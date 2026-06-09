@@ -215,3 +215,37 @@ Environment creation must be based on an approved Product.
 Environment plans must be stored as Artifacts.
 
 Production environments require approval before provisioning.
+
+## Decision: Implementation Readiness
+
+Implementation may not begin until required artifacts exist.
+
+## Required Artifacts Before Implementation
+
+- Product Specification
+- Architecture Proposal
+- Repository Plan
+- Environment Plan
+- Approved Execution Graph
+- Risk Assessment
+
+## Optional Artifacts
+
+- Market Research
+- Competitive Analysis
+- Cost Estimate
+- Security Review
+
+## Readiness Validation
+
+Before implementation starts:
+
+Orchestrator
+→ Readiness Check
+→ Validation Result
+
+## Rule
+
+Implementation Agents may not start until readiness validation passes.
+
+Missing required artifacts block execution.
