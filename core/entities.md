@@ -42,3 +42,51 @@ Examples:
 - Local repository
 
 Repositories contain code that agents can analyze and modify.
+## Environment
+
+A runtime environment where a product can run.
+
+Examples:
+- local
+- staging
+- production
+
+Agents must know which environment they are allowed to use or modify.
+
+## Tool
+
+An external capability used by an agent.
+
+Examples:
+- shell
+- git
+- GitHub
+- Docker
+- browser
+- deployment platform
+
+Tools are accessed through the Orchestrator, not directly by agents.
+
+## Memory
+
+Stored knowledge used by the system.
+
+Examples:
+- product decisions
+- previous bugs
+- architecture notes
+- successful runs
+- failed runs
+
+Memory helps agents avoid starting from zero.
+
+## Approval
+
+A human decision required before risky actions.
+
+Examples:
+- deploy to production
+- delete code
+- change database schema
+- modify secrets
+- merge PR
