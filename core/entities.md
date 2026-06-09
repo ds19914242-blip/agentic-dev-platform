@@ -32,3 +32,13 @@ It defines:
 - what can run in parallel
 - what requires approval
 - what result is expected
+
+## Repository
+
+A source code repository managed by the system.
+
+Examples:
+- GitHub repository
+- Local repository
+
+Repositories contain code that agents can analyze and modify.
