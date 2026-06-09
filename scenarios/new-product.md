@@ -145,3 +145,35 @@ Risk Evaluation validates:
 Execution Graphs must be reviewed before execution.
 
 High-risk graphs require human approval.
+
+## Decision: Repository Creation
+
+Repositories are not created directly by the Human.
+
+Flow:
+
+Approved Product
+→ Repository Planner Agent
+→ Repository Plan
+→ Orchestrator Validation
+→ Repository Provisioning
+→ Repository Created
+
+## Repository Plan
+
+The Repository Plan defines:
+
+- repository structure
+- repository names
+- ownership
+- branching strategy
+- technology stack
+- CI/CD requirements
+
+## Rule
+
+Repository creation must be based on an approved Product.
+
+Repository plans must be stored as Artifacts.
+
+Repository creation must be recorded in execution history.
