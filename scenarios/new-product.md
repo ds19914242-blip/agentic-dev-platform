@@ -19,6 +19,8 @@ Create a new SaaS product from an idea.
 
 A deployable product is created with repositories, environments and documentation.
 
+---
+
 ## Architecture Check
 
 New Product request should use:
@@ -38,6 +40,8 @@ New Product request should use:
 - Governance Model
 - Memory Model
 
+---
+
 ## Main Open Questions
 
 - Who creates the initial Product record?
@@ -47,6 +51,8 @@ New Product request should use:
 - How are environments created?
 - When does human approval happen?
 - What artifacts are required before implementation starts?
+
+---
 
 ## Decision: Product Creation
 
@@ -70,6 +76,8 @@ Orchestrator validates the Draft Product.
 
 Human approves before the Product becomes active.
 
+---
+
 ## Decision: Workflow Template Selection
 
 The Orchestrator selects the initial Workflow Template.
@@ -90,7 +98,50 @@ The Orchestrator selects the Workflow Template.
 Planner Agent validates whether the selected template fits the request.
 
 Human approval is required only when:
+
 - template risk is high
 - request is ambiguous
 - production systems may be affected
 - new infrastructure or paid services are required
+
+---
+
+## Decision: Execution Graph Validation
+
+The generated Execution Graph must be reviewed before execution.
+
+Flow:
+
+Orchestrator
+→ Execution Graph Draft
+→ Planner Agent Review
+→ Architect Agent Review
+→ Risk Evaluation
+→ Approved Execution Graph
+
+## Review Goals
+
+Planner Agent validates:
+
+- completeness
+- missing stages
+- missing dependencies
+
+Architect Agent validates:
+
+- architecture impact
+- technical feasibility
+- implementation sequencing
+
+Risk Evaluation validates:
+
+- approval gates
+- production impact
+- security impact
+- cost impact
+
+## Rule
+
+Execution Graphs must be reviewed before execution.
+
+High-risk graphs require human approval.
