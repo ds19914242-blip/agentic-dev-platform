@@ -177,3 +177,41 @@ Repository creation must be based on an approved Product.
 Repository plans must be stored as Artifacts.
 
 Repository creation must be recorded in execution history.
+
+## Decision: Environment Creation
+
+Environments are created from an approved Environment Plan.
+
+Flow:
+
+Approved Product
+→ Environment Planner Agent
+→ Environment Plan
+→ Orchestrator Validation
+→ Environment Provisioning
+→ Environment Created
+
+## Environment Plan
+
+The Environment Plan defines:
+
+- local environment
+- development environment
+- staging environment
+- production environment
+
+It also defines:
+
+- deployment platform
+- secrets strategy
+- monitoring requirements
+- backup strategy
+- rollback strategy
+
+## Rule
+
+Environment creation must be based on an approved Product.
+
+Environment plans must be stored as Artifacts.
+
+Production environments require approval before provisioning.
