@@ -47,3 +47,25 @@ New Product request should use:
 - How are environments created?
 - When does human approval happen?
 - What artifacts are required before implementation starts?
+
+## Decision: Product Creation
+
+Initial Product record is not created directly by the Human.
+
+Flow:
+
+Human Request
+→ Orchestrator
+→ Product Agent
+→ Draft Product
+→ Orchestrator Validation
+→ Human Approval
+→ Product Created
+
+## Rule
+
+Product Agent creates a Draft Product.
+
+Orchestrator validates the Draft Product.
+
+Human approves before the Product becomes active.
