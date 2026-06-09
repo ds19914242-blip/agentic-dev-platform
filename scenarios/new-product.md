@@ -284,3 +284,16 @@ Orchestrator validates it.
 Task Breakdown must be stored as an Artifact.
 
 Execution Graph is updated based on the approved Task Breakdown.
+
+## Remaining Open Questions
+
+- Who creates repositories and environments in the real world?
+- How are secrets managed?
+- How are costs tracked?
+- How are model providers selected?
+- How are long-running executions resumed?
+- How are failed executions recovered?
+- How are multiple products coordinated?
+- How are execution graphs versioned?
+- How are workflow templates versioned?
+- How are agent versions managed?
