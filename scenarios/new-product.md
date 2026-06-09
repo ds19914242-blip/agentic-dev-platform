@@ -249,3 +249,38 @@ Orchestrator
 Implementation Agents may not start until readiness validation passes.
 
 Missing required artifacts block execution.
+
+## Decision: Task Generation
+
+Tasks are generated from approved planning artifacts.
+
+Flow:
+
+Product Specification
+→ Architecture Proposal
+→ Planner Agent
+→ Task Breakdown
+→ Orchestrator Validation
+→ Execution Graph Update
+
+## Task Breakdown
+
+Task Breakdown defines:
+
+- implementation tasks
+- dependencies
+- required agents
+- required tools
+- expected artifacts
+- validation steps
+- risk level per task
+
+## Rule
+
+Planner Agent creates the Task Breakdown.
+
+Orchestrator validates it.
+
+Task Breakdown must be stored as an Artifact.
+
+Execution Graph is updated based on the approved Task Breakdown.
