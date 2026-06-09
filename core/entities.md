@@ -21,3 +21,14 @@ Examples:
 - Research
 - Release
 - Incident
+
+## Execution Graph
+
+A dynamic graph of steps created by the Orchestrator for each Work Item.
+
+It defines:
+- what should be done
+- which agents should work
+- what can run in parallel
+- what requires approval
+- what result is expected
