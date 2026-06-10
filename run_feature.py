@@ -6,6 +6,7 @@ from orchestrator.affected_file_detector import detect_affected_files
 from orchestrator.context_builder import read_context
 from orchestrator.run_manager import make_run_dir, write_run_files
 from orchestrator.prompt_builder import build_feature_prompt
+from orchestrator.planner_agent import create_plan
 
 
 def git_status(repo_path):
@@ -42,12 +43,16 @@ def main():
     print("\n[3] Building context...")
     context = read_context(repo_path, affected)
 
-    print("\n[4] Creating run artifacts...")
+    print("\n[4] Creating implementation plan...")
+    plan = create_plan(feature, affected)
+
+    print("\n[5] Creating run artifacts...")
     status = git_status(repo_path)
     prompt = build_feature_prompt(feature, repo_path, affected, context)
 
     run_dir = make_run_dir("feature")
     write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
+    (run_dir / "plan.md").write_text(plan)
 
     print(f"\nRun created: {run_dir}")
     print(f"Claude prompt: {run_dir / 'claude-prompt.md'}")
