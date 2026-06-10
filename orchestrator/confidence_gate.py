@@ -1,40 +1,24 @@
+import json
 from pathlib import Path
 
 
 def read_validation_result(run_dir):
-    path = Path(run_dir) / "validation.md"
+    path = Path(run_dir) / "validation.json"
 
     if not path.exists():
         return "missing"
 
-    text = path.read_text().lower()
-
-    if "failed" in text and "overall result" in text:
-        return "failed"
-
-    if "passed" in text and "overall result" in text:
-        return "passed"
-
-    if "failed" in text:
-        return "failed"
-
-    if "passed" in text:
-        return "passed"
-
-    return "unknown"
+    data = json.loads(path.read_text())
+    return data.get("overall_result", "unknown")
 
 
 def read_post_run_review(run_dir):
     path = Path(run_dir) / "post-run-review.md"
 
     if not path.exists():
-        return {
-            "unexpected": [],
-            "missing": [],
-        }
+        return {"unexpected": [], "missing": []}
 
     text = path.read_text().splitlines()
-
     current = None
     unexpected = []
     missing = []
@@ -60,10 +44,7 @@ def read_post_run_review(run_dir):
             elif current == "missing":
                 missing.append(line[2:])
 
-    return {
-        "unexpected": unexpected,
-        "missing": missing,
-    }
+    return {"unexpected": unexpected, "missing": missing}
 
 
 def evaluate_confidence(run_dir):
@@ -84,10 +65,7 @@ def evaluate_confidence(run_dir):
         reason = "Too many unexpected changed files."
     else:
         status = "passed"
-        if missing:
-            reason = "Validation passed. Some expected files were not changed, but this is treated as a non-blocking warning."
-        else:
-            reason = "Validation passed and file changes look acceptable."
+        reason = "Validation passed and file changes look acceptable."
 
     return {
         "status": status,
@@ -101,9 +79,11 @@ def evaluate_confidence(run_dir):
 def write_confidence_report(run_dir):
     result = evaluate_confidence(run_dir)
 
-    path = Path(run_dir) / "confidence.md"
+    json_path = Path(run_dir) / "confidence.json"
+    json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
 
-    path.write_text(f"""# Confidence Gate
+    md_path = Path(run_dir) / "confidence.md"
+    md_path.write_text(f"""# Confidence Gate
 
 ## Status
 
@@ -126,4 +106,4 @@ def write_confidence_report(run_dir):
 {chr(10).join("- " + f for f in result["missing"]) or "_None_"}
 """)
 
-    return path, result
+    return md_path, result
