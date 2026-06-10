@@ -3,6 +3,7 @@ from pathlib import Path
 from orchestrator.product_registry import load_product_config
 from orchestrator.execution_result import record_execution_result
 from orchestrator.run_status import write_status, append_event
+from orchestrator.post_run_review import create_post_run_review
 
 
 def latest_run():
@@ -29,6 +30,8 @@ def main():
 
     write_status(run_dir, "implemented")
     append_event(run_dir, "Implementation result recorded")
+    create_post_run_review(run_dir, product["repo_path"])
+    append_event(run_dir, "Post run review created")
 
     print(f"Recorded execution result in: {run_dir / 'implementation.md'}")
 
