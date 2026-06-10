@@ -31,6 +31,7 @@ def git_status(repo_path):
 def main():
     product_name = input("Product name: ").strip()
     feature = input("Feature request: ").strip()
+    mode = input("Execution mode [plan_only/implement]: ").strip() or "plan_only"
 
     product = load_product_config(product_name)
     repo_path = product["repo_path"]
@@ -84,7 +85,7 @@ def main():
 
     print("\n[6] Creating run artifacts...")
     status = git_status(repo_path)
-    prompt = build_feature_prompt(feature, repo_path, affected, context + '\n\n# Import Map\n\n' + import_map_text + '\n\n# Agent Context\n\n' + agent_context.to_markdown())
+    prompt = build_feature_prompt(feature, repo_path, affected, context + '\n\n# Import Map\n\n' + import_map_text + '\n\n# Agent Context\n\n' + agent_context.to_markdown(), mode=mode)
     graph.mark_completed('prompt')
 
     run_dir = make_run_dir("feature")

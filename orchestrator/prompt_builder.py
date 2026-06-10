@@ -1,4 +1,20 @@
-def build_feature_prompt(feature, repo_path, affected, context):
+def build_feature_prompt(feature, repo_path, affected, context, mode="plan_only"):
+    if mode == "implement":
+        task = """Analyze the affected files and implement the smallest safe solution.
+
+You are allowed to modify files.
+
+After implementation:
+- run typecheck/tests if available
+- summarize changed files
+- summarize risks
+- stop after implementation and validation"""
+    else:
+        task = """Analyze the affected files and create a detailed implementation plan.
+
+Do not modify files yet.
+Stop after the plan."""
+
     return f"""# Feature Request
 
 {feature}
@@ -6,6 +22,10 @@ def build_feature_prompt(feature, repo_path, affected, context):
 # Repository
 
 {repo_path}
+
+# Execution Mode
+
+{mode}
 
 # Affected Files
 
@@ -15,15 +35,13 @@ def build_feature_prompt(feature, repo_path, affected, context):
 
 You are a senior autonomous coding agent.
 
-Analyze the affected files and create a detailed implementation plan. Do not modify files yet.
+{task}
 
 Rules:
 - First explain what already exists.
-- Then create an implementation plan.
 - Do not modify auth, billing, secrets, database schema, or deployment config unless explicitly required.
 - Keep changes small and reversible.
-- Do not run implementation yet. Stop after the plan.
-- Summarize changed files and risks.
+- If uncertain, stop and explain the uncertainty.
 
 # Context
 
