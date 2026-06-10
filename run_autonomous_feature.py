@@ -27,6 +27,7 @@ from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
+from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 
 import subprocess
 
@@ -129,7 +130,6 @@ def main():
     affected = rank_affected_files(feature, files) or detect_affected_files(feature, files)
     graph_v2.complete('affected_files')
     graph_v2.write()
-    security = evaluate_security_gate(affected)
     context = read_context(repo_path, affected)
 
     agent_context = AgentContext()
@@ -209,6 +209,19 @@ def main():
     (run_dir / "repository-map.md").write_text(repo_map_text)
     (run_dir / "import-map.md").write_text(import_map_text)
     (run_dir / "plan.md").write_text(plan)
+
+    planner_selected_files = extract_files_from_plan(plan, files)
+    if planner_selected_files:
+        affected = planner_selected_files
+
+    write_planner_selected_files(run_dir, planner_selected_files)
+
+    security = evaluate_security_gate(affected)
+
+    (run_dir / "affected-files.md").write_text(
+        "# Affected Files\n\n" + "\n".join(f"- {f}" for f in affected) + "\n"
+    )
+
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
     (run_dir / "security-gate.md").write_text(format_security_report(security))
@@ -219,11 +232,20 @@ def main():
     graph.mark_completed("prompt")
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
 
-    if security["status"] != "passed":
+    if security["status"] == "blocked":
+        write_status(run_dir, "security_blocked")
+        append_event(run_dir, "Security gate blocked execution")
+        print(f"Security gate blocked execution: {run_dir / 'security-gate.md'}")
+        return
+
+    if security["status"] == "needs_approval":
         write_status(run_dir, "needs_security_approval")
         append_event(run_dir, "Security gate requires approval")
         print(f"Security gate requires approval: {run_dir / 'security-gate.md'}")
         return
+
+    if security["status"] == "passed_with_warning":
+        append_event(run_dir, "Security gate passed with warning")
 
     write_status(run_dir, "planning_with_claude")
     append_event(run_dir, "Claude planning started")
