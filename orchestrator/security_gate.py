@@ -1,25 +1,6 @@
-LOW_RISK_PREFIXES = [
-    "components/",
-    "app/",
-]
+import json
+from pathlib import Path
 
-MEDIUM_RISK_PREFIXES = [
-    "app/api/",
-    "lib/",
-    "src/",
-]
-
-HIGH_RISK_PATTERNS = [
-    "auth",
-    "login",
-    "session",
-    "permission",
-    "role",
-    "database",
-    "db",
-    "schema",
-    "migration",
-]
 
 CRITICAL_RISK_PATTERNS = [
     ".env",
@@ -34,6 +15,24 @@ CRITICAL_RISK_PATTERNS = [
     "railway",
 ]
 
+HIGH_RISK_PREFIXES = [
+    "app/api/auth/",
+    "app/login/",
+]
+
+HIGH_RISK_PATTERNS = [
+    "permission",
+    "role",
+    "schema",
+    "migration",
+]
+
+MEDIUM_RISK_PREFIXES = [
+    "app/api/",
+    "lib/",
+    "src/",
+]
+
 
 def classify_file_risk(file):
     low = file.lower()
@@ -41,14 +40,17 @@ def classify_file_risk(file):
     if any(pattern in low for pattern in CRITICAL_RISK_PATTERNS):
         return "critical"
 
+    if any(low.startswith(prefix) for prefix in HIGH_RISK_PREFIXES):
+        return "high"
+
     if any(pattern in low for pattern in HIGH_RISK_PATTERNS):
         return "high"
 
+    if low.startswith("app/") and low.endswith("/page.tsx"):
+        return "low"
+
     if any(low.startswith(prefix) for prefix in MEDIUM_RISK_PREFIXES):
         return "medium"
-
-    if any(low.startswith(prefix) for prefix in LOW_RISK_PREFIXES):
-        return "low"
 
     return "low"
 
@@ -113,3 +115,13 @@ def format_security_report(result):
         lines.append("")
 
     return "\n".join(lines)
+
+
+def write_security_report(run_dir, result):
+    json_path = Path(run_dir) / "security-gate.json"
+    json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+
+    md_path = Path(run_dir) / "security-gate.md"
+    md_path.write_text(format_security_report(result))
+
+    return md_path, result
