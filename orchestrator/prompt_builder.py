@@ -1,18 +1,22 @@
 def build_feature_prompt(feature, repo_path, affected, context, mode="plan_only"):
+    affected_list = chr(10).join("- " + f for f in affected)
+
     if mode == "implement":
-        task = """Analyze the affected files and implement the smallest safe solution.
+        task = """Implement the feature directly in the repository.
+
+You may read files as needed.
 
 You are allowed to modify files.
 
 After implementation:
-- run typecheck/tests if available
+- run npx tsc --noEmit if this is a TypeScript project
 - summarize changed files
 - summarize risks
 - stop after implementation and validation"""
     else:
-        task = """Analyze the affected files and create a detailed implementation plan.
+        task = """Create a detailed implementation plan.
 
-Do not modify files yet.
+Do not modify files.
 Stop after the plan."""
 
     return f"""# Feature Request
@@ -29,21 +33,17 @@ Stop after the plan."""
 
 # Affected Files
 
-{chr(10).join("- " + f for f in affected)}
+{affected_list}
 
 # Task
 
-You are a senior autonomous coding agent.
-
 {task}
 
-Rules:
-- First explain what already exists.
+# Rules
+
+- Start by inspecting the affected files directly from the repository.
+- Prefer the smallest safe implementation.
 - Do not modify auth, billing, secrets, database schema, or deployment config unless explicitly required.
 - Keep changes small and reversible.
 - If uncertain, stop and explain the uncertainty.
-
-# Context
-
-{context}
 """
