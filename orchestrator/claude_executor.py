@@ -17,18 +17,25 @@ def run_claude(repo_path, prompt, allow_writes=False, max_turns=15):
         capture_output=True,
     )
 
+    output = result.stdout or ""
+    error = result.stderr or ""
+
     if result.returncode != 0:
+        if "Reached max turns" in output:
+            return output + "\n\n[WARNING] Claude reached max turns before final response."
+
         raise RuntimeError(
-            f"Claude failed with code {result.returncode}\nSTDERR:\n{result.stderr}\nSTDOUT:\n{result.stdout}"
+            f"Claude failed with code {result.returncode}\nSTDERR:\n{error}\nSTDOUT:\n{output}"
         )
 
-    return result.stdout
+    return output
 
 
 def run_claude_from_file(repo_path, prompt_path, allow_writes=False):
     prompt = Path(prompt_path).read_text()
 
     max_chars = 50000
+
     if len(prompt) > max_chars:
         prompt = prompt[:max_chars] + "\n\n[TRUNCATED BY AGENTIC DEV PLATFORM]\n"
 
