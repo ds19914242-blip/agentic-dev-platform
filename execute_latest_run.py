@@ -18,6 +18,8 @@ def latest_run():
 
 def main():
     product_name = input("Product name: ").strip()
+    allow_writes_input = input("Allow Claude to modify files? [y/N]: ").strip().lower()
+    allow_writes = allow_writes_input == "y"
 
     product = load_product_config(product_name)
     repo_path = product["repo_path"]
@@ -34,7 +36,7 @@ def main():
     write_status(run_dir, "executing")
     append_event(run_dir, "Claude execution started")
 
-    response = run_claude_from_file(repo_path, prompt_path)
+    response = run_claude_from_file(repo_path, prompt_path, allow_writes=allow_writes)
 
     save_claude_response(run_dir, response)
     append_event(run_dir, "Claude response recorded")
