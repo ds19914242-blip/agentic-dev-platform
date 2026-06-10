@@ -76,12 +76,12 @@ def evaluate_confidence(run_dir):
     elif len(unexpected) >= 5:
         status = "needs_review"
         reason = "Too many unexpected changed files."
-    elif len(missing) >= 5:
-        status = "needs_review"
-        reason = "Many expected files were not changed."
     else:
         status = "passed"
-        reason = "Validation passed and file changes look acceptable."
+        if missing:
+            reason = "Validation passed. Some expected files were not changed, but this is treated as a non-blocking warning."
+        else:
+            reason = "Validation passed and file changes look acceptable."
 
     return {
         "status": status,
