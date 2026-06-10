@@ -4,3 +4,12 @@ __pycache__/
 
 runs/latest-feature-prompt.md
 runs/claude-code-feature-prompt.md
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Temporary runtime prompts
+runs/latest-feature-prompt.md
+runs/feature-request-prompt.md
+runs/claude-code-feature-prompt.md
