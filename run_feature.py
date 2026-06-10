@@ -56,7 +56,7 @@ def main():
 
     print("\n[6] Creating run artifacts...")
     status = git_status(repo_path)
-    prompt = build_feature_prompt(feature, repo_path, affected, context)
+    prompt = build_feature_prompt(feature, repo_path, affected, context + '\n\n# Import Map\n\n' + import_map_text)
 
     run_dir = make_run_dir("feature")
     write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
