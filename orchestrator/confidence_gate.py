@@ -9,11 +9,17 @@ def read_validation_result(run_dir):
 
     text = path.read_text().lower()
 
-    if "## result\n\npassed" in text:
+    if "failed" in text and "overall result" in text:
+        return "failed"
+
+    if "passed" in text and "overall result" in text:
         return "passed"
 
-    if "## result\n\nfailed" in text:
+    if "failed" in text:
         return "failed"
+
+    if "passed" in text:
+        return "passed"
 
     return "unknown"
 
