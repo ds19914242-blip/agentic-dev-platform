@@ -1,62 +1,11 @@
-from pathlib import Path
-from datetime import datetime
 import subprocess
-import re
 
-IGNORE_DIRS = {
-    ".git", "node_modules", "dist", "build", ".next",
-    "coverage", ".venv", "__pycache__",
-}
+from orchestrator.product_registry import load_product_config
+from orchestrator.repository_scanner import scan_repo
+from orchestrator.affected_file_detector import detect_affected_files
+from orchestrator.context_builder import read_context
+from orchestrator.run_manager import make_run_dir, write_run_files
 
-IMPORTANT_FILES = {
-    "package.json", "README.md", "next.config.js",
-    "vite.config.js", "tsconfig.json", "requirements.txt", "pyproject.toml",
-}
-
-KEYWORDS = {
-    "rss": ["app/rss", "app/api/rss", "lib/rss", "src/collector", "src/config/feeds"],
-    "summary": ["components", "src/reporting", "src/report", "src/agents"],
-    "summaries": ["components", "src/reporting", "src/report", "src/agents"],
-    "ai": ["src/llm", "src/agents", "src/analysis"],
-    "feed": ["lib/rss", "src/collector", "src/config/feeds"],
-    "preview": ["components/PreviewPanel", "lib/uploadPreview", "app/api/rss/summarize"],
-}
-
-def should_ignore(path):
-    return any(part in IGNORE_DIRS for part in path.parts)
-
-def scan_repo(repo_path):
-    root = Path(repo_path)
-    files = []
-    for path in root.rglob("*"):
-        rel = path.relative_to(root)
-        if should_ignore(rel):
-            continue
-        if path.is_file():
-            if rel.parts[0] in {"src", "app", "components", "pages", "api", "lib"}:
-                files.append(str(rel))
-            elif path.name in IMPORTANT_FILES:
-                files.append(str(rel))
-    return sorted(files)
-
-def detect_affected_files(feature, files):
-    feature_l = feature.lower()
-    matched = []
-    for word, patterns in KEYWORDS.items():
-        if word in feature_l:
-            for file in files:
-                if any(file.startswith(pattern) for pattern in patterns):
-                    matched.append(file)
-    return sorted(set(matched))[:15]
-
-def read_context(repo_path, affected_files):
-    chunks = []
-    for file in affected_files:
-        path = Path(repo_path) / file
-        if path.exists():
-            chunks.append(f"\n\n# FILE: {file}\n\n")
-            chunks.append(path.read_text(errors="ignore")[:8000])
-    return "".join(chunks)
 
 def git_status(repo_path):
     result = subprocess.run(
@@ -65,74 +14,12 @@ def git_status(repo_path):
         text=True,
         capture_output=True,
     )
+
     return result.stdout.strip()
 
-def make_run_dir():
-    Path("runs").mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir = Path("runs") / f"feature-{stamp}"
-    run_dir.mkdir(parents=True, exist_ok=True)
-    return run_dir
 
-def load_product_config(product_name):
-    config_path = Path("products") / product_name / "config.yaml"
-    if not config_path.exists():
-        raise FileNotFoundError(f"Product config not found: {config_path}")
-
-    text = config_path.read_text()
-    match = re.search(r"repo_path:\s*(.+)", text)
-    if not match:
-        raise ValueError("repo_path not found in product config")
-
-    return match.group(1).strip()
-
-
-def main():
-    product_name = input("Product name: ").strip()
-    repo_path = load_product_config(product_name)
-    feature = input("Feature request: ").strip()
-
-    print(f"Using repo: {repo_path}")
-
-    run_dir = make_run_dir()
-
-    print("\n[1] Scanning repository...")
-    files = scan_repo(repo_path)
-
-    print("\n[2] Detecting affected files...")
-    affected = detect_affected_files(feature, files)
-
-    print("\nAffected files:")
-    for file in affected:
-        print(f"- {file}")
-
-    context = read_context(repo_path, affected)
-    status = git_status(repo_path)
-
-    (run_dir / "work-item.md").write_text(f"""# Work Item
-
-## Type
-
-feature
-
-## Request
-
-{feature}
-
-## Repository
-
-{repo_path}
-
-## Status
-
-created
-""")
-
-    (run_dir / "affected-files.md").write_text(
-        "# Affected Files\n\n" + "\n".join(f"- {f}" for f in affected) + "\n"
-    )
-
-    prompt = f"""# Feature Request
+def build_prompt(feature, repo_path, affected, context):
+    return f"""# Feature Request
 
 {feature}
 
@@ -163,39 +50,39 @@ Rules:
 {context}
 """
 
-    (run_dir / "claude-prompt.md").write_text(prompt)
 
-    (run_dir / "summary.md").write_text(f"""# Run Summary
+def main():
+    product_name = input("Product name: ").strip()
+    feature = input("Feature request: ").strip()
 
-## Feature Request
+    product = load_product_config(product_name)
+    repo_path = product["repo_path"]
 
-{feature}
+    print(f"\nUsing repo: {repo_path}")
 
-## Repository
+    print("\n[1] Scanning repository...")
+    files = scan_repo(repo_path)
 
-{repo_path}
+    print("\n[2] Detecting affected files...")
+    affected = detect_affected_files(feature, files)
 
-## Files scanned
+    print("\nAffected files:")
+    for file in affected:
+        print(f"- {file}")
 
-{len(files)}
+    print("\n[3] Building context...")
+    context = read_context(repo_path, affected)
 
-## Affected files
+    print("\n[4] Creating run artifacts...")
+    status = git_status(repo_path)
+    prompt = build_prompt(feature, repo_path, affected, context)
 
-{len(affected)}
-
-## Git status before execution
-
-```text
-{status or "clean"}
-```
-
-## Status
-
-prompt_created
-""")
+    run_dir = make_run_dir("feature")
+    write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
 
     print(f"\nRun created: {run_dir}")
     print(f"Claude prompt: {run_dir / 'claude-prompt.md'}")
+
 
 if __name__ == "__main__":
     main()
