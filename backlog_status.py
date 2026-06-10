@@ -11,7 +11,6 @@ def task_title(task_path):
 
     for line in text.splitlines():
         line = line.strip()
-
         if line.startswith("### Task "):
             return line.replace("### ", "")
 
@@ -25,15 +24,15 @@ def epic_progress(epic_path):
     pending = []
 
     for task in tasks:
-        entry = {
+        item = {
             "name": task.name,
             "title": task_title(task),
         }
 
         if task_done(task):
-            completed.append(entry)
+            completed.append(item)
         else:
-            pending.append(entry)
+            pending.append(item)
 
     return {
         "total": len(tasks),
@@ -47,7 +46,6 @@ def print_epic(epic_path):
 
     done = len(progress["completed"])
     total = progress["total"]
-
     percent = round((done / total) * 100) if total else 0
 
     print()
@@ -57,7 +55,6 @@ def print_epic(epic_path):
 
     print("DONE")
     print("----")
-
     if progress["completed"]:
         for task in progress["completed"]:
             print(f"✓ {task['title']}")
@@ -67,23 +64,16 @@ def print_epic(epic_path):
     print()
     print("PENDING")
     print("-------")
-
     if progress["pending"]:
         for task in progress["pending"]:
             print(f"□ {task['title']}")
     else:
         print("None")
 
-    print()
-
 
 def main():
     backlog = Path("backlog")
-
-    epics = sorted(
-        p for p in backlog.iterdir()
-        if p.is_dir()
-    )
+    epics = sorted(p for p in backlog.iterdir() if p.is_dir())
 
     if not epics:
         print("No backlog epics found.")
@@ -95,19 +85,10 @@ def main():
     for i, epic in enumerate(epics, start=1):
         print(f"[{i}] {epic.name}")
 
-    print()
-
     default = "1" if len(epics) == 1 else ""
-
-    choice = input(
-        f"Select epic [{default}]: "
-    ).strip()
-
-    if not choice:
-        choice = default
+    choice = input(f"\nSelect epic [{default}]: ").strip() or default
 
     epic = epics[int(choice) - 1]
-
     print_epic(epic)
 
 
