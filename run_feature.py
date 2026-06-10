@@ -71,9 +71,9 @@ def main():
     print("\n[5] Creating implementation plan...")
     plan = create_plan(feature, affected)
     graph.mark_completed('planning')
-    architecture_review = create_architecture_review(feature, affected, repo_map_text)
+    architecture_review = create_architecture_review(feature, affected, repo_map_text, plan)
     graph.mark_completed('architecture_review')
-    qa_plan = create_qa_plan(feature, affected)
+    qa_plan = create_qa_plan(feature, affected, plan, architecture_review)
     graph.mark_completed('qa_plan')
 
     print("\n[6] Creating run artifacts...")

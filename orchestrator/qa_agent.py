@@ -1,4 +1,4 @@
-def create_qa_plan(feature, affected_files):
+def create_qa_plan(feature, affected_files, plan, architecture_review):
     lines = []
 
     lines.append("# QA Plan")
@@ -7,9 +7,19 @@ def create_qa_plan(feature, affected_files):
     lines.append("")
     lines.append(feature)
     lines.append("")
+    lines.append("## Based On Plan")
+    lines.append("")
+    lines.append(plan)
+    lines.append("")
+    lines.append("## Based On Architecture Review")
+    lines.append("")
+    lines.append(architecture_review)
+    lines.append("")
     lines.append("## Validation Goals")
     lines.append("")
     lines.append("- Confirm the feature works as requested.")
+    lines.append("- Confirm the implementation follows the plan.")
+    lines.append("- Confirm architecture risks were addressed.")
     lines.append("- Confirm existing flows still work.")
     lines.append("- Confirm no unsafe areas were modified.")
     lines.append("")

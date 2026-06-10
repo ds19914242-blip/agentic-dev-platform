@@ -1,4 +1,4 @@
-def create_architecture_review(feature, affected_files, repo_map_text):
+def create_architecture_review(feature, affected_files, repo_map_text, plan):
     lines = []
 
     lines.append("# Architecture Review")
@@ -7,9 +7,13 @@ def create_architecture_review(feature, affected_files, repo_map_text):
     lines.append("")
     lines.append(feature)
     lines.append("")
+    lines.append("## Planner Input")
+    lines.append("")
+    lines.append(plan)
+    lines.append("")
     lines.append("## Review Focus")
     lines.append("")
-    lines.append("- Does the feature fit existing architecture?")
+    lines.append("- Does the plan fit existing architecture?")
     lines.append("- Which modules are affected?")
     lines.append("- Are there unnecessary risky changes?")
     lines.append("- Are auth, billing, secrets, DB schema or deployment config affected?")
@@ -32,15 +36,11 @@ def create_architecture_review(feature, affected_files, repo_map_text):
             lines.append(f"- Other: {file}")
 
     lines.append("")
-    lines.append("## Initial Risk Assessment")
+    lines.append("## Architecture Recommendation")
     lines.append("")
-    lines.append("- Risk level: medium")
-    lines.append("- Reason: code changes may affect user-facing behavior.")
-    lines.append("")
-    lines.append("## Architecture Rule")
-    lines.append("")
-    lines.append("Prefer the smallest change that reuses existing modules.")
-    lines.append("Do not introduce new infrastructure unless required.")
+    lines.append("Reuse existing modules where possible.")
+    lines.append("Avoid new infrastructure unless explicitly required.")
+    lines.append("Keep implementation small and reversible.")
     lines.append("")
 
     return "\n".join(lines)
