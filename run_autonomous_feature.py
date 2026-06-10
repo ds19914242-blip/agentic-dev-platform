@@ -25,6 +25,7 @@ from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, format_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
+from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 
 import subprocess
@@ -346,6 +347,23 @@ After implementation:
         write_status(run_dir, confidence_decision["status"])
 
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
+
+    if validation_ok and confidence["status"] == "passed" and has_changes(repo_path):
+        safe_branch = "agentic/" + feature.lower().replace(" ", "-")[:50]
+        safe_branch = "".join(ch for ch in safe_branch if ch.isalnum() or ch in "-_/")
+        commit_message = feature[:80]
+
+        pr_url = create_pr(
+            repo_path=repo_path,
+            branch_name=safe_branch,
+            commit_message=commit_message,
+            body=f"Created by Agentic Dev Platform run: {run_dir}",
+        )
+
+        if pr_url:
+            (run_dir / "pull-request.md").write_text(f"# Pull Request\n\n{pr_url}\n")
+            write_status(run_dir, "pr_created")
+            append_event(run_dir, f"Pull request created: {pr_url}")
 
     print(f"Autonomous run complete: {run_dir}")
     print(f"Validation: {'passed' if validation_ok else 'failed'}")
