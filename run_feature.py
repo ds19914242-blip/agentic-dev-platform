@@ -10,6 +10,7 @@ from orchestrator.planner_agent import create_plan
 from orchestrator.architect_agent import create_architecture_review
 from orchestrator.qa_agent import create_qa_plan
 from orchestrator.execution_graph import ExecutionGraph
+from orchestrator.agent_context import AgentContext
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
 from orchestrator.import_analyzer import analyze_imports, format_import_map
 
@@ -34,6 +35,7 @@ def main():
     repo_path = product["repo_path"]
 
     graph = ExecutionGraph()
+    agent_context = AgentContext()
     graph.add_node("repository_scan", "Scan repository")
     graph.add_node("repository_intelligence", "Build repository map")
     graph.add_node("affected_files", "Detect affected files")
@@ -70,10 +72,13 @@ def main():
 
     print("\n[5] Creating implementation plan...")
     plan = create_plan(feature, affected)
+    agent_context.set('plan', plan)
     graph.mark_completed('planning')
-    architecture_review = create_architecture_review(feature, affected, repo_map_text, plan)
+    architecture_review = create_architecture_review(feature, affected, repo_map_text, agent_context.get('plan'))
+    agent_context.set('architecture_review', architecture_review)
     graph.mark_completed('architecture_review')
-    qa_plan = create_qa_plan(feature, affected, plan, architecture_review)
+    qa_plan = create_qa_plan(feature, affected, agent_context.get('plan'), agent_context.get('architecture_review'))
+    agent_context.set('qa_plan', qa_plan)
     graph.mark_completed('qa_plan')
 
     print("\n[6] Creating run artifacts...")
@@ -87,6 +92,7 @@ def main():
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
+    (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
     (run_dir / "repository-map.md").write_text(repo_map_text)
     (run_dir / "import-map.md").write_text(import_map_text)
 
