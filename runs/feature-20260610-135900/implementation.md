@@ -2,7 +2,7 @@
 
 ## Summary
 
-Claude implemented domain filtering controls and benchmark compatibility fix. Typecheck passed.
+Test post-run review integration
 
 ## Changed Files
 

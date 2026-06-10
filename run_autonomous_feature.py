@@ -6,6 +6,7 @@ from orchestrator.repository_scanner import scan_repo
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
 from orchestrator.import_analyzer import analyze_imports, format_import_map
 from orchestrator.affected_file_detector import detect_affected_files
+from orchestrator.repository_intelligence_v2 import rank_affected_files
 from orchestrator.context_builder import read_context
 from orchestrator.planner_agent import create_plan
 from orchestrator.architect_agent import create_architecture_review
@@ -20,6 +21,7 @@ from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
 from orchestrator.execution_result import record_execution_result
 from orchestrator.post_run_review import create_post_run_review
+from orchestrator.security_gate import evaluate_security_gate, format_security_report
 from orchestrator.confidence_gate import write_confidence_report
 
 import subprocess
@@ -95,7 +97,8 @@ def main():
     import_map = analyze_imports(repo_path, files)
     import_map_text = format_import_map(import_map)
 
-    affected = detect_affected_files(feature, files)
+    affected = rank_affected_files(feature, files) or detect_affected_files(feature, files)
+    security = evaluate_security_gate(affected)
     context = read_context(repo_path, affected)
 
     agent_context = AgentContext()
@@ -171,10 +174,17 @@ def main():
     (run_dir / "plan.md").write_text(plan)
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
+    (run_dir / "security-gate.md").write_text(format_security_report(security))
     (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
 
     graph.mark_completed("prompt")
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
+
+    if security["status"] != "passed":
+        write_status(run_dir, "needs_security_approval")
+        append_event(run_dir, "Security gate requires approval")
+        print(f"Security gate requires approval: {run_dir / 'security-gate.md'}")
+        return
 
     write_status(run_dir, "planning_with_claude")
     append_event(run_dir, "Claude planning started")
