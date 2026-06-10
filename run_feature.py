@@ -18,6 +18,7 @@ KEYWORDS = {
     "summaries": ["components", "src/reporting", "src/report", "src/agents"],
     "ai": ["src/llm", "src/agents", "src/analysis"],
     "feed": ["lib/rss", "src/collector", "src/config/feeds"],
+    "preview": ["components/PreviewPanel", "lib/uploadPreview", "app/api/rss/summarize"],
 }
 
 def should_ignore(path):
