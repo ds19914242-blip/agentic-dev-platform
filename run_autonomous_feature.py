@@ -20,6 +20,7 @@ from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
 from orchestrator.execution_result import record_execution_result
 from orchestrator.post_run_review import create_post_run_review
+from orchestrator.confidence_gate import write_confidence_report
 
 import subprocess
 
@@ -251,11 +252,23 @@ After implementation:
     graph.mark_completed("post_run_review")
     append_event(run_dir, "Post run review created")
 
+    confidence_path, confidence = write_confidence_report(run_dir)
+    append_event(run_dir, f"Confidence gate: {confidence['status']}")
+
+    if confidence["status"] == "passed":
+        write_status(run_dir, "confidence_passed")
+    elif confidence["status"] == "failed":
+        write_status(run_dir, "confidence_failed")
+    else:
+        write_status(run_dir, "needs_review")
+
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
 
     print(f"Autonomous run complete: {run_dir}")
     print(f"Validation: {'passed' if validation_ok else 'failed'}")
     print(f"Review: {run_dir / 'post-run-review.md'}")
+    print(f"Confidence: {confidence_path}")
+    print(f"Confidence status: {confidence['status']}")
 
 
 if __name__ == "__main__":
