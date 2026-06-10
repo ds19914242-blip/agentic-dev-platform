@@ -23,6 +23,7 @@ from orchestrator.execution_result import record_execution_result
 from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, format_security_report
 from orchestrator.confidence_gate import write_confidence_report
+from orchestrator.graph_runtime import GraphRuntime
 
 import subprocess
 
@@ -87,17 +88,44 @@ def main():
     write_status(run_dir, "created")
     append_event(run_dir, "Autonomous feature run created")
 
+    graph_v2 = GraphRuntime(run_dir)
+    for node_id, name in [
+        ("repo_state", "Check clean repository"),
+        ("repo_scan", "Scan repository"),
+        ("repo_intelligence", "Build repository intelligence"),
+        ("affected_files", "Detect affected files"),
+        ("planning", "Create plan"),
+        ("architecture", "Create architecture review"),
+        ("qa", "Create QA plan"),
+        ("security", "Run security gate"),
+        ("claude_plan", "Run Claude planning"),
+        ("approved_plan", "Approve plan"),
+        ("implementation", "Run Claude implementation"),
+        ("validation", "Run validation"),
+        ("post_review", "Create post-run review"),
+        ("confidence", "Run confidence gate"),
+    ]:
+        graph_v2.add(node_id, name)
+    graph_v2.complete("repo_state")
+    graph_v2.write()
+
     print(f"Run: {run_dir}")
     print(f"Repo: {repo_path}")
 
     files = scan_repo(repo_path)
+    graph_v2.complete('repo_scan')
+    graph_v2.write()
     repo_map = build_repository_map(files)
     repo_map_text = format_repository_map(repo_map)
+    graph_v2.complete('repo_intelligence')
+    graph_v2.write()
 
     import_map = analyze_imports(repo_path, files)
     import_map_text = format_import_map(import_map)
 
     affected = rank_affected_files(feature, files) or detect_affected_files(feature, files)
+    graph_v2.complete('affected_files')
+    graph_v2.write()
     security = evaluate_security_gate(affected)
     context = read_context(repo_path, affected)
 
@@ -105,6 +133,8 @@ def main():
 
     plan = create_plan(feature, affected)
     agent_context.set("plan", plan)
+    graph_v2.complete("planning")
+    graph_v2.write()
 
     architecture_review = create_architecture_review(
         feature,
@@ -113,6 +143,8 @@ def main():
         agent_context.get("plan"),
     )
     agent_context.set("architecture_review", architecture_review)
+    graph_v2.complete("architecture")
+    graph_v2.write()
 
     qa_plan = create_qa_plan(
         feature,
@@ -121,6 +153,8 @@ def main():
         agent_context.get("architecture_review"),
     )
     agent_context.set("qa_plan", qa_plan)
+    graph_v2.complete("qa")
+    graph_v2.write()
 
     graph = ExecutionGraph()
     for node_id, name in [
@@ -175,6 +209,8 @@ def main():
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
     (run_dir / "security-gate.md").write_text(format_security_report(security))
+    graph_v2.complete("security")
+    graph_v2.write()
     (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
 
     graph.mark_completed("prompt")
@@ -198,11 +234,15 @@ def main():
     save_claude_response(run_dir, claude_plan_response)
     graph.mark_completed("claude_plan")
     append_event(run_dir, "Claude planning response recorded")
+    graph_v2.complete("claude_plan")
+    graph_v2.write()
 
     save_approved_plan(run_dir, claude_plan_response)
     graph.mark_completed("approved_plan")
     write_status(run_dir, "plan_approved")
     append_event(run_dir, "Plan automatically approved")
+    graph_v2.complete("approved_plan")
+    graph_v2.write()
 
     approved_plan = load_approved_plan(run_dir)
 
@@ -241,6 +281,8 @@ After implementation:
 
     graph.mark_completed("implementation")
     append_event(run_dir, "Claude implementation response recorded")
+    graph_v2.complete("implementation")
+    graph_v2.write()
 
     record_execution_result(
         run_dir=run_dir,
@@ -254,16 +296,24 @@ After implementation:
         graph.mark_completed("validation")
         write_status(run_dir, "validated")
         append_event(run_dir, "Validation passed")
+        graph_v2.complete("validation")
+        graph_v2.write()
     else:
         write_status(run_dir, "validation_failed")
         append_event(run_dir, "Validation failed")
+        graph_v2.fail("validation")
+        graph_v2.write()
 
     create_post_run_review(run_dir, repo_path)
     graph.mark_completed("post_run_review")
     append_event(run_dir, "Post run review created")
+    graph_v2.complete("post_review")
+    graph_v2.write()
 
     confidence_path, confidence = write_confidence_report(run_dir)
     append_event(run_dir, f"Confidence gate: {confidence['status']}")
+    graph_v2.complete("confidence")
+    graph_v2.write()
 
     if confidence["status"] == "passed":
         write_status(run_dir, "confidence_passed")

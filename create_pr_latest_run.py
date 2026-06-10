@@ -12,11 +12,18 @@ def latest_run():
     return runs[-1]
 
 
-def run(command, cwd):
-    result = subprocess.run(command, cwd=cwd, text=True, capture_output=True)
-    if result.returncode != 0:
-        raise RuntimeError(result.stderr or result.stdout)
-    return result.stdout.strip()
+def run(command, cwd, retries=2):
+    last_error = ""
+
+    for _ in range(retries + 1):
+        result = subprocess.run(command, cwd=cwd, text=True, capture_output=True)
+
+        if result.returncode == 0:
+            return result.stdout.strip()
+
+        last_error = result.stderr or result.stdout
+
+    raise RuntimeError(last_error)
 
 
 def main():
