@@ -7,6 +7,7 @@ from orchestrator.context_builder import read_context
 from orchestrator.run_manager import make_run_dir, write_run_files
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.planner_agent import create_plan
+from orchestrator.architect_agent import create_architecture_review
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
 from orchestrator.import_analyzer import analyze_imports, format_import_map
 
@@ -53,6 +54,7 @@ def main():
 
     print("\n[5] Creating implementation plan...")
     plan = create_plan(feature, affected)
+    architecture_review = create_architecture_review(feature, affected, repo_map_text)
 
     print("\n[6] Creating run artifacts...")
     status = git_status(repo_path)
@@ -61,6 +63,7 @@ def main():
     run_dir = make_run_dir("feature")
     write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
     (run_dir / "plan.md").write_text(plan)
+    (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "repository-map.md").write_text(repo_map_text)
     (run_dir / "import-map.md").write_text(import_map_text)
 
