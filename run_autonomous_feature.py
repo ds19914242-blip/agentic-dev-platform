@@ -9,6 +9,7 @@ from orchestrator.affected_file_detector import detect_affected_files
 from orchestrator.repository_intelligence_v2 import rank_affected_files
 from orchestrator.context_builder import read_context
 from orchestrator.planner_agent import create_plan
+from orchestrator.llm_planner_agent import create_llm_plan
 from orchestrator.architect_agent import create_architecture_review
 from orchestrator.qa_agent import create_qa_plan
 from orchestrator.agent_context import AgentContext
@@ -131,7 +132,7 @@ def main():
 
     agent_context = AgentContext()
 
-    plan = create_plan(feature, affected)
+    plan = create_llm_plan(repo_path, feature, affected, repo_map_text)
     agent_context.set("plan", plan)
     graph_v2.complete("planning")
     graph_v2.write()
