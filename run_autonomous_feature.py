@@ -28,6 +28,7 @@ from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
+from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 
 import subprocess
 
@@ -85,6 +86,33 @@ def main():
 
     product = load_product_config(product_name)
     repo_path = product["repo_path"]
+
+    files_for_classification = scan_repo(repo_path)
+    repo_map_for_classification = format_repository_map(
+        build_repository_map(files_for_classification)
+    )
+
+    classification_text = classify_request_with_llm(
+        repo_path,
+        feature,
+        repo_map_for_classification,
+    )
+
+    classification = parse_complexity(classification_text)
+
+    if classification["route"] == "DECOMPOSE_FIRST":
+        print("Request should be decomposed first.")
+        print("Run:")
+        print("python3 decompose_feature.py")
+        print()
+        print(classification_text)
+        return
+
+    if classification["route"] == "NEEDS_HUMAN_REVIEW":
+        print("Request needs human review before execution.")
+        print()
+        print(classification_text)
+        return
 
     ensure_clean_repo(repo_path)
 
