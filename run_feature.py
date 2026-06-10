@@ -8,6 +8,7 @@ from orchestrator.run_manager import make_run_dir, write_run_files
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.planner_agent import create_plan
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
+from orchestrator.import_analyzer import analyze_imports, format_import_map
 
 
 def git_status(repo_path):
@@ -37,6 +38,8 @@ def main():
     print("\n[2] Building repository map...")
     repo_map = build_repository_map(files)
     repo_map_text = format_repository_map(repo_map)
+    import_map = analyze_imports(repo_path, files)
+    import_map_text = format_import_map(import_map)
 
     print("\n[3] Detecting affected files...")
     affected = detect_affected_files(feature, files)
@@ -59,6 +62,7 @@ def main():
     write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
     (run_dir / "plan.md").write_text(plan)
     (run_dir / "repository-map.md").write_text(repo_map_text)
+    (run_dir / "import-map.md").write_text(import_map_text)
 
     print(f"\nRun created: {run_dir}")
     print(f"Claude prompt: {run_dir / 'claude-prompt.md'}")
