@@ -4,11 +4,7 @@ import subprocess
 
 def list_epics():
     backlog = Path("backlog")
-
-    epics = sorted(
-        p for p in backlog.iterdir()
-        if p.is_dir()
-    )
+    epics = sorted(p for p in backlog.iterdir() if p.is_dir())
 
     if not epics:
         raise RuntimeError("No backlog epics found.")
@@ -40,8 +36,28 @@ def mark_done(task_path):
         task_path.write_text("Status: done\n\n" + text)
 
 
+def task_title(task_text):
+    for line in task_text.splitlines():
+        line = line.strip()
+        if line.startswith("### Task "):
+            return line.replace("### ", "").strip()
+    return task_text.splitlines()[0].strip()
+
+
+def build_feature_request(task_text):
+    title = task_title(task_text)
+
+    return f"""Epic task: {title}
+
+Use the following task specification as the source of truth.
+
+{task_text}
+"""
+
+
 def run_autonomous(product_name, task_text):
-    input_text = f"{product_name}\n{task_text}\n"
+    feature_request = build_feature_request(task_text)
+    input_text = product_name + "\n" + feature_request + "\n"
 
     result = subprocess.run(
         ["python3", "run_autonomous_feature.py"],
@@ -67,7 +83,10 @@ def main():
     for i, epic in enumerate(epics, start=1):
         print(f"[{i}] {epic.name}")
 
-    epic_index = int(input("\nSelect epic: ").strip())
+    default_epic = "1" if len(epics) == 1 else ""
+    epic_prompt = f"\nSelect epic [{default_epic}]: " if default_epic else "\nSelect epic: "
+    epic_raw = input(epic_prompt).strip() or default_epic
+    epic_index = int(epic_raw)
     epic_path = epics[epic_index - 1]
 
     tasks = list_tasks(epic_path)
@@ -76,10 +95,10 @@ def main():
 
     for i, task in enumerate(tasks, start=1):
         status = "done" if task_done(task) else "pending"
-        title = task.read_text(errors="ignore").splitlines()[0]
+        title = task_title(task.read_text(errors="ignore"))
         print(f"[{i}] [{status}] {task.name} — {title}")
 
-    choice = input("\nTask number or 'next': ").strip()
+    choice = input("\nTask number or 'next' [next]: ").strip() or "next"
 
     if choice == "next":
         pending = [task for task in tasks if not task_done(task)]
