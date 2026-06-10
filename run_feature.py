@@ -12,6 +12,7 @@ from orchestrator.qa_agent import create_qa_plan
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.agent_context import AgentContext
 from orchestrator.run_status import write_status, append_event
+from orchestrator.repository_state import ensure_clean_repo
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
 from orchestrator.import_analyzer import analyze_imports, format_import_map
 
@@ -46,6 +47,8 @@ def main():
     graph.add_node("architecture_review", "Create architecture review")
     graph.add_node("qa_plan", "Create QA plan")
     graph.add_node("prompt", "Create Claude Code prompt")
+
+    ensure_clean_repo(repo_path)
 
     print(f"\nUsing repo: {repo_path}")
 
