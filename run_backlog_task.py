@@ -1,5 +1,10 @@
 from pathlib import Path
 import subprocess
+import re
+
+
+ACTIVE_STATUSES = {"todo", "blocked"}
+SKIP_STATUSES = {"in_progress", "pr_created", "merged"}
 
 
 def list_epics():
@@ -16,24 +21,54 @@ def list_tasks(epic_path):
     return sorted(epic_path.glob("task-*.md"))
 
 
-def task_done(task_path):
+def get_status(task_path):
     text = task_path.read_text(errors="ignore").lower()
-    return "status: done" in text
+
+    for line in text.splitlines():
+        if line.startswith("status:"):
+            return line.split(":", 1)[1].strip()
+
+    return "todo"
 
 
-def mark_done(task_path):
+def set_status(task_path, status):
     text = task_path.read_text(errors="ignore")
+    lines = text.splitlines()
 
-    if "Status:" in text:
-        lines = []
-        for line in text.splitlines():
-            if line.startswith("Status:"):
-                lines.append("Status: done")
-            else:
-                lines.append(line)
-        task_path.write_text("\n".join(lines) + "\n")
-    else:
-        task_path.write_text("Status: done\n\n" + text)
+    updated = []
+    found = False
+
+    for line in lines:
+        if line.lower().startswith("status:"):
+            updated.append(f"Status: {status}")
+            found = True
+        else:
+            updated.append(line)
+
+    if not found:
+        updated = [f"Status: {status}", ""] + updated
+
+    task_path.write_text("\n".join(updated) + "\n")
+
+
+def set_pr_url(task_path, pr_url):
+    text = task_path.read_text(errors="ignore")
+    lines = text.splitlines()
+
+    updated = []
+    found = False
+
+    for line in lines:
+        if line.lower().startswith("pr:"):
+            updated.append(f"PR: {pr_url}")
+            found = True
+        else:
+            updated.append(line)
+
+    if not found:
+        updated = [f"PR: {pr_url}"] + updated
+
+    task_path.write_text("\n".join(updated) + "\n")
 
 
 def task_title(task_text):
@@ -41,7 +76,7 @@ def task_title(task_text):
         line = line.strip()
         if line.startswith("### Task "):
             return line.replace("### ", "").strip()
-    return task_text.splitlines()[0].strip()
+    return task_text.splitlines()[0].strip() if task_text.splitlines() else "Untitled task"
 
 
 def build_feature_request(task_text):
@@ -53,6 +88,26 @@ Use the following task specification as the source of truth.
 
 {task_text}
 """
+
+
+def latest_run_dir():
+    runs = sorted(p for p in Path("runs").glob("feature-*") if p.is_dir())
+    if not runs:
+        return None
+    return runs[-1]
+
+
+def read_pr_url(run_dir):
+    if not run_dir:
+        return ""
+
+    path = run_dir / "pull-request.md"
+    if not path.exists():
+        return ""
+
+    text = path.read_text(errors="ignore")
+    match = re.search(r"https://github\\.com/\\S+", text)
+    return match.group(0) if match else ""
 
 
 def run_autonomous(product_name, task_text):
@@ -84,41 +139,57 @@ def main():
         print(f"[{i}] {epic.name}")
 
     default_epic = "1" if len(epics) == 1 else ""
-    epic_prompt = f"\nSelect epic [{default_epic}]: " if default_epic else "\nSelect epic: "
-    epic_raw = input(epic_prompt).strip() or default_epic
-    epic_index = int(epic_raw)
-    epic_path = epics[epic_index - 1]
+    epic_raw = input(f"\nSelect epic [{default_epic}]: ").strip() or default_epic
+    epic_path = epics[int(epic_raw) - 1]
 
     tasks = list_tasks(epic_path)
 
     print("\nTasks:\n")
 
     for i, task in enumerate(tasks, start=1):
-        status = "done" if task_done(task) else "pending"
+        status = get_status(task)
         title = task_title(task.read_text(errors="ignore"))
         print(f"[{i}] [{status}] {task.name} — {title}")
 
     choice = input("\nTask number or 'next' [next]: ").strip() or "next"
 
     if choice == "next":
-        pending = [task for task in tasks if not task_done(task)]
+        pending = [task for task in tasks if get_status(task) == "todo"]
 
         if not pending:
-            raise RuntimeError("No pending tasks in this epic.")
+            raise RuntimeError("No todo tasks in this epic.")
 
         task_path = pending[0]
     else:
         task_path = tasks[int(choice) - 1]
 
+    status = get_status(task_path)
+
+    if status in SKIP_STATUSES:
+        raise RuntimeError(f"Task is not runnable because status is: {status}")
+
     task_text = task_path.read_text(errors="ignore")
 
     print(f"\nRunning task: {task_path}\n")
 
-    run_autonomous(product_name, task_text)
+    set_status(task_path, "in_progress")
 
-    mark_done(task_path)
+    try:
+        run_autonomous(product_name, task_text)
+    except Exception:
+        set_status(task_path, "blocked")
+        raise
 
-    print(f"\nTask marked done: {task_path}")
+    pr_url = read_pr_url(latest_run_dir())
+
+    if pr_url:
+        set_pr_url(task_path, pr_url)
+        set_status(task_path, "pr_created")
+        print(f"\nTask marked pr_created: {task_path}")
+        print(f"PR: {pr_url}")
+    else:
+        set_status(task_path, "blocked")
+        print(f"\nTask marked blocked: no PR found for {task_path}")
 
 
 if __name__ == "__main__":

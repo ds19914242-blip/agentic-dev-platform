@@ -1,3 +1,5 @@
+Status: done
+
 ### Task 002 — Translate layout metadata and Footer
 
 **Goal:** Translate the app `metadata` (title/description) and any static Footer text to Russian.
