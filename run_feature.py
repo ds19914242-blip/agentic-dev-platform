@@ -11,6 +11,7 @@ from orchestrator.architect_agent import create_architecture_review
 from orchestrator.qa_agent import create_qa_plan
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.agent_context import AgentContext
+from orchestrator.run_status import write_status, append_event
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
 from orchestrator.import_analyzer import analyze_imports, format_import_map
 
@@ -87,7 +88,10 @@ def main():
     graph.mark_completed('prompt')
 
     run_dir = make_run_dir("feature")
+    write_status(run_dir, "prompt_created")
+    append_event(run_dir, "Feature run created")
     write_run_files(run_dir, feature, repo_path, files, affected, status, prompt)
+    append_event(run_dir, "Run artifacts written")
     (run_dir / "plan.md").write_text(plan)
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
