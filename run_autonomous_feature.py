@@ -25,6 +25,7 @@ from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, format_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
+from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 
 import subprocess
 
@@ -238,6 +239,24 @@ def main():
     graph_v2.complete("claude_plan")
     graph_v2.write()
 
+    planning_decision = decide_after_planning(run_dir)
+    write_decision(run_dir, "planning", planning_decision)
+
+    if planning_decision["decision"] == "stop":
+        write_status(run_dir, planning_decision["status"])
+        append_event(run_dir, f"Stopped after planning: {planning_decision['reason']}")
+        print(f"Run stopped after planning: {planning_decision['status']}")
+        return
+
+    security_decision = decide_after_security(run_dir)
+    write_decision(run_dir, "security", security_decision)
+
+    if security_decision["decision"] == "stop":
+        write_status(run_dir, security_decision["status"])
+        append_event(run_dir, f"Stopped after security: {security_decision['reason']}")
+        print(f"Run stopped after security: {security_decision['status']}")
+        return
+
     save_approved_plan(run_dir, claude_plan_response)
     graph.mark_completed("approved_plan")
     write_status(run_dir, "plan_approved")
@@ -316,12 +335,15 @@ After implementation:
     graph_v2.complete("confidence")
     graph_v2.write()
 
-    if confidence["status"] == "passed":
-        write_status(run_dir, "confidence_passed")
-    elif confidence["status"] == "failed":
+    confidence_decision = decide_after_confidence(run_dir)
+    write_decision(run_dir, "confidence", confidence_decision)
+
+    if confidence_decision["status"] == "ready_for_pr":
+        write_status(run_dir, "ready_for_pr")
+    elif confidence_decision["status"] == "confidence_failed":
         write_status(run_dir, "confidence_failed")
     else:
-        write_status(run_dir, "needs_review")
+        write_status(run_dir, confidence_decision["status"])
 
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
 
