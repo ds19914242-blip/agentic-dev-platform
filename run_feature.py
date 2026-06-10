@@ -1,6 +1,7 @@
 from pathlib import Path
 from datetime import datetime
 import subprocess
+import re
 
 IGNORE_DIRS = {
     ".git", "node_modules", "dist", "build", ".next",
@@ -73,9 +74,25 @@ def make_run_dir():
     run_dir.mkdir(parents=True, exist_ok=True)
     return run_dir
 
+def load_product_config(product_name):
+    config_path = Path("products") / product_name / "config.yaml"
+    if not config_path.exists():
+        raise FileNotFoundError(f"Product config not found: {config_path}")
+
+    text = config_path.read_text()
+    match = re.search(r"repo_path:\s*(.+)", text)
+    if not match:
+        raise ValueError("repo_path not found in product config")
+
+    return match.group(1).strip()
+
+
 def main():
-    repo_path = input("Repo path: ").strip()
+    product_name = input("Product name: ").strip()
+    repo_path = load_product_config(product_name)
     feature = input("Feature request: ").strip()
+
+    print(f"Using repo: {repo_path}")
 
     run_dir = make_run_dir()
 
