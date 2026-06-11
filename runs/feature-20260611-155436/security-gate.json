@@ -1,0 +1,12 @@
+{
+  "status": "passed",
+  "reason": "Only low-risk files are affected.",
+  "risks": {
+    "low": [
+      "components/StatsPanel.tsx"
+    ],
+    "medium": [],
+    "high": [],
+    "critical": []
+  }
+}

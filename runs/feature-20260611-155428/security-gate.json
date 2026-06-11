@@ -1,0 +1,15 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "components/NavBar.tsx",
+      "components/StrategicSignals.tsx"
+    ],
+    "medium": [
+      "src/types/report.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

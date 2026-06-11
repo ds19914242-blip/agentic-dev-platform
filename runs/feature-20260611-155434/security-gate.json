@@ -1,0 +1,19 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "components/ProgressTimeline.tsx",
+      "components/ProgressView.tsx"
+    ],
+    "medium": [
+      "app/api/analyze/route.ts",
+      "app/api/jobs/[jobId]/route.ts",
+      "lib/jobStore.ts",
+      "src/util/progress.ts",
+      "src/workflows/customerTopNewsWorkflow.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

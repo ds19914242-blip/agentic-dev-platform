@@ -1,0 +1,45 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-011",
+  "feature": "Epic task: Task 011 — Translate ExecutiveSummary and report section headers",
+  "plan": "Error: Reached max turns (5)\n\n[WARNING] Claude reached max turns before final response.",
+  "affected_files": [
+    "src/agents/summaryBatchAgent.ts",
+    "src/agents/trendAnalysisAgent.ts",
+    "components/ExecutiveSummary.tsx",
+    "src/agents/criteriaBatchAgent.ts",
+    "src/analysis/criteria.ts",
+    "src/analysis/feedbackRanking.ts",
+    "src/analysis/performance.ts",
+    "src/analysis/profiles.ts",
+    "src/llm/client.ts",
+    "components/SummaryCards.tsx",
+    "lib/analysisCache.ts",
+    "app/api/report/[id]/docx/route.ts"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "components/ExecutiveSummary.tsx",
+        "components/SummaryCards.tsx"
+      ],
+      "medium": [
+        "src/agents/summaryBatchAgent.ts",
+        "src/agents/trendAnalysisAgent.ts",
+        "src/agents/criteriaBatchAgent.ts",
+        "src/analysis/criteria.ts",
+        "src/analysis/feedbackRanking.ts",
+        "src/analysis/performance.ts",
+        "src/analysis/profiles.ts",
+        "src/llm/client.ts",
+        "lib/analysisCache.ts",
+        "app/api/report/[id]/docx/route.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": false
+}

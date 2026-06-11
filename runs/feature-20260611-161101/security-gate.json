@@ -1,0 +1,17 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/sources/page.tsx",
+      "components/ConfirmModal.tsx"
+    ],
+    "medium": [
+      "app/api/rss/sources/[id]/route.ts",
+      "app/api/rss/sources/route.ts",
+      "lib/storage/types.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

@@ -1,0 +1,62 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-019",
+  "feature": "Epic task: Task 019 — Finish Benchmark page remaining English",
+  "plan": "I now have a complete picture. Here's the plan.\n\n# Implementation Plan\n\n## Summary\n\nTask 019 finishes the Russian localization of the Benchmark page and the API routes that feed it (or whose errors surface in the UI). The Benchmark page UI (`app/benchmark/page.tsx`) is already fully translated; the remaining English lives in **`components/BenchmarkTable.tsx`** (two row labels + status text) and in the **JSON `error` messages returned by the listed API routes**, which bubble up into user-facing toasts/alerts. The work is string-only: translate user-facing text, leave technical identifiers, JSDoc comments, console logs, HTTP/storage enum values, and mode names untouched.\n\n## Files To Inspect\n\n- `components/BenchmarkTable.tsx` — `\"Collected\"`, `\"Selected\"` labels (lines 45–46) and the `({r.status})` text (line 35). Already done: all other row labels are Russian.\n- `app/api/benchmark/route.ts` — error strings: `\"ANTHROPIC_API_KEY is not set on the server.\"`, `\"Expected JSON body.\"`, `\"Upload not found.\"`\n- `app/api/analyze/route.ts` — `\"ANTHROPIC_API_KEY is not set on the server.\"`, `\"Expected JSON body.\"`, `\"Missing uploadId.\"`, `\"Upload not found. Please upload the file again.\"`\n- `app/api/jobs/[jobId]/route.ts` — `\"Job not found\"` (note: `status: \"not_found\"` is a technical enum — keep).\n- `app/api/auth/login/route.ts` — `\"Server auth is not configured.\"`, `\"Invalid request.\"` (the credentials error is already Russian).\n- `app/api/favorites/route.ts` & `app/api/favorites/[id]/route.ts` — `\"Invalid JSON.\"`, `\"articleId is required.\"`, `\"Not found.\"`\n- `app/api/feedback/route.ts` — `\"Invalid JSON.\"`, `\"articleId is required.\"`, `\"Invalid vote.\"`\n- `app/api/auth/logout/route.ts` — no user-facing strings (no change).\n- `app/api/overview/route.ts` — pure JSON data, no user-facing strings (no change).\n- `app/api/health/route.ts` & `app/api/health/db/route.ts` — `status: \"ok\"`, `note: \"not using postgres\"`, backend enums are diagnostic/machine values, not UI copy → **leave as-is** (confirm during review; these probes aren't shown to end users).\n\n## Implementation Steps\n\n1. **`components/BenchmarkTable.tsx`**: translate the two metric labels — `\"Collected\"` → `\"Собрано\"`, `\"Selected\"` → `\"Отобрано\"` (matching the existing Russian labels like `\"По критериям\"`, `\"Из кэша\"`). Optionally map the inline status badge `({r.status})` (pending/running/done/error) to Russian equivalents (`ожидание/выполняется/готово/ошибка`) for consistency. **Keep** the mode column headers (`fast`/`balanced`/`deep`) — they match the page's intentional \"Fast / Balanced / Deep\" branding.\n2. **API error strings**: translate each user-facing `error` value in the routes above to Russian, e.g.:\n   - `\"Expected JSON body.\"` → `\"Ожидается тело запроса в формате JSON.\"`\n   - `\"Upload not found.\"` / `\"Upload not found. Please upload the file again.\"` → `\"Файл не найден. Загрузите файл заново.\"`\n   - `\"Missing uploadId.\"` → `\"Отсутствует uploadId.\"`\n   - `\"ANTHROPIC_API_KEY is not set on the server.\"` → `\"ANTHROPIC_API_KEY не задан на сервере.\"`\n   - `\"Invalid JSON.\"` → `\"Некорректный JSON.\"`, `\"articleId is required.\"` → `\"Требуется articleId.\"`, `\"Invalid vote.\"` → `\"Некорректная оценка.\"`, `\"Not found.\"` → `\"Не найдено.\"`, `\"Server auth is not configured.\"` → `\"Аутентификация не настроена на сервере.\"`, `\"Invalid request.\"` → `\"Некорректный запрос.\"`, `\"Job not found\"` → `\"Задача не найдена.\"`\n3. **Do not touch**: JSDoc/inline comments, console/log output, type literals, status/backend enum values (`\"ok\"`, `\"not_found\"`, `\"postgres\"`, etc.), and field keys — only string *values* shown to users.\n\n## Validation Steps\n\n- `npm run build` (or `tsc --noEmit` / lint) to confirm no type/syntax breakage from the string edits.\n- Grep the affected files for residual ASCII letters in quoted strings to confirm no user-facing English remains: search for likely leftovers (e.g. `error: \"[A-Za-z]`) across the listed routes.\n- Manual smoke of the Benchmark page: upload → config → run, confirm the table shows `Собрано`/`Отобрано` and that an induced error (e.g. malformed request) renders a Russian message.\n\n## Risks\n\n- **Scope ambiguity**: the epic title is \"Benchmark page\" but the affected-files list includes routes unrelated to benchmarking (favorites, feedback, auth, overview, health). Plan assumes the intent is to translate all user-facing strings in the listed files; confirm whether diagnostic/health JSON (`status: \"ok\"`, backend enums) should stay English (recommended) vs. be localized.\n- **Enum vs. copy confusion**: values like `status: \"not_found\"`, `\"ok\"`, `storageBackend` are consumed by code/clients — translating them would break logic. Only the human-readable `error`/UI strings should change.\n- **Mode/status identifiers**: translating `r.status`/mode names could clash with the page's English \"Fast/Balanced/Deep\" wording; keep mode names English and only localize the status badge if desired for consistency.\n- Low overall risk — changes are isolated string literals with no control-flow impact.\n",
+  "affected_files": [
+    "app/api/benchmark/route.ts",
+    "app/benchmark/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/benchmark/page.tsx",
+        "components/BenchmarkTable.tsx"
+      ],
+      "medium": [
+        "app/api/analyze/route.ts",
+        "app/api/benchmark/route.ts",
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/health/db/route.ts",
+        "app/api/health/route.ts",
+        "app/api/jobs/[jobId]/route.ts",
+        "app/api/overview/route.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/api/auth/logout/route.ts"
+      ],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "The Benchmark page's last visible English labels (Collected/Selected → Собрано/Отобрано in BenchmarkTable.tsx) are translated, and the error strings on the routes the Benchmark flow actually hits (benchmark, analyze, jobs) are now Russian, matching the existing translation precedent. The diff is pure string-literal replacement with no logic, control-flow, or type changes; typecheck and production build both pass. The favorites/feedback/[id] route translations reach slightly beyond the strict Benchmark page, but they are user-facing error-message translations consistent with the broader Russian-localization epic and were explicitly enumerated and approved in the plan, so this reads as planned breadth rather than unrelated scope creep. Machine-facing values (HTTP statuses, JSON keys, env-var names, enum values like not_found, mode identifiers) are correctly left in English."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

@@ -1,0 +1,5 @@
+{
+  "decision": "continue",
+  "status": "security_ok",
+  "reason": "Security gate passed."
+}

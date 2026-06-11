@@ -1,0 +1,14 @@
+{
+  "status": "passed",
+  "reason": "Only low-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/layout.tsx",
+      "components/Footer.tsx",
+      "components/NavBar.tsx"
+    ],
+    "medium": [],
+    "high": [],
+    "critical": []
+  }
+}

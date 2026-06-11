@@ -1,0 +1,5 @@
+{
+  "decision": "create_pr",
+  "status": "ready_for_pr",
+  "reason": "Validation passed and file changes look acceptable."
+}

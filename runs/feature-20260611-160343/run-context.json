@@ -1,0 +1,46 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-019",
+  "feature": "Epic task: Task 019 — Finish Benchmark page remaining English",
+  "plan": "I now have a complete picture. No file modifications needed — here is the plan.\n\n# Implementation Plan\n\n## Summary\n\nTask 019 finishes Russifying the Benchmark page flow and its supporting API routes. The Benchmark page UI (`app/benchmark/page.tsx`) is already fully Russian, but the API routes it (and sibling features) call still return **English error/message strings** that surface to users via `body.error`. The work is a string-only translation pass over the listed API routes — translating human-readable error messages to Russian while leaving machine-readable values (health-probe `status`, backend names) untouched. One visible-English gap remains in `components/BenchmarkTable.tsx` (\"Collected\"/\"Selected\") that should be included to truly \"finish\" the page (see Risks).\n\n## Files To Inspect\n\n- `app/benchmark/page.tsx` — confirmed already fully Russian; no visible English remains. Serves as the style reference (e.g. `\"Не удалось запустить бенчмарк.\"`).\n- `app/api/benchmark/route.ts` — English: `\"ANTHROPIC_API_KEY is not set on the server.\"`, `\"Expected JSON body.\"`, `\"Upload not found.\"`\n- `app/api/analyze/route.ts` — English: same API-key/JSON strings + `\"Missing uploadId.\"`, `\"Upload not found. Please upload the file again.\"`\n- `app/api/auth/login/route.ts` — English: `\"Server auth is not configured.\"`, `\"Invalid request.\"` (note `\"Неверный логин или пароль.\"` already Russian — match this tone).\n- `app/api/auth/logout/route.ts` — no user-facing strings; no change.\n- `app/api/favorites/route.ts` — English: `\"Invalid JSON.\"`, `\"articleId is required.\"`\n- `app/api/favorites/[id]/route.ts` — English: `\"Invalid JSON.\"`, `\"Not found.\"`\n- `app/api/feedback/route.ts` — English: `\"Invalid JSON.\"`, `\"articleId is required.\"`, `\"Invalid vote.\"`\n- `app/api/jobs/[jobId]/route.ts` — English: `\"Job not found\"` (error field).\n- `app/api/overview/route.ts` — no user-facing strings; no change.\n- `app/api/health/route.ts` & `app/api/health/db/route.ts` — only machine-readable values (`status: \"ok\"`, `\"postgres\"`, `\"local-fs\"`, `note: \"not using postgres\"`); **leave untouched** (consumed by platform health checks).\n- `components/BenchmarkTable.tsx` (not in affected list) — visible English row labels `\"Collected\"` / `\"Selected\"`. Flag for inclusion.\n\n## Implementation Steps\n\n1. **`app/api/benchmark/route.ts`** — translate the three error messages, e.g. `\"Ожидается JSON-тело запроса.\"`, `\"Загруженный файл не найден.\"`. Keep the `ANTHROPIC_API_KEY` env-var name literal inside a Russian sentence.\n2. **`app/api/analyze/route.ts`** — translate all four error strings, reusing the same wording as the benchmark route for the shared messages to stay consistent.\n3. **`app/api/auth/login/route.ts`** — translate `\"Server auth is not configured.\"` and `\"Invalid request.\"`; match the register of the already-Russian `\"Неверный логин или пароль.\"`.\n4. **`app/api/favorites/route.ts`** & **`app/api/favorites/[id]/route.ts`** — translate `\"Invalid JSON.\"`, `\"articleId is required.\"`, `\"Not found.\"`; keep field name `articleId` literal.\n5. **`app/api/feedback/route.ts`** — translate `\"Invalid JSON.\"`, `\"articleId is required.\"`, `\"Invalid vote.\"`.\n6. **`app/api/jobs/[jobId]/route.ts`** — translate the `error: \"Job not found\"` value (keep `status: \"not_found\"` literal — it's a machine flag the client checks).\n7. **`components/BenchmarkTable.tsx`** (recommended) — translate `\"Collected\"` → `\"Собрано\"` and `\"Selected\"` → `\"Отобрано\"` to match the surrounding Russian metric labels.\n8. Use one consistent Russian phrasing for each repeated English string (`\"Expected JSON body.\"`, `\"Upload not found.\"`) across all routes.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or the project's typecheck) — pure string edits should not affect types; confirms nothing broke.\n- Grep the affected files for residual ASCII-letter strings in `error:`/`note:` fields to confirm no user-facing English remains (excluding intentional machine values and the `ANTHROPIC_API_KEY` identifier).\n- Manual smoke (optional): trigger the Benchmark flow with a bad upload id / non-JSON body and confirm the surfaced toast text is Russian.\n- Verify health endpoints still return literal `\"ok\"` / backend names unchanged.\n\n## Risks\n\n- **Scope ambiguity on `BenchmarkTable.tsx`**: it is genuinely visible English on the Benchmark page but is *not* in the affected-files list. Leaving it makes the task title only partly true; including it touches an unlisted file. Recommendation: include it (step 7) since the epic is \"finish Benchmark page.\"\n- **Translating machine-readable values would break things**: the health probes' `status: \"ok\"`, backend identifiers, and `status: \"not_found\"` are consumed programmatically — must stay English. Only translate human-facing `error`/message text.\n- **Consistency**: the same English string appears in multiple routes (`analyze` + `benchmark`); divergent translations would look sloppy — use identical Russian wording.\n- **Non-UI internal text**: code comments and the `ANTHROPIC_API_KEY` env name should remain English; only the quoted user-facing message changes.\n- No tests exist in the repo, so validation leans on typecheck + manual/grep verification rather than an automated suite.\n",
+  "affected_files": [
+    "app/api/benchmark/route.ts",
+    "app/benchmark/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/benchmark/page.tsx",
+        "components/BenchmarkTable.tsx"
+      ],
+      "medium": [
+        "app/api/analyze/route.ts",
+        "app/api/benchmark/route.ts",
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/health/db/route.ts",
+        "app/api/health/route.ts",
+        "app/api/jobs/[jobId]/route.ts",
+        "app/api/overview/route.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/api/auth/logout/route.ts"
+      ],
+      "critical": []
+    }
+  }
+}

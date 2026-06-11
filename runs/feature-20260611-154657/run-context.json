@@ -1,0 +1,49 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-009",
+  "feature": "Epic task: Task 009 — Translate SummaryCards component",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTask 009 translates the user-visible text in the `SummaryCards` component (`components/SummaryCards.tsx`) to Russian, matching the pattern of prior epic tasks (translate only visible UI strings; touch no logic, data, or non-UI files). The component renders four `KpiCard`s with English labels and one sub-label. Only those literal strings need translation.\n\n## Files To Inspect\n\n- `components/SummaryCards.tsx` — the only file to change; contains all the visible English strings.\n- `components/KpiCard.tsx` — read-only confirmation that `label` and `sub` props render verbatim (no hardcoded text of its own). Confirmed: it renders props as-is.\n- The other \"Affected Files\" (agents, analysis, llm, cache, SourcePicker, ExecutiveSummary) carry no SummaryCards UI text and are **not** part of this task — leave untouched.\n\n## Implementation Steps\n\n1. In `components/SummaryCards.tsx`, translate the four `KpiCard` `label` values:\n   - `\"Collected\"` → `\"Собрано\"`\n   - `\"Selected\"` → `\"Отобрано\"`\n   - `\"Potentially Relevant\"` → `\"Потенциально релевантные\"`\n   - `\"Trends\"` → `\"Тренды\"`\n2. Translate the `sub` template literal `${discarded} discarded` → `${discarded} отклонено` (keep the interpolated `discarded` variable; only translate the word).\n3. Leave all logic, prop names, accent classes, imports, and JSX structure unchanged.\n\n## Validation Steps\n\n- Visually re-read the diff to confirm only string literals changed and JSX/TS structure is intact.\n- `npx tsc --noEmit` (or the project's typecheck) — should pass since only string contents changed.\n- Run the dev server and view a report/dashboard page that renders `SummaryCards` to confirm the four cards show Russian labels and the \"N отклонено\" sub-label renders correctly.\n\n## Risks\n\n- **Scope creep**: the broad \"Affected Files\" list could invite editing unrelated agent/analysis files. Keep the change strictly to `SummaryCards.tsx`.\n- **Wording consistency**: ensure terms align with translations already used elsewhere (e.g. \"Тренды\", \"отклонено\") so the UI stays coherent across components.\n- Very low technical risk — string-only edit with no behavioral change.\n",
+  "affected_files": [
+    "src/agents/summaryBatchAgent.ts",
+    "src/agents/trendAnalysisAgent.ts",
+    "components/SummaryCards.tsx",
+    "components/ExecutiveSummary.tsx",
+    "src/agents/criteriaBatchAgent.ts",
+    "src/analysis/criteria.ts",
+    "src/analysis/feedbackRanking.ts",
+    "src/analysis/performance.ts",
+    "src/analysis/profiles.ts",
+    "src/llm/client.ts",
+    "lib/analysisCache.ts",
+    "components/SourcePicker.tsx"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "components/KpiCard.tsx",
+        "components/SummaryCards.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "SummaryCards component's five visible UI strings (Collected, Selected, '...discarded', Potentially Relevant, Trends) were translated to Russian exactly as specified in the approved plan. No logic, prop names, accent classes, imports, or the KpiCard component were touched. 'Выбрано' and 'Тренды' reuse existing translations from app/reports/page.tsx for consistency. Only components/SummaryCards.tsx changed — no scope creep. typecheck and build both pass."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

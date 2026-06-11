@@ -2,7 +2,7 @@ from pathlib import Path
 import sys
 
 
-STATUSES = ["merged", "pr_created", "in_progress", "blocked", "todo"]
+STATUSES = ["merged", "pr_created", "done", "done_no_pr", "in_progress", "blocked", "todo"]
 
 
 def get_status(task_path):
@@ -105,6 +105,8 @@ def print_epic_detail(epic_path):
 
     print_group("MERGED", "✓", grouped["merged"])
     print_group("PR CREATED", "◉", grouped["pr_created"])
+    print_group("DONE", "✓", grouped["done"])
+    print_group("DONE NO PR", "•", grouped["done_no_pr"])
     print_group("IN PROGRESS", "…", grouped["in_progress"])
     print_group("BLOCKED", "⚠", grouped["blocked"])
     print_group("TODO", "□", grouped["todo"])

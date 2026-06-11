@@ -1,0 +1,4 @@
+- 2026-06-11T16:03:43 — Autonomous feature run created
+- 2026-06-11T16:03:43 — Autonomous feature run created
+- 2026-06-11T16:05:02 — Security advisory: needs_approval
+- 2026-06-11T16:05:02 — Claude planning started

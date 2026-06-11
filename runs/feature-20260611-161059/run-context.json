@@ -1,0 +1,54 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-015",
+  "feature": "Epic task: Task 015 — Finish home page (page.tsx) remaining English",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTask 015 finishes the Russian localization of the home page (`app/page.tsx`). Earlier commits in this epic already translated most error messages and several buttons, but a handful of user-visible English strings remain — primarily in the RSS-collection source block and a couple of action buttons / error toasts. The change is UI-text-only: replace the remaining English strings with Russian, matching the tone and style already established in the file (e.g. `\"Не удалось собрать статьи.\"`, `\"← Другой файл\"`).\n\nNote: the \"Affected Files\" list enumerates `app/api/**` route handlers, but the epic title and actual remaining English are in `app/page.tsx`. API route files return machine-readable JSON / error codes consumed by the UI — they are **not** visible UI text and should not be touched. Scope is strictly the home page's rendered strings.\n\n## Files To Inspect\n\n- `app/page.tsx` — the only file to edit; remaining English strings identified below.\n- `components/Hero.tsx`, `components/SourcePicker.tsx`, `components/UploadDropzone.tsx`, `components/ProgressTimeline.tsx`, `components/ErrorState.tsx`, `components/Dashboard.tsx` — confirm these child components are already localized (out of scope for this task, but verify the home page reads consistently).\n- Recent epic commits (`git log`) — confirm Russian phrasing/tone conventions already adopted.\n\n## Implementation Steps\n\nTranslate the remaining English user-visible strings in `app/page.tsx` to Russian:\n\n1. **Job-not-found error messages** (lines ~162 and ~169): `\"Job not found. Please start analysis again.\"` → e.g. `\"Задание не найдено. Запустите анализ заново.\"` (both occurrences).\n2. **RSS collection label** (line ~212): `\"RSS collection\"` → e.g. `\"RSS-коллекция\"`.\n3. **Empty-collections notice** (lines ~214–219): `\"No collections yet —\"`, link text `\"create one\"`, and `\"and add sources first.\"` → Russian equivalents (e.g. `\"Коллекций пока нет — \"`, `\"создайте одну\"`, `\" и сначала добавьте источники.\"`).\n4. **Select placeholder** (line ~228): `\"Choose a collection…\"` → e.g. `\"Выберите коллекцию…\"`.\n5. **Source count suffix** (line ~232): `({c.sourceIds.length} sources)` → e.g. `({c.sourceIds.length} источников)`.\n6. **Collect button** (line ~240): `\"Collecting articles…\"` → e.g. `\"Сбор статей…\"`; `\"Collect Articles →\"` → e.g. `\"Собрать статьи →\"`.\n7. **Run Analysis button** (line ~286): `\"Run Analysis →\"` → e.g. `\"Запустить анализ →\"`.\n\nConstraints:\n- Change only string literals rendered to the user. Do **not** alter `Phase` type values, state keys, `sessionStorage` keys, API paths, CSS classes, or JSON request fields.\n- Leave the code comment on line ~184 (`/* transient — keep polling */`) and other non-visible comments as-is (optional to translate; not user-facing).\n- Keep arrow glyphs (`→`, `←`) and ellipses intact.\n\n## Validation Steps\n\n- `npm run lint` / `npx tsc --noEmit` (or the repo's typecheck script) — ensure no syntax/type regressions from the string edits.\n- `npm run build` (Next.js) to confirm the page compiles.\n- Manually run the app and walk the home page through each phase: empty (TXT + RSS source pickers), the empty-collections notice, collection select + collect button states, preview → run analysis, and the job-not-found error path — verifying every previously-English string now renders in Russian and no English remains.\n- Grep `app/page.tsx` for residual Latin-letter UI strings to confirm completeness.\n\n## Risks\n\n- **Scope creep**: the affected-files list points at API routes; editing them would change machine-readable error codes/contract. Confirmed out of scope — UI-only change.\n- **Hidden English in child components**: strings like the Hero, dropzone, and dashboard come from child components; if any still show English they belong to other epic tasks, not this one — note but don't expand scope.\n- **Encoding**: ensure the file stays UTF-8 so Cyrillic renders correctly.\n- **Tone consistency**: match the imperative/polite style already used in existing Russian strings in the same file.\n",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/page.tsx",
+        "components/Dashboard.tsx",
+        "components/ErrorState.tsx",
+        "components/Hero.tsx",
+        "components/ProgressTimeline.tsx",
+        "components/SourcePicker.tsx",
+        "components/UploadDropzone.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "Despite the implementation response text claiming the plan was empty and nothing was implemented, the working tree contains a complete, correct change. app/page.tsx now has all remaining user-visible English strings translated to Russian: the two 'Job not found' error messages, the RSS collection panel ('RSS collection', 'No collections yet', 'create one', 'and add sources first'), the collection select ('Choose a collection…', 'sources' suffix), the collect button ('Collecting articles…' / 'Collect Articles'), the 'Run Analysis' button, the reset buttons, and the topic warning. Grep confirms no English remains in JSX text nodes — only code identifiers, classNames, and URLs (correctly left untranslated). The diff is scoped strictly to app/page.tsx (10 insertions, 10 deletions), consistent with the prior incremental-localization commits. Typecheck and production build both pass. Task 015 is satisfied."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

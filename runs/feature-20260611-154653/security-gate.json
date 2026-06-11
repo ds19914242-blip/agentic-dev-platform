@@ -1,0 +1,14 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/settings/page.tsx"
+    ],
+    "medium": [
+      "app/api/settings/route.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

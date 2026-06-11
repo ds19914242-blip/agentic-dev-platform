@@ -1,0 +1,51 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-010",
+  "feature": "Epic task: Task 010 — Translate StrategicSignals component",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTranslate the remaining visible UI text in `components/StrategicSignals.tsx` to Russian, consistent with the prior translation tasks (e.g., NavBar). The section heading (`Стратегические сигналы`) is **already** translated. The only English UI strings left are the five category group **names** rendered in the card headers. These are static display labels — translate them in place. The `items` values come from analysis data (`trends.strategicSignals.*`) and the `icon` symbols are not translatable text, so neither is touched.\n\n## Files To Inspect\n\n- `components/StrategicSignals.tsx` — the only file requiring edits; the `groups` array (lines 4–10) holds the English labels.\n- `src/types/report.ts` — confirm `TrendAnalysis.strategicSignals` field names (`productLaunches`, `partnershipsIntegrations`, `aiInitiatives`, `iamGovernance`, `secOpsPlatform`) so the `name` change does not affect the `key={g.name}` / data wiring.\n- `components/NavBar.tsx` (reference, already read) — established Russian translation tone/pattern.\n\n> Note: The many `app/api/**/route.ts` files in \"Affected Files\" contain no user-facing UI copy and are out of scope for this UI-translation task. No changes there.\n\n## Implementation Steps\n\n1. In `components/StrategicSignals.tsx`, translate the five `name` strings in the `groups` array:\n   - `\"Product Launches\"` → `\"Запуск продуктов\"`\n   - `\"Partnerships\"` → `\"Партнёрства\"`\n   - `\"AI Initiatives\"` → `\"ИИ-инициативы\"`\n   - `\"IAM / Governance\"` → `\"IAM / Управление\"`\n   - `\"SecOps / Platform\"` → `\"SecOps / Платформа\"`\n2. Leave `icon`, `items`, the already-translated `<h2>` heading, and the empty-state `—` placeholder unchanged.\n3. Confirm `key={g.name}` still yields unique keys after translation (the five new strings are all distinct — no collision).\n\n## Validation Steps\n\n- Run the type checker / build (`npm run build` or `tsc --noEmit` per repo config) to confirm no type or JSX errors.\n- Visually verify (or grep) that no English UI string remains in `components/StrategicSignals.tsx`.\n- Confirm only `components/StrategicSignals.tsx` appears in `git diff`.\n\n## Risks\n\n- **Very low risk** — change is limited to display-label string literals; no logic, data bindings, or props change.\n- The `name` field also serves as a React `key`; translated strings remain unique, so rendering is unaffected.\n- Translation wording/casing should match the project's existing Russian tone; the suggested terms keep widely-recognized acronyms (IAM, SecOps, ИИ) intact, consistent with typical Russian tech UI conventions.\n",
+  "affected_files": [
+    "components/SourcePicker.tsx",
+    "components/StrategicSignals.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "components/NavBar.tsx",
+        "components/StrategicSignals.tsx"
+      ],
+      "medium": [
+        "src/types/report.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "The implementation translates the 5 group `name` labels in components/StrategicSignals.tsx (Product Launches, Partnerships, AI Initiatives, IAM/Governance, SecOps/Platform) to Russian, exactly matching the approved plan. Icons, data bindings, and the already-translated section heading are untouched. The `name` still serves as the unique React key and values remain unique. Only the single intended file was modified, no logic or type changes. Typecheck and build both pass. Requirements fully satisfied with very low risk."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

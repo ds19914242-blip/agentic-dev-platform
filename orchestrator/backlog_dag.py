@@ -3,7 +3,7 @@ import re
 import json
 
 
-TERMINAL_STATUSES = {"merged", "done", "completed"}
+TERMINAL_STATUSES = {"merged", "done", "completed", "pr_created", "done_no_pr"}
 
 
 def task_id_from_path(path):

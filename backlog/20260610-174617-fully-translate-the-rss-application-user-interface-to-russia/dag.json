@@ -4,7 +4,7 @@
     {
       "id": "task-001",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-001.md",
-      "status": "blocked",
+      "status": "done_no_pr",
       "depends_on": []
     },
     {
@@ -28,7 +28,7 @@
     {
       "id": "task-005",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-005.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
@@ -40,61 +40,61 @@
     {
       "id": "task-007",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-007.md",
-      "status": "in_progress",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-008",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-008.md",
-      "status": "in_progress",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-009",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-009.md",
-      "status": "in_progress",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-010",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-010.md",
-      "status": "in_progress",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-011",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-011.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-012",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-012.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-013",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-013.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-014",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-014.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-015",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-015.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
       "id": "task-016",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-016.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {
@@ -112,7 +112,7 @@
     {
       "id": "task-019",
       "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-019.md",
-      "status": "blocked",
+      "status": "pr_created",
       "depends_on": []
     },
     {

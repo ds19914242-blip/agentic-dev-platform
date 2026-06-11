@@ -1,0 +1,45 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-016",
+  "feature": "Epic task: Task 016 — Finish Sources page remaining English labels",
+  "plan": "Error: Reached max turns (5)\n\n[WARNING] Claude reached max turns before final response.",
+  "affected_files": [
+    "app/api/rss/sources/[id]/route.ts",
+    "app/api/rss/sources/route.ts",
+    "app/sources/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/sources/page.tsx"
+      ],
+      "medium": [
+        "app/api/rss/sources/[id]/route.ts",
+        "app/api/rss/sources/route.ts",
+        "app/api/analyze/route.ts",
+        "app/api/benchmark/route.ts",
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/health/db/route.ts",
+        "app/api/health/route.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/api/auth/logout/route.ts"
+      ],
+      "critical": []
+    }
+  }
+}

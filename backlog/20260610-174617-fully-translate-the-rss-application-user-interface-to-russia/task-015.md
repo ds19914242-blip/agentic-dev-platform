@@ -1,4 +1,6 @@
-Status: blocked
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/25
+Run: feature-20260611-161059
+Status: pr_created
 
 ### Task 015 — Finish home page (page.tsx) remaining English
 

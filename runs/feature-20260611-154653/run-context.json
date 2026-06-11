@@ -1,0 +1,50 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-005",
+  "feature": "Epic task: Task 005 — Translate Settings page",
+  "plan": "## Files inspected\n\nThe only file with visible Settings UI text is `app/settings/page.tsx`. The API route (`app/api/settings/route.ts`) contains one non-user-facing error string (`\"Invalid JSON.\"`) returned to API callers, not rendered in the UI. The other listed API routes contain no Settings-page UI text.\n\n# Implementation Plan\n\n## Summary\n\nTranslate the visible UI text of the Settings page to Russian, matching the established project convention (Task 001/earlier epics) of changing only user-facing strings in the page component while leaving code, identifiers, API contracts, and stored values (`off`/`low`/`medium`/`high`) untouched.\n\n## Files To Inspect\n\n- `app/settings/page.tsx` — primary file; all visible strings live here (page title/subtitle, the `OPTIONS` `label`/`desc` fields, the two section headings + descriptions, the \"How it works\" list, and the two `toast(...)` messages).\n- `app/api/settings/route.ts` — confirm the `feedbackInfluence` value contract (`off/low/medium/high`) must not change; its `\"Invalid JSON.\"` string is an API error, not Settings UI — leave as-is to stay consistent with prior tasks scoping changes to rendered page text.\n\n## Implementation Steps\n\n1. In `app/settings/page.tsx`, translate the `OPTIONS` array's human-readable fields only:\n   - `label`: Off → «Выкл.», Low → «Низкое», Medium → «Среднее», High → «Высокое».\n   - `desc`: translate each description (e.g. \"Feedback does not affect ranking.\" → «Отзывы не влияют на ранжирование.», \"Balanced personalization (default).\" → «Сбалансированная персонализация (по умолчанию).», etc.).\n   - Keep each `id` (`off`/`low`/`medium`/`high`) unchanged — these are the API/storage values.\n2. Translate the header block (lines 39–40): \"Settings\" → «Настройки»; subtitle \"Tune how your feedback affects analysis.\" → Russian.\n3. Translate the \"Feedback Influence\" section (lines 44–48): heading and the descriptive paragraph (including the \"Rule-based and explainable — no machine learning\" note); keep the 👍/👎 emojis.\n4. Translate the \"How it works\" section (lines 73–87): heading plus the three list items, including the colored emphasis spans (\"Source affinity\", \"Topic affinity\", \"Missed But Relevant\") and their explanatory text — translate the visible words but keep the surrounding JSX/`className` markup intact.\n5. Translate the toast messages (lines 32–33): \"Settings saved\" → «Настройки сохранены», \"Failed to save\" → «Не удалось сохранить»; keep the `\"success\"`/`\"error\"` type args unchanged.\n6. Leave all imports, types (`FeedbackInfluence`), hooks, fetch paths, and JSX structure unchanged.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or project typecheck) to confirm no type/JSX breakage.\n- `npm run lint` if configured.\n- Run the app, navigate to `/settings`, and verify: title/subtitle, all four influence cards, both section bodies, and the save/fail toasts render in Russian; clicking an option still saves (PATCH succeeds, success toast shows).\n- Confirm selecting an option still persists by reloading — the API still receives the unchanged `off/low/medium/high` values.\n\n## Risks\n\n- **Scope creep into API strings**: changing `\"Invalid JSON.\"` or the `INFLUENCES` values would alter the API contract; keep changes confined to rendered UI text per prior-task convention.\n- **Accidentally translating an `id` value** in `OPTIONS`, which would break save/highlight logic (`influence === o.id`) and the stored setting.\n- **JSX/emphasis spans**: translating inside the colored `<span>` elements risks disturbing markup — edit only the text nodes.\n- **Encoding**: ensure Cyrillic is saved as UTF-8 (default) to avoid mojibake.\n",
+  "affected_files": [
+    "app/api/settings/route.ts",
+    "app/settings/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/settings/page.tsx"
+      ],
+      "medium": [
+        "app/api/settings/route.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "All user-visible strings in app/settings/page.tsx were translated to Russian (OPTIONS labels/descriptions, both toasts, headings, subtitle, 'Feedback Influence' and 'How it works' sections). FeedbackInfluence IDs (off/low/medium/high) and all JSX structure, classNames, emoji, and logic are preserved, so stored values and request payloads are unaffected. Only the single page component was changed — API routes untouched, matching prior reports/feedback translation convention. Typecheck and build both pass. Requirements fully met with no scope creep and minimal architectural risk."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

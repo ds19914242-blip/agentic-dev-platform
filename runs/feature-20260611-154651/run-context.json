@@ -1,0 +1,50 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-001",
+  "feature": "Epic task: Task 001 — Translate NavBar navigation links",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTranslate the NavBar navigation links to Russian. On inspection, `components/NavBar.tsx` is the only file holding the navigation UI, and its labels (`LINKS`) plus the logout button are **already in Russian** (matching the established Russian-translation pattern from recent commits). The task therefore reduces to verifying completeness and translating the one remaining untranslated user-facing string: the brand label `\"RSS Agent Lab\"` (and confirming whether it should stay as a proper noun).\n\nThe listed \"Affected Files\" (API routes under `app/api/**`) contain no navigation UI and are **not relevant** to this task — they are server handlers with no rendered nav links.\n\n## Files To Inspect\n\n- `components/NavBar.tsx` — the only component rendering nav links; already mostly translated.\n- `components/Footer.tsx` — confirm no duplicated nav links live here (footer was recently touched in commit `868d0f2`).\n- `app/layout.tsx` — confirm `<NavBar />` is the single nav mount point and no other inline nav strings exist.\n\n## Implementation Steps\n\n1. In `components/NavBar.tsx`, confirm every `LINKS[].label` is Russian:\n   - `Панель`, `Источники`, `Коллекции`, `Запуск анализа`, `Отчёты`, `Шаблоны`, `Обратная связь`, `Список чтения`, `Настройки` — all already translated.\n   - Logout button `Выйти` — already translated.\n2. Decide on the brand string `\"RSS Agent Lab\"` (line 39): typically a product proper noun left as-is. If the task scope includes it, no change; if a Russian label is desired, this is the only edit needed. **Leave as-is unless instructed otherwise** (proper nouns are conventionally untranslated).\n3. Make no changes to `href` values, `EXACT` set, routing, or className logic — translation is label-text only.\n4. Do **not** modify any `app/api/**` route files; they are out of scope for navigation text.\n\n## Validation Steps\n\n- `npm run build` (or `next build`) / `tsc --noEmit` to confirm no type or syntax regressions.\n- Run the app and visually confirm the nav bar renders all nine links plus logout in Russian, with active-link highlighting and routing unchanged.\n- Confirm `/login` still hides the nav (early `return null`).\n\n## Risks\n\n- **Likely no-op:** the translation appears already complete (probably done in commit `9fcb163`). Re-verify before opening a PR to avoid an empty changeset.\n- **Scope creep:** the supplied \"Affected Files\" point at API routes that have nothing to do with nav links — editing them would be incorrect.\n- **Brand-name ambiguity:** translating `\"RSS Agent Lab\"` is a judgment call; defaulting to leaving proper nouns untranslated avoids an unwanted change.\n",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/layout.tsx",
+        "components/Footer.tsx",
+        "components/NavBar.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "The feature request — translate NavBar navigation links to Russian — is already satisfied in components/NavBar.tsx. All nine nav links (Панель, Источники, Коллекции, Запуск анализа, Отчёты, Шаблоны, Обратная связь, Список чтения, Настройки) and the logout button (Выйти) are in Russian; only the brand name 'RSS Agent Lab' remains in English, which is conventionally left untranslated. The implementation correctly made no changes since the work was already complete, and avoided inventing out-of-scope edits (e.g. the unrelated API route files or dashboard OverviewCard labels). Typecheck and build both pass. Requirements are met with no scope creep and no blocking issues."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

@@ -1,0 +1,25 @@
+{
+  "overall_result": "passed",
+  "validators": [
+    {
+      "name": "typecheck",
+      "required": true,
+      "command": "npx tsc --noEmit",
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "name": "build",
+      "required": true,
+      "command": "npm run build",
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "\n> rss-agent-lab@1.0.0 build\n> next build\n\n  ▲ Next.js 14.2.35\n\n   Creating an optimized production build ...\n ✓ Compiled successfully\n   Linting and checking validity of types ...\n   Collecting page data ...\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n   Generating static pages (0/19) ...\n   Generating static pages (4/19) \n   Generating static pages (9/19) \n   Generating static pages (14/19) \n ✓ Generating static pages (19/19)\n   Finalizing page optimization ...\n   Collecting build traces ...\n\nRoute (app)                              Size     First Load JS\n┌ ○ /                                    6.29 kB         214 kB\n├ ○ /_not-found                          873 B          88.2 kB\n├ ƒ /api/analyze                         0 B                0 B\n├ ƒ /api/auth/login                      0 B                0 B\n├ ƒ /api/auth/logout                     0 B                0 B\n├ ƒ /api/benchmark                       0 B                0 B\n├ ƒ /api/favorites                       0 B                0 B\n├ ƒ /api/favorites/[id]                  0 B                0 B\n├ ƒ /api/feedback                        0 B                0 B\n├ ƒ /api/health                          0 B                0 B\n├ ƒ /api/health/db                       0 B                0 B\n├ ƒ /api/jobs/[jobId]                    0 B                0 B\n├ ƒ /api/overview                        0 B                0 B\n├ ƒ /api/profiles                        0 B                0 B\n├ ƒ /api/profiles/[id]                   0 B                0 B\n├ ƒ /api/report/[id]/docx                0 B                0 B\n├ ƒ /api/report/[id]/json                0 B                0 B\n├ ƒ /api/report/[id]/markdown            0 B                0 B\n├ ƒ /api/report/[id]/pdf                 0 B                0 B\n├ ƒ /api/rss/collect                     0 B                0 B\n├ ƒ /api/rss/collections                 0 B                0 B\n├ ƒ /api/rss/collections/[id]            0 B                0 B\n├ ƒ /api/rss/sources                     0 B                0 B\n├ ƒ /api/rss/sources/[id]                0 B                0 B\n├ ƒ /api/rss/summarize                   0 B                0 B\n├ ƒ /api/rss/test                        0 B                0 B\n├ ƒ /api/runs                            0 B                0 B\n├ ƒ /api/runs/[id]                       0 B                0 B\n├ ƒ /api/settings                        0 B                0 B\n├ ƒ /api/upload                          0 B                0 B\n├ ○ /benchmark                           2.5 kB         92.6 kB\n├ ○ /collections                         2.95 kB        90.3 kB\n├ ○ /dashboard                           1.61 kB        97.7 kB\n├ ○ /feedback                            1.55 kB        88.9 kB\n├ ○ /history                             152 B          87.5 kB\n├ ○ /login                               1.41 kB        88.7 kB\n├ ○ /profiles                            3.22 kB        90.5 kB\n├ ○ /reading-list                        1.81 kB        89.1 kB\n├ ○ /reports                             2.64 kB        98.7 kB\n├ ○ /rss                                 152 B          87.5 kB\n├ ○ /rss/collections                     152 B          87.5 kB\n├ ƒ /run/[id]                            936 B           214 kB\n├ ○ /settings                            1.7 kB           89 kB\n├ ○ /sources                             7.68 kB          95 kB\n├ ○ /templates                           152 B          87.5 kB\n└ ○ /workspace                           152 B          87.5 kB\n+ First Load JS shared by all            87.3 kB\n  ├ chunks/117-c2e8725fecde5126.js       31.7 kB\n  ├ chunks/fd9d1056-307a36020502e7d7.js  53.6 kB\n  └ other shared chunks (total)          1.95 kB\n\n\nƒ Middleware                             26.9 kB\n\n○  (Static)   prerendered as static content\nƒ  (Dynamic)  server-rendered on demand\n\n",
+      "stderr": "",
+      "timed_out": false
+    }
+  ]
+}

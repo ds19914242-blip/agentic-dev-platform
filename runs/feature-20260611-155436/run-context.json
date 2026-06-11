@@ -1,0 +1,48 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-012",
+  "feature": "Epic task: Task 012 — Translate StatsPanel remaining English",
+  "plan": "The component is clear. The \"remaining English\" in StatsPanel is just two section headings — all the `Row` labels are already translated. The affected-files list (API routes) is noise; the actual UI text lives in `components/StatsPanel.tsx`.\n\n# Implementation Plan\n\n## Summary\n\n`components/StatsPanel.tsx` has been mostly translated to Russian already — every `Row` label is in Russian. Two visible English strings remain: the section headings **\"Processing\"** (line 22) and **\"Performance\"** (line 35). The task is to translate these two remaining headings to Russian, matching the established \"translate only visible UI text\" pattern used in prior commits.\n\n## Files To Inspect\n\n- `components/StatsPanel.tsx` — confirmed: the only English left is the two `<h2 className=\"label\">` headings. No API-route changes are needed despite the affected-files list.\n\n## Implementation Steps\n\n1. In `components/StatsPanel.tsx` line 22, change `<h2 className=\"label mb-3\">Processing</h2>` → `Обработка` (e.g. \"Обработка\").\n2. In `components/StatsPanel.tsx` line 35, change `<h2 className=\"label mb-3\">Performance</h2>` → `Производительность`.\n3. Leave all code, props, types, and class names untouched — change only the two display strings.\n\nSuggested translations (consistent with existing Russian labels in the file):\n- `Processing` → `Обработка`\n- `Performance` → `Производительность`\n\n## Validation Steps\n\n- Visually scan the file to confirm no English UI strings remain (CSS class names like `label`, `card`, `stat-number` are not user-facing and stay as-is).\n- Run `npm run build` / `tsc` to confirm no type or JSX breakage (text-only change should be safe).\n- Optionally render a report view to confirm the two headings now display in Russian above their respective stat rows.\n\n## Risks\n\n- **Very low.** Pure visible-text change in one component; no logic, props, or types affected.\n- Only ambiguity is word choice for the translations — \"Обработка\" / \"Производительность\" align with the existing Russian labels and are recommended; adjust if a project glossary specifies different terms.\n",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "components/StatsPanel.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "Both remaining English headings in components/StatsPanel.tsx are now Russian ('Processing'→'Обработка' line 22, 'Performance'→'Производительность' line 35). All other labels were already translated. Only the single in-scope file was touched — no API routes, auth, types, or config changed. Typecheck and build both pass."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

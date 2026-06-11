@@ -1,4 +1,6 @@
-Status: blocked
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/20
+Run: feature-20260611-155436
+Status: pr_created
 
 ### Task 012 — Translate StatsPanel remaining English
 

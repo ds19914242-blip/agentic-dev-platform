@@ -1,4 +1,5 @@
-Status: blocked
+Run: feature-20260611-162541
+Status: done_no_pr
 
 ### Task 001 — Translate NavBar navigation links
 

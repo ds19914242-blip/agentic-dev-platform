@@ -1,0 +1,53 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2-worktrees/task-016",
+  "feature": "Epic task: Task 016 — Finish Sources page remaining English labels",
+  "plan": "I have enough to write the plan. The Sources page is mostly translated to Russian already; a handful of labels and the supporting API error messages remain in English.\n\n# Implementation Plan\n\n## Summary\n\nTask 016 finishes the Russian localization of the **Sources** page (`/sources`). The page UI is ~80% translated, but a cluster of form labels, the Telegram time-window options, the editor action buttons, the delete-confirmation modal text, and the Telegram note remain in English. Additionally, the two RSS-sources API routes return English error strings that surface on this page via `toast((await res.json()).error ?? \"Ошибка\")`. The work is pure UI/string translation — no logic, data-model, or behavior changes.\n\nThe other API routes in the affected-files list (`analyze`, `auth/*`, `benchmark`, `favorites/*`, `feedback`, `health/*`) do **not** emit any strings rendered on the Sources page; they are out of scope for this task's stated goal (see Risks).\n\n## Files To Inspect\n\n- `app/sources/page.tsx` — primary file; remaining English labels (confirmed below).\n- `app/api/rss/sources/route.ts` — POST error messages surfaced as toasts on save.\n- `app/api/rss/sources/[id]/route.ts` — PATCH error messages surfaced as toasts on save/toggle.\n- `components/ConfirmModal.tsx` — confirm whether any default labels need overriding (the page passes its own props, so likely no change).\n- `lib/storage/types.ts` — `RSS_CATEGORIES` values are data shown verbatim in the category dropdown/badge; confirm these are intentionally left as-is (out of scope, not \"labels\").\n\n## Implementation Steps\n\n1. **`app/sources/page.tsx` — translate remaining UI labels:**\n   - Line 304: `label=\"Time window\"` → `\"Период\"`.\n   - Lines 310–312: option labels `1 day` / `7 days` / `30 days` → `\"1 день\"` / `\"7 дней\"` / `\"30 дней\"`.\n   - Lines 317–319: Telegram note \"Telegram collection reads only recent public posts…\" → Russian equivalent (e.g. «Сбор Telegram читает только недавние публичные посты, а не всю историю канала.»).\n   - Line 331: `label=\"Category\"` → `\"Категория\"`.\n   - Line 344: `label=\"Tags (comma-separated)\"` → `\"Теги (через запятую)\"`.\n   - Line 358: `Active` → `\"Активен\"`.\n   - Line 362: `{editingId ? \"Save\" : \"Add source\"}` → `{editingId ? \"Сохранить\" : \"Добавить источник\"}`.\n   - Line 366: `Cancel` → `\"Отмена\"`.\n   - Lines 375–377 (ConfirmModal props): `title=\"Delete source?\"` → `\"Удалить источник?\"`; `message` \"…will be removed.\" → «Источник «…» будет удалён.»; `confirmLabel=\"Delete\"` → `\"Удалить\"`.\n   - Leave data-driven values untouched: category names from `RSS_CATEGORIES`, `s.category` badge, `lastStatus` (\"ok\"/\"error\"), and example placeholders.\n\n2. **`app/api/rss/sources/route.ts` — translate POST error strings** so save-failure toasts render in Russian:\n   - \"Invalid JSON.\" → «Некорректный JSON.»\n   - \"Name is required.\" → «Укажите название.»\n   - \"A valid Telegram channel URL or @username is required.\" → «Укажите корректный URL Telegram-канала или @username.»\n   - \"RSS URL is required.\" → «Укажите URL RSS-ленты.»\n   - \"URL must start with http:// or https://\" → «URL должен начинаться с http:// или https://»\n\n3. **`app/api/rss/sources/[id]/route.ts` — translate PATCH error strings** (same phrasings as step 2, plus):\n   - \"Source not found.\" → «Источник не найден.»\n\n4. **Consistency check:** ensure new API strings match the wording already used client-side in `page.tsx` (e.g. the page already uses «Укажите URL RSS-ленты» and «URL должен начинаться с http:// или https://») so duplicate validation messages read identically.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or project's typecheck script) — confirm no type errors introduced.\n- `npm run lint` if configured.\n- Manual/visual: run the app, open `/sources`; verify the editor form labels, time-window options, Telegram note, action buttons, and the delete modal are all Russian. Trigger a save with an empty/invalid URL and an invalid Telegram handle to confirm the toast error messages now appear in Russian.\n- Grep `app/sources/page.tsx` and the two sources routes for residual ASCII-only user-facing strings to confirm none were missed.\n\n## Risks\n\n- **Scope ambiguity:** the affected-files list includes 9 unrelated API routes (`auth`, `benchmark`, `favorites`, `feedback`, `health`, `analyze`). Their error strings never render on the Sources page, so translating them is outside this task's title. Recommend confirming whether the epic wants those routes localized in a separate task; touching them here risks scope creep and unrelated review surface.\n- **Encoding:** ensure Cyrillic is written as UTF-8; avoid mojibake in `NextResponse.json` error payloads.\n- **Wording drift:** client-side and server-side validation messages partly overlap — using inconsistent phrasing would show two different Russian messages for the same condition. Step 4 mitigates this.\n- **Data vs. label distinction:** `RSS_CATEGORIES` and `lastStatus` values are English data, not labels. Translating them would be a larger change (touching the type/storage layer) and is intentionally excluded; flag if the product owner expects category names localized too.\n",
+  "affected_files": [
+    "app/api/rss/sources/[id]/route.ts",
+    "app/api/rss/sources/route.ts",
+    "app/sources/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/sources/page.tsx",
+        "components/ConfirmModal.tsx"
+      ],
+      "medium": [
+        "app/api/rss/sources/[id]/route.ts",
+        "app/api/rss/sources/route.ts",
+        "lib/storage/types.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "Task 016 is satisfied. All remaining English UI labels on the Sources page editor/modal (Time window, Category, Tags, Active, Save/Add source/Cancel, the Telegram note, and the delete ConfirmModal) were translated to Russian, and the two Sources API routes that surface error text as toasts on that page were translated as well. Changes are string-only swaps inside existing JSX and object literals with no logic, key, or status-code changes. The 9 unrelated API routes from the affected-files list were correctly deferred per the approved plan (option a), so no scope creep. typecheck (npx tsc --noEmit) and build (npm run build) both pass with exit code 0."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

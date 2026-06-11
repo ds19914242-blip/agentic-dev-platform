@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "reason": "Only low-risk files are affected.",
+  "risks": {
+    "low": [
+      "components/KpiCard.tsx",
+      "components/SummaryCards.tsx"
+    ],
+    "medium": [],
+    "high": [],
+    "critical": []
+  }
+}
