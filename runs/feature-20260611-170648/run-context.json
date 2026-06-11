@@ -1,0 +1,52 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Change footer text from \"Powered by Agentic Dev Platform\" to \"Работает на Agentic Dev Platform\"",
+  "work_item": {
+    "work_item_type": "feature",
+    "reason": "A single, well-defined UI copy change (translating one footer string to Russian). It is one concrete product change with no investigation, no broken behavior to fix, and is far too small to break into subtasks.",
+    "should_decompose": false
+  },
+  "plan": "# Implementation Plan\n\n## Summary\n\nChange the footer label rendered in `components/Footer.tsx` from the English `\"Powered by Agentic Dev Platform\"` to the Russian `\"Работает на Agentic Dev Platform\"`. This is a single-line static text change.\n\n**Note:** The string lives in `components/Footer.tsx:24` — **not** in any of the \"Affected Files\" listed in the request (those are API routes and `parseRssTextFile.ts`, none of which contain footer text). A repo-wide grep confirms exactly one occurrence. The listed files appear to be a mismatch and should be ignored for this change.\n\n## Files To Inspect\n\n- `components/Footer.tsx` (line 24) — the only file containing the target string.\n\n## Implementation Steps\n\n1. In `components/Footer.tsx:24`, replace:\n   ```tsx\n   <span>Powered by Agentic Dev Platform</span>\n   ```\n   with:\n   ```tsx\n   <span>Работает на Agentic Dev Platform</span>\n   ```\n   Keep the product name \"Agentic Dev Platform\" untranslated (matches the request's target text). No structural/className changes needed.\n\n## Validation Steps\n\n1. Re-grep to confirm no remaining `\"Powered by Agentic Dev Platform\"` and one new `\"Работает на Agentic Dev Platform\"`.\n2. Ensure the file is saved UTF-8 so Cyrillic renders correctly.\n3. `npm run build` (or `tsc`/lint) to confirm no syntax/type errors.\n4. Visually verify the footer in any page (footer is shared) shows the new text.\n\n## Risks\n\n- **Low.** Single static-string change with no logic impact.\n- **Encoding:** ensure Cyrillic is written as proper UTF-8, not escaped/mojibake.\n- **Scope mismatch:** the provided \"Affected Files\" list is incorrect for this task; editing them would be wrong. The real target is `components/Footer.tsx`.\n- **Consistency:** the rest of the footer (e.g. `RSS Agent Lab`, `build`) stays English — confirm partial Russian translation is intended.\n",
+  "affected_files": [
+    "src/importers/parseRssTextFile.ts",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "components/Footer.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "The footer string in components/Footer.tsx was changed from 'Powered by Agentic Dev Platform' to 'Работает на Agentic Dev Platform', keeping the product name in English — exactly fulfilling the feature request. Single-line, presentation-only edit with no changes to unrelated areas. Typecheck and build both pass clean. No issues found."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}
