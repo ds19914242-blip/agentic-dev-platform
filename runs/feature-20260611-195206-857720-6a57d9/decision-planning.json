@@ -1,0 +1,5 @@
+{
+  "decision": "stop",
+  "status": "already_satisfied",
+  "reason": "Planner detected that the requested feature already exists."
+}

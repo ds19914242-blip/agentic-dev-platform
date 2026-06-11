@@ -1,0 +1,21 @@
+{
+  "status": "needs_approval",
+  "reason": "High-risk files are affected.",
+  "risks": {
+    "low": [],
+    "medium": [
+      "app/api/admin/users/route.ts",
+      "lib/auth/currentUser.ts",
+      "lib/auth/password.ts",
+      "lib/session.ts",
+      "lib/storage/local.ts",
+      "lib/storage/postgres.ts",
+      "lib/storage/types.ts"
+    ],
+    "high": [
+      "app/api/auth/login/route.ts",
+      "app/login/page.tsx"
+    ],
+    "critical": []
+  }
+}

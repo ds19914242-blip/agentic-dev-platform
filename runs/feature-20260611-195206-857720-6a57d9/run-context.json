@@ -1,0 +1,46 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 010 — Add local registration page and API",
+  "work_item": {
+    "work_item_type": "epic",
+    "reason": "Explicitly labeled an epic task and bundles two distinct deliverables — a local registration page (frontend) and a registration API (backend) — which should be split into separate implementation tasks.",
+    "should_decompose": true
+  },
+  "plan": "# Implementation Plan\n\n## Summary\n\nAdd a self-service local **registration** flow: a public `POST /api/auth/register` endpoint that creates a `UserRecord` (hashed password) and signs the user in, plus a public `/register` page mirroring the existing login UI. Nearly all backend primitives already exist — `UserStorage` (Local + Postgres), `hashPassword`, and `createSessionToken(secret, user)` with embeddable `{sub, username, role}` — so this is mostly wiring a new route + page and opening them in middleware.\n\n## Files To Inspect\n\n- `lib/session.ts` — `createSessionToken(secret, user)`, `SESSION_COOKIE`, `SESSION_MAX_AGE_SECONDS` (reuse for setting the cookie). ✓ already read\n- `lib/auth/password.ts` — `hashPassword`. ✓\n- `lib/storage/types.ts` — `UserStorage` / `UserRecord` (`create`, `getByUsername`, `count`). ✓\n- `lib/storage/local.ts` + `lib/storage/postgres.ts` — confirm `create` throws/`already exists` on duplicate username (the admin route relies on this; register must too).\n- `app/api/auth/login/route.ts` — cookie-set pattern + Russian error strings to match. ✓\n- `app/api/admin/users/route.ts` — validation pattern (username trim, password ≥ 8, role set, 409 on duplicate) to mirror. ✓\n- `app/login/page.tsx` — UI structure to copy for the register page. ✓\n- `middleware.ts` — matcher excludes `login`, `api/auth`, `api/health`; `/register` page must be added to the negative lookahead. ✓\n- `lib/auth/currentUser.ts` — **key gap** (see Risks): currently returns env `APP_USERNAME`/`\"admin\"` and ignores session user fields.\n\n## Implementation Steps\n\n1. **`app/api/auth/register/route.ts`** (new, `runtime = \"nodejs\"`, `dynamic = \"force-dynamic\"`):\n   - Parse JSON `{ username, password }`; mirror validation from the admin POST (trim username non-empty, password ≥ 8 chars). Reject invalid JSON with 400.\n   - Reject duplicate via `userStorage.getByUsername` (or catch the `already exists` error from `create`) → 409 with `\"Пользователь с таким логином уже существует.\"`.\n   - Assign role: default `\"user\"`; optionally make the **first** user `\"admin\"` via `userStorage.count() === 0` (decision — see Risks).\n   - `hashPassword(password)` → `userStorage.create({ username, passwordHash, role })`.\n   - Sign in immediately: `createSessionToken(secret, { id, username, role })`; set `SESSION_COOKIE` with the same cookie options as login. Return `{ ok: true }`. Guard on missing `SESSION_SECRET` → 500.\n2. **`app/register/page.tsx`** (new, client component): copy `login/page.tsx`, POST to `/api/auth/register`, on success `router.replace(\"/dashboard\")` + `router.refresh()`. Add a \"уже есть аккаунт? Войти\" link to `/login`.\n3. **`app/login/page.tsx`**: add a \"Зарегистрироваться\" link to `/register`.\n4. **`middleware.ts`**: add `register` to the matcher negative lookahead so the page is reachable while logged out (`(?!login|register|api/auth|...)`). The API is already public under `api/auth`.\n\n## Validation Steps\n\n- `npm run build` / typecheck (`tsc`) — no type errors on new files.\n- Manual (local-fs backend): visit `/register` while logged out → register → redirected to `/dashboard` with a session cookie set.\n- Duplicate username → 409 with the expected message.\n- Password < 8 chars and empty username → 400.\n- Confirm `data/users.json` (local) or `users` table (postgres) receives a record with a `scrypt$…` hash, never plaintext.\n\n## Risks\n\n- **Login/currentUser do not recognize registered users (highest risk).** `POST /api/auth/login` validates only against `APP_USERNAME`/`APP_PASSWORD` env vars, and `currentUser` returns `{ username: APP_USERNAME, role: \"admin\" }` for *any* valid session — ignoring the embedded `sub/username/role`. Consequences: (a) a registered user can sign in at registration time, but **cannot log back in** after logout; (b) once logged in, they'd resolve as the env admin. Decide scope: either Task 010 is registration-only (flag login integration as a follow-up — likely Task 011), or extend `currentUser`/login to read session user fields and verify against `userStorage`. Recommend confirming with the task owner.\n- **First-user-as-admin** is a security/product decision; if unwanted, hardcode `role: \"user\"` and provision admins via `/api/admin/users`.\n- **Open registration** means anyone can self-register — acceptable for a local lab tool but note it's unauthenticated by design.\n- **Duplicate-detection consistency** between Local and Postgres `create()` — ensure both surface the same `already exists` signal so the 409 path is reliable across backends.\n",
+  "affected_files": [
+    "app/admin/users/page.tsx",
+    "app/api/admin/users/[id]/route.ts",
+    "app/api/admin/users/route.ts",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/auth/me/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [],
+      "medium": [
+        "app/api/admin/users/route.ts",
+        "lib/auth/currentUser.ts",
+        "lib/auth/password.ts",
+        "lib/session.ts",
+        "lib/storage/local.ts",
+        "lib/storage/postgres.ts",
+        "lib/storage/types.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/login/page.tsx"
+      ],
+      "critical": []
+    }
+  }
+}
