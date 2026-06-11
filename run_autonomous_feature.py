@@ -27,6 +27,7 @@ from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.run_runtime import RunRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
+from orchestrator.replanner_agent import run_replanner
 from orchestrator.run_context import update_run_context
 from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
@@ -110,6 +111,7 @@ def main():
         ("approved_plan", "Approve plan"),
         ("implementation", "Run Claude implementation"),
         ("validation", "Run validation"),
+        ("replanning", "Replan after validation failure"),
         ("post_review", "Create post-run review"),
         ("confidence", "Run confidence gate"),
     ]:
@@ -365,12 +367,48 @@ After implementation:
         run.status("validated")
         run.event("Validation passed")
         graph_v2.complete("validation", artifacts=["validation.md", "validation.json"])
+        graph_v2.skip("replanning")
         graph_v2.write()
     else:
         run.status("validation_failed")
         run.event("Validation failed")
         graph_v2.fail("validation", error="Validation failed", artifacts=["validation.md", "validation.json"])
         graph_v2.write()
+
+        max_replans = 1
+        for replan_attempt in range(max_replans):
+            run.status("replanning")
+            run.event(f"Replanner started, attempt {replan_attempt + 1}")
+            graph_v2.start("replanning")
+            graph_v2.write()
+
+            run_replanner(
+                run_dir=run_dir,
+                repo_path=repo_path,
+                feature=feature,
+            )
+
+            graph_v2.complete("replanning", artifacts=["replan-prompt.md", "replan-response.md"])
+            graph_v2.write()
+
+            validation_results = run_validators(repo_path, product.get("validators", []))
+            _, validation_ok = write_validation_report(run_dir, validation_results)
+            register_artifacts(run_dir, ["validation.md", "validation.json"], stage="validation")
+            update_run_context(run_dir, validation_passed=validation_ok, replan_attempts=replan_attempt + 1)
+
+            if validation_ok:
+                graph.mark_completed("validation")
+                run.status("validated_after_replan")
+                run.event("Validation passed after replanning")
+                graph_v2.complete("validation", artifacts=["validation.md", "validation.json"])
+                graph_v2.write()
+                break
+
+        if not validation_ok:
+            run.status("validation_failed")
+            run.event("Validation still failed after replanning")
+            graph_v2.fail("validation", error="Validation failed after replanning", artifacts=["validation.md", "validation.json"])
+            graph_v2.write()
 
     create_post_run_review(run_dir, repo_path)
     run.artifact("post-run-review.md", stage="post_review")
