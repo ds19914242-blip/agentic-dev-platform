@@ -1,0 +1,28 @@
+{
+  "name": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "type": "existing_product",
+  "status": "local",
+  "framework": "nextjs",
+  "capabilities": {
+    "typecheck": true,
+    "build": true,
+    "lint": false,
+    "unit_tests": false,
+    "e2e_tests": false,
+    "auto_pr": true
+  },
+  "validators": [
+    {
+      "name": "typecheck",
+      "command": "npx tsc --noEmit",
+      "required": true
+    },
+    {
+      "name": "build",
+      "command": "npm run build",
+      "required": true
+    }
+  ],
+  "updated_at": "2026-06-11T13:52:02"
+}

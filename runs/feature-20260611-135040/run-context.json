@@ -1,0 +1,20 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Add a small footer note saying \"Powered by Agentic Dev Platform\"",
+  "plan": "# Implementation Plan\n\n## Summary\n\nAdd a small footer note reading **\"Powered by Agentic Dev Platform\"**. The app already has a shared `components/Footer.tsx` rendered globally via `app/layout.tsx`, so a single, minimal addition to the existing footer markup covers every page. The API routes listed under \"Affected Files\" are not relevant to a UI footer change and should be ignored.\n\n## Files To Inspect\n\n- `components/Footer.tsx` — the existing footer; this is the only file that needs editing.\n- `app/layout.tsx` — confirms `<Footer />` is rendered once for all pages (no per-page changes needed).\n- `lib/version.js` — existing styling/value pattern for footer items (for stylistic consistency only).\n\n## Implementation Steps\n\n1. In `components/Footer.tsx`, add a new note inside the existing `<footer>`, following the established separator + `<span>` pattern. Append after the last item (the build span block):\n   ```tsx\n   <span className=\"text-slate-300\">·</span>\n   <span>Powered by Agentic Dev Platform</span>\n   ```\n2. Keep the muted styling consistent with the surrounding `text-xs text-slate-400` footer. No new imports, props, or state required.\n3. No changes to `app/layout.tsx` — the footer is already mounted globally.\n\n## Validation Steps\n\n1. Run the dev server (`npm run dev`) and load any page (e.g. `/`, `/reports`, `/dashboard`); confirm the note appears centered in the footer alongside the existing version/env/build items.\n2. Verify the separator dot renders correctly and wrapping behaves on narrow widths (the footer uses `flex-wrap`).\n3. Typecheck/build (`npm run build` or `tsc`) to confirm no JSX/markup errors.\n\n## Risks\n\n- **Very low risk.** Purely additive, presentational change in one shared component.\n- The listed \"Affected Files\" (API routes) are misleading — editing them is unnecessary and would be out of scope; restrict the change to `Footer.tsx`.\n- Minor: if Russian localization is expected (the app uses `lang=\"ru\"`), confirm whether the note should stay in English (\"Agentic Dev Platform\" is a proper name, so English is reasonable) — otherwise no localization work needed.\n",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ]
+}

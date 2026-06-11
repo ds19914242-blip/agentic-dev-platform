@@ -152,6 +152,8 @@ def fail_stage(run_dir, stage, error=None, artifacts=None):
 def attach_artifact(run_dir, name, path, kind="file"):
     state = load_run_state(run_dir)
 
+    state.setdefault("artifacts", {})
+
     state["artifacts"][name] = {
         "kind": kind,
         "path": str(path),

@@ -91,6 +91,20 @@ def main():
     ensure_clean_repo(repo_path)
 
     run_dir = make_run_dir("feature")
+
+    run = RunRuntime(
+        run_dir,
+        product=product_name,
+        request=feature,
+        run_type="feature",
+    )
+    graph_v2 = run.graph
+
+    run.status("created")
+    run.event("Autonomous feature run created")
+    update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
+
+
     run.status("created")
     run.event("Autonomous feature run created")
     update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
