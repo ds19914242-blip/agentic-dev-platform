@@ -16,7 +16,6 @@ from orchestrator.agent_context import AgentContext
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.run_manager import make_run_dir, write_run_files
-from orchestrator.run_status import write_status, append_event
 from orchestrator.claude_executor import run_claude_from_file, run_claude
 from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
@@ -25,9 +24,11 @@ from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
+from orchestrator.run_runtime import RunRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
 from orchestrator.run_context import update_run_context
+from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
@@ -85,16 +86,17 @@ def main():
     ensure_clean_repo(repo_path)
 
     run_dir = make_run_dir("feature")
-    write_status(run_dir, "created")
-    append_event(run_dir, "Autonomous feature run created")
+    run.status("created")
+    run.event("Autonomous feature run created")
     update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
 
-    graph_v2 = GraphRuntime(
+    run = RunRuntime(
         run_dir,
         product=product_name,
         request=feature,
         run_type="feature",
     )
+    graph_v2 = run.graph
     for node_id, name in [
         ("repo_state", "Check clean repository"),
         ("repo_scan", "Scan repository"),
@@ -212,12 +214,18 @@ def main():
     (run_dir / "repository-map.md").write_text(repo_map_text)
     (run_dir / "import-map.md").write_text(import_map_text)
     (run_dir / "plan.md").write_text(plan)
+    register_artifacts(run_dir, [
+        "repository-map.md",
+        "import-map.md",
+        "plan.md",
+    ], stage="planning")
 
     planner_selected_files = extract_files_from_plan(plan, files)
     if planner_selected_files:
         affected = planner_selected_files
 
     write_planner_selected_files(run_dir, planner_selected_files)
+    run.artifact("planner-selected-files.md", stage="planning")
 
     security = evaluate_security_gate(affected)
 
@@ -228,20 +236,26 @@ def main():
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
     write_security_report(run_dir, security)
+    run.artifact("affected-files.md", stage="affected_files")
+    run.artifact("architecture-review.md", stage="architecture")
+    run.artifact("qa-plan.md", stage="qa")
+    register_artifacts(run_dir, ["security-gate.md", "security-gate.json"], stage="security")
     update_run_context(run_dir, security=security)
     graph_v2.complete("security", artifacts=["security-gate.md", "security-gate.json"])
     graph_v2.write()
     (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
+    run.artifact("agent-context.md", stage="planning")
 
     graph.mark_completed("prompt")
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
+    run.artifact("execution-graph.md", stage="planning")
 
     # MVP mode: Security Gate is advisory only.
     # It writes security-gate.md / security-gate.json, but never blocks execution.
-    append_event(run_dir, f"Security advisory: {security['status']}")
+    run.event(f"Security advisory: {security['status']}")
 
-    write_status(run_dir, "planning_with_claude")
-    append_event(run_dir, "Claude planning started")
+    run.status("planning_with_claude")
+    run.event("Claude planning started")
 
     claude_plan_response = run_claude_from_file(
         repo_path,
@@ -250,8 +264,9 @@ def main():
     )
 
     save_claude_response(run_dir, claude_plan_response)
+    run.artifact("claude-response.md", stage="claude_plan")
     graph.mark_completed("claude_plan")
-    append_event(run_dir, "Claude planning response recorded")
+    run.event("Claude planning response recorded")
     graph_v2.complete("claude_plan", artifacts=["claude-response.md"])
     graph_v2.write()
 
@@ -259,19 +274,20 @@ def main():
     write_decision(run_dir, "planning", planning_decision)
 
     if planning_decision["decision"] == "stop":
-        write_status(run_dir, planning_decision["status"])
-        append_event(run_dir, f"Stopped after planning: {planning_decision['reason']}")
+        run.status(planning_decision["status"])
+        run.event(f"Stopped after planning: {planning_decision['reason']}")
         print(f"Run stopped after planning: {planning_decision['status']}")
         return
 
     security_decision = decide_after_security(run_dir)
     write_decision(run_dir, "security", security_decision)
-    append_event(run_dir, f"Security decision advisory: {security_decision['status']}")
+    run.event(f"Security decision advisory: {security_decision['status']}")
 
     save_approved_plan(run_dir, claude_plan_response)
+    run.artifact("approved-plan.md", stage="approved_plan")
     graph.mark_completed("approved_plan")
-    write_status(run_dir, "plan_approved")
-    append_event(run_dir, "Plan automatically approved")
+    run.status("plan_approved")
+    run.event("Plan automatically approved")
     graph_v2.complete("approved_plan", artifacts=["approved-plan.md"])
     graph_v2.write()
 
@@ -296,8 +312,8 @@ After implementation:
 {approved_plan}
 """
 
-    write_status(run_dir, "implementing")
-    append_event(run_dir, "Claude implementation started")
+    run.status("implementing")
+    run.event("Claude implementation started")
 
     implementation_response = run_claude(
         repo_path=repo_path,
@@ -309,9 +325,10 @@ After implementation:
     (run_dir / "claude-implementation-response.md").write_text(
         "# Claude Implementation Response\n\n" + implementation_response
     )
+    run.artifact("claude-implementation-response.md", stage="implementation")
 
     graph.mark_completed("implementation")
-    append_event(run_dir, "Claude implementation response recorded")
+    run.event("Claude implementation response recorded")
     graph_v2.complete("implementation", artifacts=["claude-implementation-response.md"])
     graph_v2.write()
 
@@ -321,8 +338,8 @@ After implementation:
         summary="Autonomous feature implementation completed.",
     )
 
-    write_status(run_dir, "generating_tests")
-    append_event(run_dir, "Test generation started")
+    run.status("generating_tests")
+    run.event("Test generation started")
 
     test_generation_response = generate_tests(
         repo_path=repo_path,
@@ -334,34 +351,38 @@ After implementation:
     (run_dir / "test-generation.md").write_text(
         "# Test Generation Result\n\n" + test_generation_response
     )
+    run.artifact("test-generation.md", stage="test_generation")
 
-    append_event(run_dir, "Test generation completed")
+    run.event("Test generation completed")
 
     validation_results = run_validators(repo_path, product.get("validators", []))
     _, validation_ok = write_validation_report(run_dir, validation_results)
+    register_artifacts(run_dir, ["validation.md", "validation.json"], stage="validation")
     update_run_context(run_dir, validation_passed=validation_ok)
 
     if validation_ok:
         graph.mark_completed("validation")
-        write_status(run_dir, "validated")
-        append_event(run_dir, "Validation passed")
+        run.status("validated")
+        run.event("Validation passed")
         graph_v2.complete("validation", artifacts=["validation.md", "validation.json"])
         graph_v2.write()
     else:
-        write_status(run_dir, "validation_failed")
-        append_event(run_dir, "Validation failed")
+        run.status("validation_failed")
+        run.event("Validation failed")
         graph_v2.fail("validation", error="Validation failed", artifacts=["validation.md", "validation.json"])
         graph_v2.write()
 
     create_post_run_review(run_dir, repo_path)
+    run.artifact("post-run-review.md", stage="post_review")
     graph.mark_completed("post_run_review")
-    append_event(run_dir, "Post run review created")
+    run.event("Post run review created")
     graph_v2.complete("post_review", artifacts=["post-run-review.md"])
     graph_v2.write()
 
     confidence_path, confidence = write_confidence_report(run_dir)
+    register_artifacts(run_dir, ["confidence.md", "confidence.json"], stage="confidence")
     update_run_context(run_dir, confidence=confidence)
-    append_event(run_dir, f"Confidence gate: {confidence['status']}")
+    run.event(f"Confidence gate: {confidence['status']}")
     graph_v2.complete("confidence", artifacts=["confidence.md", "confidence.json"])
     graph_v2.write()
 
@@ -370,10 +391,11 @@ After implementation:
 
     # MVP mode: Confidence Gate is advisory only.
     # It writes confidence.md / confidence.json / decision-confidence.*, but does not block PR creation.
-    append_event(run_dir, f"Confidence advisory: {confidence_decision['status']}")
-    write_status(run_dir, "ready_for_pr")
+    run.event(f"Confidence advisory: {confidence_decision['status']}")
+    run.status("ready_for_pr")
 
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
+    run.artifact("execution-graph.md", stage="planning")
 
     if validation_ok and has_changes(repo_path):
         safe_branch = "agentic/" + feature.lower().replace(" ", "-")[:50]
@@ -389,8 +411,9 @@ After implementation:
 
         if pr_url:
             (run_dir / "pull-request.md").write_text(f"# Pull Request\n\n{pr_url}\n")
-            write_status(run_dir, "pr_created")
-            append_event(run_dir, f"Pull request created: {pr_url}")
+            run.artifact("pull-request.md", stage="pr")
+            run.status("pr_created")
+            run.event(f"Pull request created: {pr_url}")
 
     print(f"Autonomous run complete: {run_dir}")
     print(f"Validation: {'passed' if validation_ok else 'failed'}")

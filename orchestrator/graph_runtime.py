@@ -142,7 +142,34 @@ class GraphRuntime:
 
     def write_run_json(self):
         path = self.run_dir / "run.json"
-        path.write_text(json.dumps(self.to_run_state(), indent=2, ensure_ascii=False))
+        next_state = self.to_run_state()
+
+        if path.exists():
+            try:
+                existing = json.loads(path.read_text())
+            except Exception:
+                existing = {}
+        else:
+            existing = {}
+
+        # Preserve data written by run_status.py, run_artifacts.py and other artifact writers.
+        for key in ["metadata", "artifacts", "events"]:
+            if key in existing and key not in next_state:
+                next_state[key] = existing[key]
+            elif key in existing and isinstance(existing[key], dict):
+                merged = dict(existing[key])
+                merged.update(next_state.get(key, {}))
+                next_state[key] = merged
+            elif key in existing and isinstance(existing[key], list):
+                next_state[key] = existing[key]
+
+        # Preserve created_at once it exists.
+        if "created_at" in existing:
+            next_state["created_at"] = existing["created_at"]
+        else:
+            next_state["created_at"] = now_iso()
+
+        path.write_text(json.dumps(next_state, indent=2, ensure_ascii=False))
         return path
 
     def write_markdown(self):

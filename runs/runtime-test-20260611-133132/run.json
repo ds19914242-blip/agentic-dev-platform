@@ -1,0 +1,53 @@
+{
+  "schema_version": "0.5",
+  "run_id": "runtime-test-20260611-133132",
+  "run_type": "platform",
+  "product": "agentic-dev-platform",
+  "request": "RunRuntime smoke test",
+  "status": "completed",
+  "current_stage": "planning",
+  "updated_at": "2026-06-11T13:31:32",
+  "stages": {
+    "planning": {
+      "name": "Create plan",
+      "status": "completed",
+      "started_at": "2026-06-11T13:31:32",
+      "completed_at": "2026-06-11T13:31:32",
+      "updated_at": "2026-06-11T13:31:32",
+      "attempt": 1,
+      "artifacts": [
+        "plan.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "planning",
+    "status_updated_at": "2026-06-11T13:31:32"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/runtime-test-20260611-133132/status.md",
+      "updated_at": "2026-06-11T13:31:32"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/runtime-test-20260611-133132/events.md",
+      "updated_at": "2026-06-11T13:31:32"
+    },
+    "plan.md": {
+      "kind": "markdown",
+      "path": "runs/runtime-test-20260611-133132/plan.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T13:31:32"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T13:31:32",
+      "event": "Planning started"
+    }
+  ],
+  "created_at": "2026-06-11T13:31:32"
+}
