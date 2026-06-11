@@ -2,6 +2,10 @@ import sys
 import argparse
 import os
 from pathlib import Path
+
+from orchestrator.product_registry import load_product_config
+from orchestrator.task_classifier import classify_task
+from orchestrator.execution_router import route_task
 import subprocess
 import re
 
@@ -92,6 +96,24 @@ def set_run_id(task_path, run_id):
         updated = [f"Run: {run_id}"] + updated
 
     task_path.write_text("\n".join(updated) + "\n")
+
+
+def set_task_profile(task_path, profile):
+    text = task_path.read_text(errors="ignore")
+
+    header = [
+        f"Type: {profile.get('task_type')}",
+        f"Pipeline: {profile.get('pipeline')}",
+        f"Risk: {profile.get('risk')}",
+    ]
+
+    lines = text.splitlines()
+    cleaned = [
+        line for line in lines
+        if not line.lower().startswith(("type:", "pipeline:", "risk:"))
+    ]
+
+    task_path.write_text("\n".join(header + cleaned) + "\n")
 
 
 def task_title(task_text):
@@ -190,7 +212,21 @@ def main():
 
         task_text = task_path.read_text(errors="ignore")
 
+        product = load_product_config(product_name)
+        classifier_repo_path = args.repo_path or product["repo_path"]
+        task_profile = classify_task(classifier_repo_path, task_text)
+        pipeline = route_task(task_profile)
+        set_task_profile(task_path, task_profile)
+
         print(f"Running task from argv: {task_path}")
+        print(f"Task type: {task_profile.get('task_type')}")
+        print(f"Pipeline: {pipeline}")
+        print(f"Risk: {task_profile.get('risk')}")
+
+        if pipeline == "audit":
+            set_status(task_path, "done_no_pr")
+            print(f"Task marked done_no_pr: audit task should create follow-up work, not direct PR")
+            return
 
         set_status(task_path, "in_progress")
 

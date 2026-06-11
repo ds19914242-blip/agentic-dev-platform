@@ -38,6 +38,7 @@ from orchestrator.memory_store import update_product_memory, ingest_run
 from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
+from orchestrator.work_item_analyst import analyze_work_item
 
 import subprocess
 import os
@@ -72,6 +73,8 @@ def main():
         build_repository_map(files_for_classification)
     )
 
+    work_item = analyze_work_item(repo_path, feature)
+
     classification_text = classify_request_with_llm(
         repo_path,
         feature,
@@ -79,6 +82,9 @@ def main():
     )
 
     classification = parse_complexity(classification_text)
+
+    if work_item.get("should_decompose"):
+        classification["route"] = "DECOMPOSE_FIRST"
 
     if classification["route"] == "DECOMPOSE_FIRST":
         print("Request should be decomposed first.")
@@ -108,7 +114,13 @@ def main():
 
     run.status("created")
     run.event("Autonomous feature run created")
-    update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
+    update_run_context(
+        run_dir,
+        product=product_name,
+        repo_path=repo_path,
+        feature=feature,
+        work_item=work_item,
+    )
 
 
     run.status("created")

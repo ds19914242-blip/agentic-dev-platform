@@ -15,6 +15,7 @@ COMMANDS = {
     "schedule": "backlog_scheduler.py",
     "parallel": "backlog_parallel_worktree.py",
     "memory": "memory_report.py",
+    "classify": "classify_task.py",
 }
 
 
@@ -45,6 +46,7 @@ def print_help():
     print("  schedule     Run next dependency-ready backlog task")
     print("  parallel     Run ready backlog tasks in parallel")
     print("  memory       Show product memory report")
+    print("  classify     Classify a task and show selected pipeline")
     print()
     print("Aliases:")
     print("  run          feature")
