@@ -35,6 +35,7 @@ from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.memory_store import update_product_memory, ingest_run
+from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 
@@ -431,6 +432,9 @@ After implementation:
             run.event("Validation still failed after replanning")
             graph_v2.fail("validation", error="Validation failed after replanning", artifacts=["validation.md", "validation.json"])
             graph_v2.write()
+            failure = ingest_validation_failure(product_name, run_dir)
+            if failure:
+                run.event(f"Failure memory recorded: {failure.get('failure_type')}")
 
     run.status("reviewing")
     run.event("Reviewer started")
@@ -495,6 +499,7 @@ After implementation:
     print(f"Review: {run_dir / 'post-run-review.md'}")
     print(f"Confidence: {confidence_path}")
     try:
+        ingest_validation_failure(product_name, run_dir)
         ingest_run(product_name, run_dir)
         run.event("Run memory ingested")
     except Exception as err:

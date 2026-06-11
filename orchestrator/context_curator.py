@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from orchestrator.failure_memory import related_failures
 from orchestrator.memory_store import (
     load_product_memory,
     load_run_memory,
@@ -36,6 +37,7 @@ def build_memory_context(product_name, feature):
     run_memory = load_run_memory(product_name)
     architecture_memory = load_architecture_memory(product_name)
     related_runs = find_related_runs(feature, run_memory)
+    failures = related_failures(product_name, feature)
 
     lines = [
         "# Platform Memory Context",
@@ -78,6 +80,21 @@ def build_memory_context(product_name, feature):
             )
     else:
         lines.append("_No related previous runs found._")
+
+    lines.extend([
+        "",
+        "## Related Failure Memory",
+        "",
+    ])
+
+    if failures:
+        for failure in failures:
+            lines.append(
+                f"- {failure.get('run_id')}: {failure.get('failure_type')} "
+                f"for request: {failure.get('request')}"
+            )
+    else:
+        lines.append("_No related failures recorded yet._")
 
     lines.append("")
     return "\n".join(lines)
