@@ -13,6 +13,14 @@ COMMANDS = {
 }
 
 
+ALIASES = {
+    "run": "feature",
+    "epic": "decompose",
+    "next": "backlog",
+    "progress": "status",
+}
+
+
 def print_help():
     print("Agentic Dev Platform")
     print()
@@ -20,18 +28,26 @@ def print_help():
     print("  python3 agentic.py <command> [args]")
     print()
     print("Commands:")
-    for name, script in COMMANDS.items():
-        print(f"  {name:<12} {script}")
+    print("  feature      Run one autonomous feature")
+    print("  decompose    Decompose a large request into backlog tasks")
+    print("  backlog      Run a backlog task")
+    print("  status       Show backlog status")
+    print("  sync         Sync backlog PR statuses")
+    print("  validate     Validate latest run")
+    print("  confidence   Run confidence report for latest run")
+    print()
+    print("Aliases:")
+    print("  run          feature")
+    print("  epic         decompose")
+    print("  next         backlog")
+    print("  progress     status")
     print()
     print("Examples:")
     print("  python3 agentic.py feature")
-    print("  python3 agentic.py decompose")
-    print("  python3 agentic.py backlog")
-    print("  python3 agentic.py status")
-    print("  python3 agentic.py status --detail")
-    print("  python3 agentic.py status --all")
+    print("  python3 agentic.py epic")
+    print("  python3 agentic.py next")
+    print("  python3 agentic.py progress --detail")
     print("  python3 agentic.py sync")
-    print("  python3 agentic.py validate")
 
 
 def main():
@@ -45,6 +61,7 @@ def main():
         print_help()
         return
 
+    command = ALIASES.get(command, command)
     script = COMMANDS.get(command)
 
     if not script:
@@ -54,7 +71,6 @@ def main():
         raise SystemExit(1)
 
     result = subprocess.run(["python3", script] + sys.argv[2:])
-
     raise SystemExit(result.returncode)
 
 

@@ -27,6 +27,7 @@ from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
+from orchestrator.run_context import update_run_context
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
@@ -86,6 +87,7 @@ def main():
     run_dir = make_run_dir("feature")
     write_status(run_dir, "created")
     append_event(run_dir, "Autonomous feature run created")
+    update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
 
     graph_v2 = GraphRuntime(run_dir)
     for node_id, name in [
@@ -131,6 +133,7 @@ def main():
 
     plan = create_llm_plan(repo_path, feature, affected, repo_map_text)
     agent_context.set("plan", plan)
+    update_run_context(run_dir, plan=plan, affected_files=affected)
     graph_v2.complete("planning")
     graph_v2.write()
 
@@ -220,6 +223,7 @@ def main():
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
     write_security_report(run_dir, security)
+    update_run_context(run_dir, security=security)
     graph_v2.complete("security")
     graph_v2.write()
     (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
@@ -319,6 +323,7 @@ After implementation:
         repo_path=repo_path,
         feature=feature,
         test_plan=qa_plan,
+        capabilities=product.get("capabilities", {}),
     )
 
     (run_dir / "test-generation.md").write_text(
@@ -329,6 +334,7 @@ After implementation:
 
     validation_results = run_validators(repo_path, product.get("validators", []))
     _, validation_ok = write_validation_report(run_dir, validation_results)
+    update_run_context(run_dir, validation_passed=validation_ok)
 
     if validation_ok:
         graph.mark_completed("validation")
@@ -349,6 +355,7 @@ After implementation:
     graph_v2.write()
 
     confidence_path, confidence = write_confidence_report(run_dir)
+    update_run_context(run_dir, confidence=confidence)
     append_event(run_dir, f"Confidence gate: {confidence['status']}")
     graph_v2.complete("confidence")
     graph_v2.write()
