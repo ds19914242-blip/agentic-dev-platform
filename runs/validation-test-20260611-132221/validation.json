@@ -1,0 +1,15 @@
+{
+  "overall_result": "passed",
+  "validators": [
+    {
+      "name": "fake",
+      "required": true,
+      "command": "echo ok",
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "ok",
+      "stderr": "",
+      "timed_out": false
+    }
+  ]
+}

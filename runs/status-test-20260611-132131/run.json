@@ -1,0 +1,48 @@
+{
+  "schema_version": "0.5",
+  "run_id": "status-test-20260611-132131",
+  "run_type": "platform",
+  "product": "agentic-dev-platform",
+  "request": "Smoke test status/events in run.json",
+  "status": "created",
+  "current_stage": "planning",
+  "updated_at": "2026-06-11T13:21:31",
+  "stages": {
+    "planning": {
+      "name": "Create plan",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "created",
+    "status_updated_at": "2026-06-11T13:21:31"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/status-test-20260611-132131/status.md",
+      "updated_at": "2026-06-11T13:21:31"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/status-test-20260611-132131/events.md",
+      "updated_at": "2026-06-11T13:21:31"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T13:21:31",
+      "event": "Run created"
+    },
+    {
+      "timestamp": "2026-06-11T13:21:31",
+      "event": "Planning started"
+    }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Add a small README note for Agentic Dev Platform smoke test",
+  "plan": "# Implementation Plan\n\n## Summary\n\nAdd a small, self-contained note to `README.md` documenting an \"Agentic Dev Platform smoke test\" — a quick way to confirm the running app is alive and the platform integration works. This is a **documentation-only** change touching `README.md` and nothing else. The long list of `app/api/**` routes in the request is context (those are the platform's API surface); they should be read for accuracy but **not modified**. The natural smoke-test target already exists: `GET /api/health`, a public, DB-free liveness probe that returns `{ status: \"ok\", storageBackend, time }`.\n\n## Files To Inspect\n\n- `README.md` — confirm heading style, table format, and where to slot the note (candidates: near the existing \"API routes\" section ~L148, or as a short top-level section after the Web platform section).\n- `app/api/health/route.ts` — already read; authoritative response shape for the smoke test (`status: \"ok\"`, no auth, no DB).\n- `app/api/health/db/route.ts` — optional deeper check (DB readiness) to mention as a secondary smoke test, if it returns a useful status.\n- `app/api/rss/test/route.ts` — already read; `POST /api/rss/test` validates a feed/Telegram source without LLM calls — a good optional \"does the collector path work\" smoke step.\n- `middleware`/auth recap (README L225-228) — to verify which endpoints are public so the note's curl examples don't require login.\n\n## Implementation Steps\n\n1. Choose placement: add a concise **\"Agentic Dev Platform smoke test\"** subsection. Recommend placing it right after the \"API routes\" table (~L157) or under a new `###` heading near \"Web platform\".\n2. Write 3-6 lines covering:\n   - One-line purpose: verify a deployment/local run is healthy.\n   - Liveness check: `curl http://localhost:3000/api/health` → expect `{ \"status\": \"ok\", ... }` (public, no auth, no DB).\n   - Optional source check: `POST /api/rss/test` with a sample URL to confirm fetching works without an LLM key.\n3. Keep the tone/format consistent with the existing README (fenced `bash` blocks, backtick routes). Do not duplicate content already in the \"API routes\" table.\n4. Do not modify any `app/api/**` route files — the request lists them only as platform context.\n\n## Validation Steps\n\n- Render/preview the README markdown to confirm formatting (code fences, headings, table integrity unbroken).\n- Cross-check the documented response shape against `app/api/health/route.ts` so the example matches reality.\n- If commands are shown, optionally run `npm run dev` and `curl /api/health` to confirm the example output is accurate before committing.\n- `git diff --stat` should show only `README.md` changed.\n\n## Risks\n\n- **Scope creep**: the affected-files list tempts edits to route files; the actual deliverable is README-only. Keep it that way.\n- **Drift**: documenting an endpoint's exact JSON risks going stale if the route changes — keep the example minimal (`status: \"ok\"`) rather than copying every field.\n- **Auth confusion**: if a chosen smoke endpoint is gated by `APP_USERNAME`/`APP_PASSWORD`, the example would fail. `/api/health` is confirmed public; verify any other endpoint before including it.\n",
+  "affected_files": [
+    "app/api/rss/test/route.ts",
+    "README.md",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts"
+  ]
+}

@@ -1,0 +1,36 @@
+{
+  "schema_version": "0.5",
+  "run_id": "graph-test-20260611-131810",
+  "run_type": "feature",
+  "product": "rss-agent-lab_2",
+  "request": "Smoke test GraphRuntime run.json",
+  "status": "failed",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T13:18:10",
+  "stages": {
+    "planning": {
+      "name": "Create plan",
+      "status": "completed",
+      "started_at": "2026-06-11T13:18:10",
+      "completed_at": "2026-06-11T13:18:10",
+      "updated_at": "2026-06-11T13:18:10",
+      "attempt": 1,
+      "artifacts": [
+        "plan.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "failed",
+      "started_at": null,
+      "completed_at": "2026-06-11T13:18:10",
+      "updated_at": "2026-06-11T13:18:10",
+      "attempt": 0,
+      "artifacts": [
+        "validation.json"
+      ],
+      "error": "typecheck failed"
+    }
+  }
+}

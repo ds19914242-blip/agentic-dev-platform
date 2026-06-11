@@ -1,4 +1,4 @@
-Status: done
+Status: blocked
 
 ### Task 001 — Translate NavBar navigation links
 

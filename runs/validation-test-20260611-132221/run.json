@@ -1,0 +1,35 @@
+{
+  "schema_version": "0.5",
+  "run_id": "validation-test-20260611-132221",
+  "run_type": "feature",
+  "product": "agentic-dev-platform",
+  "request": "Validation smoke",
+  "status": "running",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T13:22:21",
+  "stages": {
+    "validation": {
+      "name": "Run validation",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T13:22:21",
+      "event": "Validation report written: passed"
+    }
+  ],
+  "artifacts": {
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/validation-test-20260611-132221/events.md",
+      "updated_at": "2026-06-11T13:22:21"
+    }
+  }
+}

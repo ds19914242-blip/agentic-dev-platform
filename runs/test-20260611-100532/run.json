@@ -1,0 +1,118 @@
+{
+  "schema_version": "0.5",
+  "run_id": "test-20260611-100532",
+  "product": "rss-agent-lab_2",
+  "request": "Smoke test run engine",
+  "run_type": "feature",
+  "backlog_task": null,
+  "status": "running",
+  "current_stage": "planning",
+  "created_at": "2026-06-11T10:05:32Z",
+  "updated_at": "2026-06-11T10:05:32Z",
+  "completed_at": null,
+  "stages": {
+    "classification": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "planning": {
+      "status": "completed",
+      "started_at": "2026-06-11T10:05:32Z",
+      "completed_at": "2026-06-11T10:05:32Z",
+      "attempt": 1,
+      "artifacts": [
+        "plan.json"
+      ],
+      "error": null
+    },
+    "architecture_review": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "qa_plan": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "implementation": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "test_generation": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "validation": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "security_gate": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "confidence_gate": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "review": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "artifacts": {
+    "plan.json": {
+      "kind": "json",
+      "path": "runs/test-20260611-100532/plan.json",
+      "attached_at": "2026-06-11T10:05:32Z"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/test-20260611-100532/run-context.json",
+      "attached_at": "2026-06-11T10:05:32Z"
+    }
+  },
+  "metadata": {}
+}

@@ -13,38 +13,16 @@ def read_validation_result(run_dir):
 
 
 def read_post_run_review(run_dir):
-    path = Path(run_dir) / "post-run-review.md"
+    path = Path(run_dir) / "post-run-review.json"
 
-    if not path.exists():
-        return {"unexpected": [], "missing": []}
+    if path.exists():
+        data = json.loads(path.read_text())
+        return {
+            "unexpected": data.get("unexpected", []),
+            "missing": data.get("missing", []),
+        }
 
-    text = path.read_text().splitlines()
-    current = None
-    unexpected = []
-    missing = []
-
-    for line in text:
-        line = line.strip()
-
-        if line == "## Unexpected Changes":
-            current = "unexpected"
-            continue
-
-        if line == "## Expected But Not Changed":
-            current = "missing"
-            continue
-
-        if line.startswith("## "):
-            current = None
-            continue
-
-        if line.startswith("- "):
-            if current == "unexpected":
-                unexpected.append(line[2:])
-            elif current == "missing":
-                missing.append(line[2:])
-
-    return {"unexpected": unexpected, "missing": missing}
+    return {"unexpected": [], "missing": []}
 
 
 def evaluate_confidence(run_dir):

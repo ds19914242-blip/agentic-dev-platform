@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 
@@ -22,6 +23,24 @@ def read_file(run_dir, name):
     if not path.exists():
         return ""
     return path.read_text(errors="ignore")
+
+
+def read_security_json(run_dir):
+    path = Path(run_dir) / "security-gate.json"
+
+    if not path.exists():
+        return {}
+
+    return json.loads(path.read_text())
+
+
+def read_confidence_json(run_dir):
+    path = Path(run_dir) / "confidence.json"
+
+    if not path.exists():
+        return {}
+
+    return json.loads(path.read_text())
 
 
 def decide_after_planning(run_dir):
@@ -49,44 +68,60 @@ def decide_after_planning(run_dir):
 
 
 def decide_after_security(run_dir):
-    security = read_file(run_dir, "security-gate.md").lower()
+    security = read_security_json(run_dir)
+    status = security.get("status", "unknown")
 
-    if "needs_approval" in security:
+    if status in {"blocked", "needs_approval"}:
         return {
             "decision": "stop",
-            "status": "needs_security_approval",
-            "reason": "Security gate requires approval.",
+            "status": "needs_security_approval" if status == "needs_approval" else "security_blocked",
+            "reason": security.get("reason", "Security gate did not pass."),
+        }
+
+    if status == "passed_with_warning":
+        return {
+            "decision": "continue",
+            "status": "security_warning",
+            "reason": security.get("reason", "Security gate passed with warning."),
+        }
+
+    if status == "passed":
+        return {
+            "decision": "continue",
+            "status": "security_ok",
+            "reason": "Security gate passed.",
         }
 
     return {
-        "decision": "continue",
-        "status": "security_ok",
-        "reason": "Security gate passed.",
+        "decision": "review",
+        "status": "security_unknown",
+        "reason": "Security gate result is missing or unknown.",
     }
 
 
 def decide_after_confidence(run_dir):
-    confidence = read_file(run_dir, "confidence.md").lower()
+    confidence = read_confidence_json(run_dir)
+    status = confidence.get("status", "unknown")
 
-    if "## status\n\nfailed" in confidence:
+    if status == "failed":
         return {
             "decision": "stop",
             "status": "confidence_failed",
-            "reason": "Confidence gate failed.",
+            "reason": confidence.get("reason", "Confidence gate failed."),
         }
 
-    if "## status\n\nneeds_review" in confidence:
+    if status == "needs_review":
         return {
             "decision": "review",
             "status": "needs_review",
-            "reason": "Confidence gate requires human review.",
+            "reason": confidence.get("reason", "Confidence gate requires human review."),
         }
 
-    if "## status\n\npassed" in confidence:
+    if status == "passed":
         return {
             "decision": "create_pr",
             "status": "ready_for_pr",
-            "reason": "Confidence gate passed.",
+            "reason": confidence.get("reason", "Confidence gate passed."),
         }
 
     return {
@@ -97,9 +132,11 @@ def decide_after_confidence(run_dir):
 
 
 def write_decision(run_dir, stage, result):
-    path = Path(run_dir) / f"decision-{stage}.md"
+    json_path = Path(run_dir) / f"decision-{stage}.json"
+    json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
 
-    path.write_text(f"""# Run Decision
+    md_path = Path(run_dir) / f"decision-{stage}.md"
+    md_path.write_text(f"""# Run Decision
 
 ## Stage
 
@@ -118,4 +155,4 @@ def write_decision(run_dir, stage, result):
 {result["reason"]}
 """)
 
-    return path
+    return md_path

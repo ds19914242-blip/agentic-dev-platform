@@ -1,0 +1,14 @@
+{
+  "status": "needs_approval",
+  "reason": "High-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/reports/page.tsx"
+    ],
+    "medium": [],
+    "high": [
+      "app/feedback/page.tsx"
+    ],
+    "critical": []
+  }
+}

@@ -2,6 +2,8 @@ import json
 import subprocess
 from pathlib import Path
 
+from orchestrator.run_status import append_event
+
 
 def run_validator(command, cwd):
     try:
@@ -104,5 +106,13 @@ def write_validation_report(run_dir, results):
 
     md_path = Path(run_dir) / "validation.md"
     md_path.write_text("\n".join(lines))
+
+    try:
+        append_event(
+            run_dir,
+            f"Validation report written: {'passed' if all_required_passed else 'failed'}",
+        )
+    except Exception:
+        pass
 
     return md_path, all_required_passed
