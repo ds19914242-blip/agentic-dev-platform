@@ -48,11 +48,15 @@ def main():
             "type": run_json.get("run_type", "unknown"),
             "model_calls": int(metrics.get("model_calls", 0) or 0),
             "duration_seconds": int(metrics.get("duration_seconds", 0) or 0),
+            "prompt_chars": int(metrics.get("prompt_chars", 0) or 0),
+            "response_chars": int(metrics.get("response_chars", 0) or 0),
         })
 
     total_runs = len(rows)
     total_calls = sum(row["model_calls"] for row in rows)
     total_duration = sum(row["duration_seconds"] for row in rows)
+    total_prompt_chars = sum(row["prompt_chars"] for row in rows)
+    total_response_chars = sum(row["response_chars"] for row in rows)
 
     avg_calls = round(total_calls / total_runs, 2) if total_runs else 0
     avg_duration = round(total_duration / total_runs, 2) if total_runs else 0
@@ -63,6 +67,8 @@ def main():
     print(f"Total model calls: {total_calls}")
     print(f"Average model calls per run: {avg_calls}")
     print(f"Average duration seconds: {avg_duration}")
+    print(f"Total prompt chars: {total_prompt_chars}")
+    print(f"Total response chars: {total_response_chars}")
     print()
 
     print("Top 10 runs by model calls")

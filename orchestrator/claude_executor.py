@@ -1,4 +1,5 @@
 import subprocess
+import json
 import time
 from orchestrator.llm_metrics import increment_model_calls
 from pathlib import Path
@@ -48,6 +49,32 @@ def run_claude(repo_path, prompt, allow_writes=False, max_turns=15, retries=2):
         last_error = error
 
         if result.returncode == 0:
+            run_dir = Path.cwd()
+
+            metrics_run_dir = None
+            import os
+
+            if os.environ.get("AGENTIC_RUN_DIR"):
+                metrics_run_dir = Path(os.environ["AGENTIC_RUN_DIR"])
+
+            if metrics_run_dir:
+                metrics_file = metrics_run_dir / "metrics.json"
+
+                try:
+                    if metrics_file.exists():
+                        metrics = json.loads(metrics_file.read_text())
+                    else:
+                        metrics = {}
+
+                    metrics["prompt_chars"] = int(metrics.get("prompt_chars", 0)) + len(prompt)
+                    metrics["response_chars"] = int(metrics.get("response_chars", 0)) + len(output)
+
+                    metrics_file.write_text(
+                        json.dumps(metrics, indent=2, ensure_ascii=False)
+                    )
+                except Exception:
+                    pass
+
             return output
 
         if "Reached max turns" in output:
