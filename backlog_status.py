@@ -1,4 +1,5 @@
 from pathlib import Path
+import sys
 
 
 STATUSES = ["merged", "pr_created", "in_progress", "blocked", "todo"]
@@ -29,6 +30,7 @@ def task_title(task_path):
 
     for line in text.splitlines():
         line = line.strip()
+
         if line.startswith("### Task "):
             return line.replace("### ", "")
 
@@ -41,6 +43,7 @@ def epic_progress(epic_path):
 
     for task in tasks:
         status = get_status(task)
+
         if status not in grouped:
             status = "todo"
 
@@ -54,6 +57,28 @@ def epic_progress(epic_path):
         "total": len(tasks),
         "grouped": grouped,
     }
+
+
+def print_epic_summary(epic_path):
+    progress = epic_progress(epic_path)
+    grouped = progress["grouped"]
+
+    total = progress["total"]
+    merged = len(grouped["merged"])
+    pr_created = len(grouped["pr_created"])
+    in_progress = len(grouped["in_progress"])
+    blocked = len(grouped["blocked"])
+    todo = len(grouped["todo"])
+
+    percent = round((merged / total) * 100) if total else 0
+
+    print(f"Epic: {epic_path.name}")
+    print(f"Progress: {merged}/{total} merged ({percent}%)")
+    print(f"PR created: {pr_created}")
+    print(f"In progress: {in_progress}")
+    print(f"Blocked: {blocked}")
+    print(f"Todo: {todo}")
+    print()
 
 
 def print_group(title, icon, items):
@@ -72,20 +97,11 @@ def print_group(title, icon, items):
     print()
 
 
-def print_epic(epic_path):
+def print_epic_detail(epic_path):
     progress = epic_progress(epic_path)
-
     grouped = progress["grouped"]
-    done = len(grouped["merged"])
-    total = progress["total"]
-    active = len(grouped["pr_created"]) + len(grouped["in_progress"])
-    percent = round((done / total) * 100) if total else 0
 
-    print()
-    print(f"Epic: {epic_path.name}")
-    print(f"Progress: {done}/{total} merged ({percent}%)")
-    print(f"Active PR / In progress: {active}")
-    print()
+    print_epic_summary(epic_path)
 
     print_group("MERGED", "✓", grouped["merged"])
     print_group("PR CREATED", "◉", grouped["pr_created"])
@@ -94,25 +110,41 @@ def print_epic(epic_path):
     print_group("TODO", "□", grouped["todo"])
 
 
-def main():
+def list_epics():
     backlog = Path("backlog")
-    epics = sorted(p for p in backlog.iterdir() if p.is_dir())
+
+    if not backlog.exists():
+        return []
+
+    return sorted(p for p in backlog.iterdir() if p.is_dir())
+
+
+def main():
+    epics = list_epics()
 
     if not epics:
         print("No backlog epics found.")
         return
 
-    print("Available Epics")
-    print("----------------")
+    args = sys.argv[1:]
 
-    for i, epic in enumerate(epics, start=1):
-        print(f"[{i}] {epic.name}")
+    if "--all" in args:
+        for epic in epics:
+            print_epic_summary(epic)
+        return
 
-    default = "1" if len(epics) == 1 else ""
-    choice = input(f"\nSelect epic [{default}]: ").strip() or default
+    if "--detail" in args:
+        index = 0
 
-    epic = epics[int(choice) - 1]
-    print_epic(epic)
+        for arg in args:
+            if arg.isdigit():
+                index = int(arg) - 1
+
+        print_epic_detail(epics[index])
+        return
+
+    for epic in epics:
+        print_epic_summary(epic)
 
 
 if __name__ == "__main__":
