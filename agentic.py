@@ -13,7 +13,7 @@ COMMANDS = {
     "dag": "backlog_dag.py",
     "ready": "backlog_ready.py",
     "schedule": "backlog_scheduler.py",
-    "parallel": "backlog_parallel.py",
+    "parallel": "backlog_parallel_worktree.py",
     "memory": "memory_report.py",
 }
 

@@ -1,3 +1,5 @@
+Status: in_progress
+
 ### Task 009 — Translate SummaryCards component
 
 **Goal:** Translate the hardcoded card labels ("Collected", "Selected", "Potentially Relevant", "Trends") to Russian.

@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 011 — Translate ExecutiveSummary and report section headers
 
 **Goal:** Translate the "Executive Summary" heading and any other static section labels in the executive summary view.

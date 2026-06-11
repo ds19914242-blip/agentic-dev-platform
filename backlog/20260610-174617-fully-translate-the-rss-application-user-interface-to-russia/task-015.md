@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 015 — Finish home page (page.tsx) remaining English
 
 **Goal:** Translate the remaining English intro/hero/inline text on the home page (form is mostly Russian already).

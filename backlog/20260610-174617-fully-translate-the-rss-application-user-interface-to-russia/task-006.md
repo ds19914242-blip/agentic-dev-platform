@@ -1,3 +1,6 @@
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/11
+Status: pr_created
+
 ### Task 006 — Translate Reading List page
 
 **Goal:** Translate the reading-list title, filter buttons, and empty-state messages to Russian.

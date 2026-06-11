@@ -1,0 +1,55 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 006 — Translate Reading List page",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTranslate all user-facing English copy on the Reading List page (`app/reading-list/page.tsx`) to Russian, matching the established pattern from prior epic tasks (Dashboard, Hero, NavBar): replace display strings only, leaving all code, logic, props, API endpoints, and `className` values untouched. The listed `app/api/**` routes are part of the affected-files set but serve JSON to the client and contain no end-user UI text; they should be inspected and left unchanged unless a route returns a string surfaced directly in the UI.\n\n## Files To Inspect\n\n- `app/reading-list/page.tsx` — the only file requiring edits; contains all the UI strings.\n- `app/dashboard/page.tsx` (commit `51eb9ef`) — reference for translation tone/terminology (e.g. \"Избранное\", \"(без названия)\", `toLocaleString(\"ru-RU\")`).\n- `app/api/favorites/route.ts` & `app/api/favorites/[id]/route.ts` — confirm responses are JSON only (no user-visible message strings to translate); verify GET/PATCH/DELETE contract used by the page is unchanged.\n- The remaining `app/api/**` routes in the affected list — quick scan to confirm no UI-facing strings; expected to need no changes.\n\n## Implementation Steps\n\n1. In `app/reading-list/page.tsx`, translate the header block:\n   - `\"Reading List\"` → `\"Список для чтения\"`\n   - `\"Articles you saved for later.\"` → `\"Статьи, сохранённые на потом.\"`\n2. Filter chips (line 55): `\"All\"` → `\"Все\"`, `\"Unread\"` → `\"Непрочитанные\"`, `\"Read\"` → `\"Прочитанные\"`. Keep the filter keys (`\"all\" | \"unread\" | \"read\"`) and `setFilter` logic unchanged.\n3. Empty/zero states (lines 63–67):\n   - `\"Nothing saved yet — use ⭐ Save for Later on report articles.\"` → `\"Пока ничего не сохранено — используйте ⭐ «Сохранить на потом» в статьях отчёта.\"` (reuse the exact Dashboard wording for consistency).\n   - `\"Nothing for this filter.\"` → `\"Ничего нет для этого фильтра.\"`\n4. Badges: keep `\"Telegram\"` as-is; `\"Read\"` badge (line 81) → `\"Прочитано\"`.\n5. Card content: `\"(untitled)\"` → `\"(без названия)\"` (matches Dashboard); in the meta line (line 91) translate `saved` → `сохранено` (`{f.source} · сохранено {…}`); keep the existing `toLocaleDateString(\"ru-RU\")`.\n6. Action bar: `\"Open Source ↗\"` → `\"Открыть источник ↗\"`; `\"Mark unread\"` → `\"Отметить непрочитанным\"` and `\"Mark as Read\"` → `\"Отметить прочитанным\"`; `\"Remove\"` → `\"Удалить\"`.\n7. Toast on removal (line 31): `toast(\"Removed\", \"success\")` → `toast(\"Удалено\", \"success\")`. Keep the `\"success\"` severity key unchanged.\n8. Leave all imports, hooks, fetch calls, `className`s, and the `FavoriteArticle` typing untouched.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or project typecheck) to confirm no type/JSX breakage.\n- `npm run lint` if configured.\n- `npm run build` / `next build` to confirm the page compiles.\n- Manual/visual check of `/reading-list`: verify all three filter chips, both empty states (no items vs. filtered-empty), the read/unread badge, action buttons, the remove toast, and the date line render in Russian and still function.\n- Confirm favorites API calls (GET/PATCH/DELETE) still work end-to-end after edits.\n\n## Risks\n\n- **Scope creep into API routes:** The affected-files list includes many `app/api/**` routes that have no UI strings. Editing them risks breaking JSON contracts for no benefit — limit changes to `page.tsx`.\n- **Filter-key coupling:** The chip labels are derived from the literal union `[\"all\",\"unread\",\"read\"]`. Only the displayed label text (the ternary on line 55) should change; altering the keys would break filtering logic.\n- **Terminology consistency:** Use the same Russian terms already chosen in Dashboard (\"Избранное\", \"(без названия)\", \"Сохранить на потом\") to avoid drift across pages.\n- **Locale already Russian:** Date formatting already uses `\"ru-RU\"`; no change needed there — avoid redundant edits.\n",
+  "affected_files": [
+    "app/reading-list/page.tsx",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/dashboard/page.tsx",
+        "app/reading-list/page.tsx"
+      ],
+      "medium": [
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "replan_attempts": 1,
+  "review": {
+    "requirements_covered": false,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [
+      "app/reading-list/page.tsx was not modified at all — no working-tree diff and no commit for it. The file still contains all original English strings (line 44 'Reading List', line 45 'Articles you saved for later.', line 55 'All'/'Unread'/'Read', line 31 toast 'Removed', lines 65-66 empty states, line 80 'Read' badge, line 85 '(untitled)', line 91 'saved', line 102 'Open Source ↗', line 109 'Mark unread'/'Mark as Read', line 115 'Remove'). None of the 9 claimed translations exist in the codebase.",
+      "The implementation response is inaccurate: it reports completed string swaps that are not present in the file. Typecheck/build passing does not indicate the translation was applied, since valid English also compiles."
+    ],
+    "summary": "Task 006 was not implemented. The only working-tree change is the pre-existing app/settings/page.tsx (unrelated to this task). The target file app/reading-list/page.tsx remains fully in English despite the implementation response claiming the swaps were made. requirements_covered=false because the feature is verifiably absent from the code."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

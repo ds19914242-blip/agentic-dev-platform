@@ -1,3 +1,7 @@
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/14
+Run: feature-20260611-153323
+Status: pr_created
+
 ### Task 017 — Finish Profiles page remaining English labels
 
 **Goal:** Translate the leftover English keyword-editor labels ("Include keywords", "Exclude keywords") on the profiles page.

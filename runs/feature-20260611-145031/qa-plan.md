@@ -1,0 +1,176 @@
+# QA Plan
+
+## Feature Request
+
+Epic task: Task 004 — Translate Dashboard page
+
+## Based On Plan
+
+I now have enough context to produce the plan. The Dashboard page is fully English; the report-rendering `Dashboard.tsx`/`StatsPanel.tsx` are partly translated already; API routes carry user-facing JSON error strings (one, login, is already Russian).
+
+# Implementation Plan
+
+## Summary
+
+Translate all user-facing text on the Dashboard page to Russian, matching the established pattern from Tasks 001/003 (NavBar, Hero) and the already-Russian report components. The primary surface is `app/dashboard/page.tsx` (currently 100% English). Secondary cleanup: finish translating the leftover English strings in `components/Dashboard.tsx` and `components/StatsPanel.tsx`, and translate the user-facing error messages returned by the listed API routes for consistency. No logic, data shapes, or `href`/locale formatting (`ru-RU`) changes.
+
+## Files To Inspect
+
+- `app/dashboard/page.tsx` — main target; eyebrow, headings, quick-action labels, overview card labels, section headers, empty states, button labels.
+- `components/Dashboard.tsx` — leftover English: "Intelligence Report", "Collected/Selected/Potentially Relevant/Trends/Generated", "Potentially Relevant" heading + description, four `ChartCard` titles.
+- `components/StatsPanel.tsx` — section headings "Processing" / "Performance" (rows already Russian).
+- `lib/dashboard.ts` — types only; confirm no user-facing strings (none expected — type definitions).
+- API routes (`app/api/overview`, `analyze`, `auth/login`, `auth/logout`, `benchmark`, `favorites`, `favorites/[id]`, `feedback`) — inspect each for `error`/message strings returned to the client; translate user-facing ones (login already Russian, use as tone reference).
+
+## Implementation Steps
+
+1. **`app/dashboard/page.tsx`** — translate:
+   - Eyebrow `Workspace` → e.g. `Рабочее пространство`; `h1` "Your intelligence dashboard" (keep gradient `<span>` split, translate both parts).
+   - Quick actions: `Run Analysis`, `Add Source`, `Create Collection`.
+   - Overview: `Overview`, card labels `Sources`/`Collections`/`Reports`/`Favorites`.
+   - Latest Reports: `Latest Reports`, `View all →`, empty state "No reports yet. Run your first analysis →", inline `selected`/`trends` words in the meta line, `Open`, `Export`.
+   - Recent Saved / Recent Activity: headings, empty states ("Nothing saved yet — use ⭐ Save for Later…", "No analysis runs yet."), `(untitled)` fallback.
+   - Leave `href`, icon glyphs, and `toLocaleString("ru-RU")` untouched.
+2. **`components/Dashboard.tsx`** — translate the remaining English: header eyebrow/meta line labels, "Generated:", "Potentially Relevant" heading + paragraph, and the four `ChartCard` titles. Keep already-Russian strings as-is.
+3. **`components/StatsPanel.tsx`** — translate the two section headings `Processing` / `Performance`.
+4. **API routes** — translate user-facing `NextResponse.json({ error: ... })` messages to Russian (e.g. `analyze`: "Upload not found…", "Missing uploadId."; `feedback`: "Invalid vote." etc.). Keep server-config/developer errors (e.g. "ANTHROPIC_API_KEY is not set") per the project's existing convention — match whatever the login route's precedent implies (it translated the user-credential error but these are dev errors). Confirm convention before mass-translating; if uncertain, limit API changes to clearly end-user-visible validation messages.
+5. Ensure no JSX structure, className, or key changes; only text node / string-literal content.
+
+## Validation Steps
+
+- `npx tsc --noEmit` (or project's typecheck script) — confirm no type errors introduced.
+- `npm run lint` if configured.
+- `npm run build` / `next build` to confirm pages compile.
+- Manual: run dev server, load `/dashboard`, verify all visible strings are Russian and layout/gradient text intact; trigger an empty state if feasible.
+- Grep `app/dashboard/page.tsx` for residual English words to confirm full coverage.
+
+## Risks
+
+- **Scope ambiguity**: the affected-files list pulls in many API routes whose error strings are largely developer-facing. Translating internal/dev errors may diverge from project convention — keep those changes minimal and aligned with the login-route precedent.
+- **Gradient/split text**: `h1` splits a phrase across a `<span className="gradient-text">`; translation must preserve the two-part structure and read naturally in Russian word order.
+- **Locale formatting** already uses `ru-RU`; do not alter date/number formatting logic.
+- **Shared component**: `components/Dashboard.tsx` and `StatsPanel.tsx` render the *report* view (used by `/reports`, `/run/[id]`), not the dashboard landing page — translating them affects those pages too. This is consistent with the broader translation effort but should be a deliberate, noted change.
+- Encoding: ensure UTF-8 Cyrillic is written correctly (no mojibake) — verify with a post-edit read.
+
+
+## Based On Architecture Review
+
+# Architecture Review
+
+## Feature Request
+
+Epic task: Task 004 — Translate Dashboard page
+
+## Planner Input
+
+I now have enough context to produce the plan. The Dashboard page is fully English; the report-rendering `Dashboard.tsx`/`StatsPanel.tsx` are partly translated already; API routes carry user-facing JSON error strings (one, login, is already Russian).
+
+# Implementation Plan
+
+## Summary
+
+Translate all user-facing text on the Dashboard page to Russian, matching the established pattern from Tasks 001/003 (NavBar, Hero) and the already-Russian report components. The primary surface is `app/dashboard/page.tsx` (currently 100% English). Secondary cleanup: finish translating the leftover English strings in `components/Dashboard.tsx` and `components/StatsPanel.tsx`, and translate the user-facing error messages returned by the listed API routes for consistency. No logic, data shapes, or `href`/locale formatting (`ru-RU`) changes.
+
+## Files To Inspect
+
+- `app/dashboard/page.tsx` — main target; eyebrow, headings, quick-action labels, overview card labels, section headers, empty states, button labels.
+- `components/Dashboard.tsx` — leftover English: "Intelligence Report", "Collected/Selected/Potentially Relevant/Trends/Generated", "Potentially Relevant" heading + description, four `ChartCard` titles.
+- `components/StatsPanel.tsx` — section headings "Processing" / "Performance" (rows already Russian).
+- `lib/dashboard.ts` — types only; confirm no user-facing strings (none expected — type definitions).
+- API routes (`app/api/overview`, `analyze`, `auth/login`, `auth/logout`, `benchmark`, `favorites`, `favorites/[id]`, `feedback`) — inspect each for `error`/message strings returned to the client; translate user-facing ones (login already Russian, use as tone reference).
+
+## Implementation Steps
+
+1. **`app/dashboard/page.tsx`** — translate:
+   - Eyebrow `Workspace` → e.g. `Рабочее пространство`; `h1` "Your intelligence dashboard" (keep gradient `<span>` split, translate both parts).
+   - Quick actions: `Run Analysis`, `Add Source`, `Create Collection`.
+   - Overview: `Overview`, card labels `Sources`/`Collections`/`Reports`/`Favorites`.
+   - Latest Reports: `Latest Reports`, `View all →`, empty state "No reports yet. Run your first analysis →", inline `selected`/`trends` words in the meta line, `Open`, `Export`.
+   - Recent Saved / Recent Activity: headings, empty states ("Nothing saved yet — use ⭐ Save for Later…", "No analysis runs yet."), `(untitled)` fallback.
+   - Leave `href`, icon glyphs, and `toLocaleString("ru-RU")` untouched.
+2. **`components/Dashboard.tsx`** — translate the remaining English: header eyebrow/meta line labels, "Generated:", "Potentially Relevant" heading + paragraph, and the four `ChartCard` titles. Keep already-Russian strings as-is.
+3. **`components/StatsPanel.tsx`** — translate the two section headings `Processing` / `Performance`.
+4. **API routes** — translate user-facing `NextResponse.json({ error: ... })` messages to Russian (e.g. `analyze`: "Upload not found…", "Missing uploadId."; `feedback`: "Invalid vote." etc.). Keep server-config/developer errors (e.g. "ANTHROPIC_API_KEY is not set") per the project's existing convention — match whatever the login route's precedent implies (it translated the user-credential error but these are dev errors). Confirm convention before mass-translating; if uncertain, limit API changes to clearly end-user-visible validation messages.
+5. Ensure no JSX structure, className, or key changes; only text node / string-literal content.
+
+## Validation Steps
+
+- `npx tsc --noEmit` (or project's typecheck script) — confirm no type errors introduced.
+- `npm run lint` if configured.
+- `npm run build` / `next build` to confirm pages compile.
+- Manual: run dev server, load `/dashboard`, verify all visible strings are Russian and layout/gradient text intact; trigger an empty state if feasible.
+- Grep `app/dashboard/page.tsx` for residual English words to confirm full coverage.
+
+## Risks
+
+- **Scope ambiguity**: the affected-files list pulls in many API routes whose error strings are largely developer-facing. Translating internal/dev errors may diverge from project convention — keep those changes minimal and aligned with the login-route precedent.
+- **Gradient/split text**: `h1` splits a phrase across a `<span className="gradient-text">`; translation must preserve the two-part structure and read naturally in Russian word order.
+- **Locale formatting** already uses `ru-RU`; do not alter date/number formatting logic.
+- **Shared component**: `components/Dashboard.tsx` and `StatsPanel.tsx` render the *report* view (used by `/reports`, `/run/[id]`), not the dashboard landing page — translating them affects those pages too. This is consistent with the broader translation effort but should be a deliberate, noted change.
+- Encoding: ensure UTF-8 Cyrillic is written correctly (no mojibake) — verify with a post-edit read.
+
+
+## Review Focus
+
+- Does the plan fit existing architecture?
+- Which modules are affected?
+- Are there unnecessary risky changes?
+- Are auth, billing, secrets, DB schema or deployment config affected?
+
+## Affected Areas
+
+- Other: app/dashboard/page.tsx
+- API route: app/api/overview/route.ts
+- UI component: components/Dashboard.tsx
+- Library/module: lib/dashboard.ts
+- UI component: components/StatsPanel.tsx
+- API route: app/api/analyze/route.ts
+- API route: app/api/auth/login/route.ts
+- API route: app/api/auth/logout/route.ts
+- API route: app/api/benchmark/route.ts
+- API route: app/api/favorites/[id]/route.ts
+- API route: app/api/favorites/route.ts
+- API route: app/api/feedback/route.ts
+
+## Architecture Recommendation
+
+Reuse existing modules where possible.
+Avoid new infrastructure unless explicitly required.
+Keep implementation small and reversible.
+
+
+## Validation Goals
+
+- Confirm the feature works as requested.
+- Confirm the implementation follows the plan.
+- Confirm architecture risks were addressed.
+- Confirm existing flows still work.
+- Confirm no unsafe areas were modified.
+
+## Suggested Checks
+
+- Run typecheck.
+- Review git diff.
+- Manually verify the changed UI/API flow.
+- Check error state if API/LLM call fails.
+
+## Affected Files To Review
+
+- app/dashboard/page.tsx
+- app/api/overview/route.ts
+- components/Dashboard.tsx
+- lib/dashboard.ts
+- components/StatsPanel.tsx
+- app/api/analyze/route.ts
+- app/api/auth/login/route.ts
+- app/api/auth/logout/route.ts
+- app/api/benchmark/route.ts
+- app/api/favorites/[id]/route.ts
+- app/api/favorites/route.ts
+- app/api/feedback/route.ts
+
+## Required Command
+
+```bash
+npx tsc --noEmit
+```

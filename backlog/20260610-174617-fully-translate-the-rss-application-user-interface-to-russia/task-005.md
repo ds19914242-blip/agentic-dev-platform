@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 005 — Translate Settings page
 
 **Goal:** Translate all section titles, descriptions, option labels, and buttons on the settings page.

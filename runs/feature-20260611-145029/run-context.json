@@ -1,0 +1,50 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 001 — Translate NavBar navigation links",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTask 001 calls for translating the **NavBar navigation links** (the user-facing labels in `components/NavBar.tsx`) into Russian. On inspection, the navigation link labels in `components/NavBar.tsx` are **already in Russian** (`Панель`, `Источники`, `Коллекции`, `Запуск анализа`, `Отчёты`, `Шаблоны`, `Обратная связь`, `Список чтения`, `Настройки`), and the logout button reads `Выйти`. The git log confirms a commit `9fcb163 Epic task: Task 001 — Translate NavBar navigation links` already landed.\n\nSo this task is effectively complete. The plan below is a verification-and-polish pass to confirm nothing English remains in the nav links and that wording/consistency is correct, rather than a from-scratch translation.\n\nNote: the \"Affected Files\" list (all `app/api/**` route handlers) is **not relevant** to this task — those are backend JSON endpoints with no NavBar UI strings. The only file that matters is `components/NavBar.tsx`.\n\n## Files To Inspect\n\n- `components/NavBar.tsx` — the sole file containing the navigation link labels (`LINKS` array), brand text, and logout button. Primary target.\n- `app/layout.tsx` — confirm where `<NavBar />` is rendered and that `lang` attribute / metadata is consistent (optional context).\n- `components/Footer.tsx` — adjacent component, only to confirm translation consistency/tone with the rest of the chrome (reference only).\n\n## Implementation Steps\n\n1. Open `components/NavBar.tsx` and review the `LINKS` array (lines 6–16). Confirm each `label` is the intended Russian translation:\n   - `/dashboard` → \"Панель\"\n   - `/sources` → \"Источники\"\n   - `/collections` → \"Коллекции\"\n   - `/` → \"Запуск анализа\"\n   - `/reports` → \"Отчёты\"\n   - `/templates` → \"Шаблоны\"\n   - `/feedback` → \"Обратная связь\"\n   - `/reading-list` → \"Список чтения\"\n   - `/settings` → \"Настройки\"\n2. Verify the logout button label `Выйти` (line 66) is translated.\n3. Decide on the brand string `RSS Agent Lab` (line 39) — by convention product/brand names are **left untranslated**; keep as-is unless the epic explicitly requires it.\n4. If any label is found still in English or has a wording inconsistency, update only the `label` value(s) in the `LINKS` array (and/or the logout text). Do **not** change `href` values, the `EXACT` set, routing logic, or class names.\n5. Leave all `app/api/**` route files untouched.\n\n## Validation Steps\n\n- Run `npm run lint` (or the project's lint script in `package.json`) to confirm no TypeScript/JSX errors introduced.\n- Run `npm run build` / `next build` to ensure the component still compiles.\n- Start the dev server (`npm run dev`) and visually confirm the NavBar renders the Russian labels on a wide (`lg`) viewport, active-state highlighting still works per route, and the logout button still triggers `/api/auth/logout` and redirects to `/login`.\n- Grep the file to confirm no residual English navigation labels remain.\n\n## Risks\n\n- **Task already done** — the work may be a no-op; avoid introducing spurious diffs. If everything is already translated correctly, report completion rather than forcing changes.\n- **Routing coupling** — `href` values and the `EXACT` set drive active-link detection; editing them while \"translating\" would break navigation. Only touch display strings.\n- **Brand-name ambiguity** — translating `RSS Agent Lab` could be undesirable; confirm scope before changing it.\n- **Responsive visibility** — the `<nav>` is `hidden ... lg:flex`, so labels are not visible below the `lg` breakpoint; visual validation must use a wide viewport.\n- **Irrelevant affected-files list** — the provided API-route file list could mislead toward unnecessary edits; ignore it for this UI task.\n",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/layout.tsx",
+        "components/Footer.tsx",
+        "components/NavBar.tsx",
+        "package.json"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "Task 001 (translate NavBar navigation links to Russian) is satisfied. components/NavBar.tsx already has all nav links translated (Панель, Источники, Коллекции, Запуск анализа, Отчёты, Шаблоны, Обратная связь, Список чтения, Настройки) and the logout button (Выйти), merged in commit 9fcb163. The implementation correctly made no changes, recognizing the work was already complete; the only remaining English string is the brand name 'RSS Agent Lab', which is a product name and not a navigation link. The implementer rightly declined to edit the inconsistent 'Affected Files' list (backend API routes including auth), which render no nav text. typecheck and build both pass."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

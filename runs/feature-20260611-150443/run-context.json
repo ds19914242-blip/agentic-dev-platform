@@ -1,0 +1,34 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 008 — Translate Feedback page",
+  "plan": "I have enough context. The established pattern (from prior \"Translate\" commits) is translating user-facing English UI strings to Russian in the page's `.tsx` file only — the API routes and analysis files in the affected list are not touched.\n\n# Implementation Plan\n\n## Summary\n\nTranslate all user-facing English strings on the Feedback page (`app/feedback/page.tsx`) to Russian, matching the established pattern from prior translation tasks (e.g. Task 006, which edited only the page's `.tsx` and left strings like the `ru-RU` date locale and class names intact). No API routes, analysis files, or logic are modified — only display text. The page already has one Russian helper line; this completes the localization.\n\n## Files To Inspect\n\n- `app/feedback/page.tsx` — the only file requiring edits (already read; all target strings identified).\n- Reference only (no changes): `app/settings/page.tsx` and prior commits `4764b69`/`51eb9ef` for translation tone/terminology consistency (e.g. \"Релевантно\", \"Не релевантно\", \"Пропущено, но релевантно\").\n\n## Implementation Steps\n\n1. **`VOTE_LABEL` record** (lines 7–11): translate values to Russian — `relevant → \"Релевантно\"`, `not_relevant → \"Не релевантно\"`, `missed_but_relevant → \"Пропущено, но релевантно\"` (reuse terminology already established in the Settings translation for consistency).\n2. **Header** (line 40): `\"Feedback Center\"` → `\"Центр отзывов\"`.\n3. **Header description** (lines 41–43): translate, keeping the Settings reference, e.g. `\"Ваши оценки релевантности влияют на будущее ранжирование (см. Настройки → Влияние отзывов).\"` — note \"Settings → Feedback Influence\" should match the already-translated Settings page labels (\"Настройки\" / \"Влияние отзывов\").\n4. **Redundant Russian sub-line** (lines 44–46): leave as-is or fold into the description; recommend keeping it since it's already Russian and consistent.\n5. **`KpiCard` labels** (lines 50–56): `\"Relevant\"` → `\"Релевантно\"`, `\"Not Relevant\"` → `\"Не релевантно\"`, `\"Missed But Relevant\"` → `\"Пропущено, но релевантно\"`.\n6. **Filter \"All\" button** (line 66): `\"All\"` → `\"Все\"` (the other filter buttons already render via the translated `VOTE_LABEL`).\n7. **Empty states** (lines 74–76): `\"No feedback yet — vote on articles in a report.\"` → `\"Пока нет отзывов — оцените статьи в отчёте.\"`; `\"Nothing for this filter.\"` → `\"Нет данных для этого фильтра.\"`.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or the project's typecheck) — confirm no type errors; translations are string-value-only so types are unaffected.\n- `npm run lint` if configured.\n- Visual: run the app, open `/feedback`, verify header, KPI cards, filter chips (including \"Все\"), and both empty-state messages render in Russian; confirm filtering still works (logic untouched).\n- Confirm `git diff` touches only `app/feedback/page.tsx` and contains no logic/key changes (the `FeedbackVote` keys `relevant`/`not_relevant`/`missed_but_relevant` must remain unchanged — only their display labels change).\n\n## Risks\n\n- **Low overall.** Only display strings change.\n- **Key vs. label confusion**: the union keys (`relevant`, etc.) are also used as data values and `Record` keys — must not be translated, only the mapped label values. Translating a key would break vote matching and styling.\n- **Terminology drift**: ensure Russian terms match the already-translated Settings page so the cross-reference in the header description stays coherent.\n- **Scope creep**: the affected-files list includes many API routes that contain no user-facing UI strings; per the prior task pattern these should not be edited. Touching them risks unintended behavior changes.\n",
+  "affected_files": [
+    "app/api/feedback/route.ts",
+    "app/feedback/page.tsx",
+    "src/analysis/feedbackRanking.ts",
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts"
+  ],
+  "security": {
+    "status": "passed",
+    "reason": "Only low-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/feedback/page.tsx",
+        "app/settings/page.tsx"
+      ],
+      "medium": [],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": true
+}

@@ -1,0 +1,16 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/dashboard/page.tsx",
+      "components/Dashboard.tsx",
+      "components/StatsPanel.tsx"
+    ],
+    "medium": [
+      "lib/dashboard.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

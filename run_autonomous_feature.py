@@ -40,6 +40,7 @@ from orchestrator.planner_selected_files import extract_files_from_plan, write_p
 from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 
 import subprocess
+import os
 
 
 def git_status(repo_path):
@@ -60,6 +61,11 @@ def main():
 
     product = load_product_config(product_name)
     repo_path = product["repo_path"]
+
+    repo_path_override = os.environ.get("AGENTIC_REPO_PATH_OVERRIDE")
+    if repo_path_override:
+        repo_path = repo_path_override
+        product["repo_path"] = repo_path_override
 
     files_for_classification = scan_repo(repo_path)
     repo_map_for_classification = format_repository_map(

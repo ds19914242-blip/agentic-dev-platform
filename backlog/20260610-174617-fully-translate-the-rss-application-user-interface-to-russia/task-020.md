@@ -1,3 +1,7 @@
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/13
+Run: feature-20260611-151452
+Status: pr_created
+
 ### Task 020 — Translate SourcePicker and PreviewPanel remaining English
 
 **Goal:** Translate "Upload TXT file" / "RSS Collection" in SourcePicker and the "AI summaries" button in PreviewPanel.

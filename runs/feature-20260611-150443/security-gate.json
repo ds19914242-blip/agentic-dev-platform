@@ -1,0 +1,13 @@
+{
+  "status": "passed",
+  "reason": "Only low-risk files are affected.",
+  "risks": {
+    "low": [
+      "app/feedback/page.tsx",
+      "app/settings/page.tsx"
+    ],
+    "medium": [],
+    "high": [],
+    "critical": []
+  }
+}

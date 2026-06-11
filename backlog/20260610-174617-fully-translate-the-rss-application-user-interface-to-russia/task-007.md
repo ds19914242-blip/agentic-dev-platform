@@ -1,3 +1,5 @@
+Status: in_progress
+
 ### Task 007 — Translate Collections page
 
 **Goal:** Translate all UI labels, buttons, confirm-modal messages, and toast strings on the collections page.

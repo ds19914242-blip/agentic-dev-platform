@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 012 — Translate StatsPanel remaining English
 
 **Goal:** Translate the still-English section titles in StatsPanel (labels are already Russian) to Russian.

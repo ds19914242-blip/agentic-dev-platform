@@ -1,3 +1,5 @@
+Status: in_progress
+
 ### Task 010 — Translate StrategicSignals component
 
 **Goal:** Translate the strategic-signal group names ("Product Launches", "Partnerships", etc.) and any section headers to Russian.

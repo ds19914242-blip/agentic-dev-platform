@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 016 — Finish Sources page remaining English labels
 
 **Goal:** Translate the leftover English form labels ("Time window", "Category", "Tags", "Active") on the already-mostly-Russian sources page.

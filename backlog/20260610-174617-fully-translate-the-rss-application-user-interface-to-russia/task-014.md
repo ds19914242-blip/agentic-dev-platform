@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 014 — Translate NewsCard remaining English
 
 **Goal:** Translate the "AI summary" label and any mixed-language action button labels in NewsCard.

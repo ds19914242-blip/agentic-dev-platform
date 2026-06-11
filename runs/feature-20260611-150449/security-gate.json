@@ -1,0 +1,24 @@
+{
+  "status": "passed_with_warning",
+  "reason": "Medium-risk files are affected.",
+  "risks": {
+    "low": [
+      "components/ExecutiveSummary.tsx",
+      "components/SummaryCards.tsx"
+    ],
+    "medium": [
+      "src/agents/summaryBatchAgent.ts",
+      "src/agents/trendAnalysisAgent.ts",
+      "src/agents/criteriaBatchAgent.ts",
+      "src/analysis/criteria.ts",
+      "src/analysis/feedbackRanking.ts",
+      "src/analysis/performance.ts",
+      "src/analysis/profiles.ts",
+      "src/llm/client.ts",
+      "lib/analysisCache.ts",
+      "app/api/report/[id]/docx/route.ts"
+    ],
+    "high": [],
+    "critical": []
+  }
+}

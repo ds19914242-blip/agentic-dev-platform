@@ -1,0 +1,45 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 009 — Translate SummaryCards component",
+  "plan": "# Implementation Plan\n\n## Summary\n\nTask 009 translates the user-facing English strings in the `SummaryCards` component to Russian, matching the established pattern used in prior epic tasks (NavBar, Hero, Dashboard, Reading List) where English UI literals are replaced inline with Russian text directly in the JSX. The only file containing translatable user-facing strings for this component is `components/SummaryCards.tsx`. The remaining \"Affected Files\" are dependencies/context (data types and producers) — they require **no changes**, only inspection to confirm none emit additional user-facing literals rendered through `SummaryCards`.\n\n## Files To Inspect\n\n- **`components/SummaryCards.tsx`** — primary target; contains the 5 KPI labels/sub-strings to translate.\n- `components/KpiCard.tsx` — confirmed pass-through; renders `label`/`value`/`sub` props verbatim, no hardcoded strings of its own. No change needed.\n- `lib/dashboard.ts` (`ReportData` type) — confirm field shapes (`processingStats`, `topNews`, `trendAnalysis`, etc.); no UI strings.\n- `src/agents/summaryBatchAgent.ts`, `src/agents/trendAnalysisAgent.ts`, `src/agents/criteriaBatchAgent.ts` — data producers; confirm they don't inject display literals into the values shown by these cards.\n- `src/analysis/criteria.ts`, `feedbackRanking.ts`, `performance.ts`, `profiles.ts` — analysis helpers feeding counts; inspect only to confirm no rendered strings.\n- `src/llm/client.ts`, `lib/analysisCache.ts`, `components/SourcePicker.tsx`, `components/ExecutiveSummary.tsx` — listed as affected; verify out of scope for *this* component's translation (e.g. `ExecutiveSummary`'s \"Executive Summary\" eyebrow belongs to a separate task unless explicitly bundled).\n\n## Implementation Steps\n\n1. In `components/SummaryCards.tsx`, translate the four `KpiCard` `label` props and the one `sub` string:\n   - `\"Collected\"` → `\"Собрано\"`\n   - `\"Selected\"` → `\"Отобрано\"`\n   - `` `${discarded} discarded` `` → `` `${discarded} отклонено` ``\n   - `\"Potentially Relevant\"` → `\"Потенциально релевантно\"`\n   - `\"Trends\"` → `\"Тренды\"`\n2. Leave all `value`, `accent`, computation logic, imports, and component structure untouched — only string literals change.\n3. Confirm Russian terminology is consistent with translations already shipped in Dashboard/Hero (e.g. analytics vocabulary) for a uniform glossary.\n\n## Validation Steps\n\n- `npx tsc --noEmit` (or project typecheck) — ensure no type/JSX breakage.\n- Run the lint/build step used by prior tasks (`npm run build` or `next build`) to confirm the component compiles.\n- Visually verify the Dashboard page (`app/dashboard/page.tsx`, which renders `SummaryCards`) shows the four cards with Russian labels and the \"N отклонено\" sub-text.\n- Confirm no other component or test references the old English literals (quick grep for `\"Collected\"`, `\"Potentially Relevant\"`, `\"discarded\"`).\n\n## Risks\n\n- **Scope creep**: The broad \"Affected Files\" list could imply translating agents/analysis/`ExecutiveSummary` too. Recommend keeping this task strictly to `SummaryCards.tsx`; `ExecutiveSummary`'s \"Executive Summary\" eyebrow is a separate component and likely a different epic task.\n- **Glossary inconsistency**: \"Selected\"/\"Potentially Relevant\" may already be translated differently elsewhere; align wording to avoid divergent terms across pages.\n- **Layout overflow**: Russian strings are longer than English (e.g. \"Потенциально релевантно\"); verify the 2-col/4-col grid cards don't visually clip on smaller breakpoints.\n- **No test coverage**: Repository has no detected tests, so validation relies on typecheck/build plus manual visual confirmation.\n",
+  "affected_files": [
+    "src/agents/summaryBatchAgent.ts",
+    "src/agents/trendAnalysisAgent.ts",
+    "components/SummaryCards.tsx",
+    "components/ExecutiveSummary.tsx",
+    "src/agents/criteriaBatchAgent.ts",
+    "src/analysis/criteria.ts",
+    "src/analysis/feedbackRanking.ts",
+    "src/analysis/performance.ts",
+    "src/analysis/profiles.ts",
+    "src/llm/client.ts",
+    "lib/analysisCache.ts",
+    "components/SourcePicker.tsx"
+  ],
+  "security": {
+    "status": "passed_with_warning",
+    "reason": "Medium-risk files are affected.",
+    "risks": {
+      "low": [
+        "app/dashboard/page.tsx",
+        "components/ExecutiveSummary.tsx",
+        "components/KpiCard.tsx",
+        "components/SourcePicker.tsx",
+        "components/SummaryCards.tsx"
+      ],
+      "medium": [
+        "lib/analysisCache.ts",
+        "lib/dashboard.ts",
+        "src/agents/criteriaBatchAgent.ts",
+        "src/agents/summaryBatchAgent.ts",
+        "src/agents/trendAnalysisAgent.ts",
+        "src/analysis/criteria.ts",
+        "src/llm/client.ts"
+      ],
+      "high": [],
+      "critical": []
+    }
+  },
+  "validation_passed": false
+}

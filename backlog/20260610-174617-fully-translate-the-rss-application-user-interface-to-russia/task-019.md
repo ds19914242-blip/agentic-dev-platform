@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 019 — Finish Benchmark page remaining English
 
 **Goal:** Translate remaining mixed-language text on the benchmark page, including English table headers in BenchmarkTable.

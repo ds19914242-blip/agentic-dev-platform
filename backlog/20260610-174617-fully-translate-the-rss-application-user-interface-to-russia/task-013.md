@@ -1,3 +1,5 @@
+Status: blocked
+
 ### Task 013 — Translate progress views ("Analyzing" headers)
 
 **Goal:** Translate the remaining English headers in the progress components (steps are already Russian, "Analyzing" header is English).

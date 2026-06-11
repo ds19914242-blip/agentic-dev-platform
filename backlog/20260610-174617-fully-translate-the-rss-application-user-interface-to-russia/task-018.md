@@ -1,3 +1,5 @@
+Status: done_no_pr
+
 ### Task 018 — Finish Login page ("Sign In" button)
 
 **Goal:** Translate the remaining English "Sign In" submit button (form labels already Russian).

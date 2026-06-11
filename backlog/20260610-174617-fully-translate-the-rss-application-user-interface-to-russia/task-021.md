@@ -1,3 +1,5 @@
+Status: done_no_pr
+
 ### Task 021 — Sweep for residual English UI strings
 
 **Goal:** Final pass to catch any remaining hardcoded English UI strings missed by earlier tasks (e.g. ErrorState, ModeSelector, dynamic toast/error messages, ExportButtons descriptive text).

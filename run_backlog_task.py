@@ -1,4 +1,6 @@
 import sys
+import argparse
+import os
 from pathlib import Path
 import subprocess
 import re
@@ -72,6 +74,26 @@ def set_pr_url(task_path, pr_url):
     task_path.write_text("\n".join(updated) + "\n")
 
 
+def set_run_id(task_path, run_id):
+    text = task_path.read_text(errors="ignore")
+    lines = text.splitlines()
+
+    updated = []
+    found = False
+
+    for line in lines:
+        if line.lower().startswith("run:"):
+            updated.append(f"Run: {run_id}")
+            found = True
+        else:
+            updated.append(line)
+
+    if not found:
+        updated = [f"Run: {run_id}"] + updated
+
+    task_path.write_text("\n".join(updated) + "\n")
+
+
 def task_title(task_text):
     for line in task_text.splitlines():
         line = line.strip()
@@ -107,19 +129,34 @@ def read_pr_url(run_dir):
         return ""
 
     text = path.read_text(errors="ignore")
-    match = re.search(r"https://github\\.com/\\S+", text)
+    match = re.search(r"https://github\.com/\S+", text)
+    if not match:
+        match = re.search(r"https://github\.com/\S+", text.replace("\\", ""))
     return match.group(0) if match else ""
 
 
-def run_autonomous(product_name, task_text):
+def parse_run_dir_from_stdout(stdout):
+    match = re.search(r"Run:\s+(runs/feature-[0-9\-]+)", stdout)
+    if not match:
+        match = re.search(r"Autonomous run complete:\s+(runs/feature-[0-9\-]+)", stdout)
+
+    return Path(match.group(1)) if match else None
+
+
+def run_autonomous(product_name, task_text, repo_path_override=None):
     feature_request = build_feature_request(task_text)
     input_text = product_name + "\n" + feature_request + "\n"
+
+    env = os.environ.copy()
+    if repo_path_override:
+        env["AGENTIC_REPO_PATH_OVERRIDE"] = str(repo_path_override)
 
     result = subprocess.run(
         ["python3", "run_autonomous_feature.py"],
         input=input_text,
         text=True,
         capture_output=True,
+        env=env,
     )
 
     print(result.stdout)
@@ -128,8 +165,60 @@ def run_autonomous(product_name, task_text):
         print(result.stderr)
         raise RuntimeError("Backlog task run failed")
 
+    return result.stdout
+
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("task_path", nargs="?")
+    parser.add_argument("--product", default="rss-agent-lab_2")
+    parser.add_argument("--repo-path", default=None)
+    args = parser.parse_args()
+
+    product_name = args.product
+
+    if args.task_path:
+        task_path = Path(args.task_path)
+
+        if not task_path.exists():
+            raise RuntimeError(f"Task not found: {task_path}")
+
+        status = get_status(task_path)
+
+        if status in SKIP_STATUSES:
+            raise RuntimeError(f"Task is not runnable because status is: {status}")
+
+        task_text = task_path.read_text(errors="ignore")
+
+        print(f"Running task from argv: {task_path}")
+
+        set_status(task_path, "in_progress")
+
+        try:
+            stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path)
+        except Exception:
+            set_status(task_path, "blocked")
+            raise
+
+        run_dir = parse_run_dir_from_stdout(stdout)
+        if run_dir:
+            set_run_id(task_path, run_dir.name)
+
+        pr_url = read_pr_url(run_dir)
+
+        if pr_url:
+            set_pr_url(task_path, pr_url)
+            set_status(task_path, "pr_created")
+            print(f"Task marked pr_created: {task_path}")
+            print(f"Run: {run_dir}")
+            print(f"PR: {pr_url}")
+        else:
+            set_status(task_path, "done_no_pr")
+            print(f"Task marked done_no_pr: no PR found for {task_path}")
+            print(f"Run: {run_dir}")
+
+        return
+
     product_name = input("Product name: ").strip()
 
     epics = list_epics()
@@ -176,12 +265,16 @@ def main():
     set_status(task_path, "in_progress")
 
     try:
-        run_autonomous(product_name, task_text)
+        stdout = run_autonomous(product_name, task_text)
     except Exception:
         set_status(task_path, "blocked")
         raise
 
-    pr_url = read_pr_url(latest_run_dir())
+    run_dir = parse_run_dir_from_stdout(stdout)
+    if run_dir:
+        set_run_id(task_path, run_dir.name)
+
+    pr_url = read_pr_url(run_dir)
 
     if pr_url:
         set_pr_url(task_path, pr_url)

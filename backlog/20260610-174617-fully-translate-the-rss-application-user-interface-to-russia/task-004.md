@@ -1,3 +1,6 @@
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/10
+Status: pr_created
+
 ### Task 004 — Translate Dashboard page
 
 **Goal:** Translate all user-facing English text on the dashboard page to Russian.

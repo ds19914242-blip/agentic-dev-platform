@@ -1,0 +1,9 @@
+# Reviewer Response
+
+{
+  "requirements_covered": true,
+  "scope_creep": false,
+  "architecture_risk": "low",
+  "blocking_issues": [],
+  "summary": "All remaining visible English UI labels on the Profiles page were translated to Russian: the 'built-in' badge ('встроенный'), the raw mode display via a new type-safe MODE_LABELS map, the Include/Exclude keyword row labels, and the mode <option> display text — with functional value= attributes, state keys, and props left untouched. The 6 built-in profile descriptions in src/analysis/profiles.ts were translated while keeping ids, names, selectedTopics, and keyword arrays unchanged. Only the two relevant files were modified (no scope creep into auth or API routes). Topic chips and built-in profile names intentionally stay English as taxonomy/recognizable keys per the approved plan. typecheck and build both pass cleanly."
+}

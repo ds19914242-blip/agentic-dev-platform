@@ -1,0 +1,311 @@
+{
+  "schema_version": "0.5",
+  "run_id": "feature-20260611-150449",
+  "run_type": "feature",
+  "product": "rss-agent-lab_2",
+  "request": "Epic task: Task 011 — Translate ExecutiveSummary and report section headers",
+  "status": "implementing",
+  "current_stage": "implementation",
+  "updated_at": "2026-06-11T15:07:17",
+  "stages": {
+    "repo_state": {
+      "name": "Check clean repository",
+      "status": "completed",
+      "started_at": "2026-06-11T15:04:49",
+      "completed_at": "2026-06-11T15:04:49",
+      "updated_at": "2026-06-11T15:04:49",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "repo_scan": {
+      "name": "Scan repository",
+      "status": "completed",
+      "started_at": "2026-06-11T15:04:50",
+      "completed_at": "2026-06-11T15:04:50",
+      "updated_at": "2026-06-11T15:04:50",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "repo_intelligence": {
+      "name": "Build repository intelligence",
+      "status": "completed",
+      "started_at": "2026-06-11T15:04:50",
+      "completed_at": "2026-06-11T15:04:50",
+      "updated_at": "2026-06-11T15:04:50",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "affected_files": {
+      "name": "Detect affected files",
+      "status": "completed",
+      "started_at": "2026-06-11T15:04:50",
+      "completed_at": "2026-06-11T15:04:50",
+      "updated_at": "2026-06-11T15:04:50",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "planning": {
+      "name": "Create plan",
+      "status": "completed",
+      "started_at": "2026-06-11T15:05:33",
+      "completed_at": "2026-06-11T15:05:33",
+      "updated_at": "2026-06-11T15:05:33",
+      "attempt": 0,
+      "artifacts": [
+        "plan.md"
+      ],
+      "error": null
+    },
+    "architecture": {
+      "name": "Create architecture review",
+      "status": "completed",
+      "started_at": "2026-06-11T15:05:33",
+      "completed_at": "2026-06-11T15:05:33",
+      "updated_at": "2026-06-11T15:05:33",
+      "attempt": 0,
+      "artifacts": [
+        "architecture-review.md"
+      ],
+      "error": null
+    },
+    "qa": {
+      "name": "Create QA plan",
+      "status": "completed",
+      "started_at": "2026-06-11T15:05:33",
+      "completed_at": "2026-06-11T15:05:33",
+      "updated_at": "2026-06-11T15:05:33",
+      "attempt": 0,
+      "artifacts": [
+        "qa-plan.md"
+      ],
+      "error": null
+    },
+    "security": {
+      "name": "Run security gate",
+      "status": "completed",
+      "started_at": "2026-06-11T15:05:33",
+      "completed_at": "2026-06-11T15:05:33",
+      "updated_at": "2026-06-11T15:05:33",
+      "attempt": 0,
+      "artifacts": [
+        "security-gate.md",
+        "security-gate.json"
+      ],
+      "error": null
+    },
+    "claude_plan": {
+      "name": "Run Claude planning",
+      "status": "completed",
+      "started_at": "2026-06-11T15:07:17",
+      "completed_at": "2026-06-11T15:07:17",
+      "updated_at": "2026-06-11T15:07:17",
+      "attempt": 0,
+      "artifacts": [
+        "claude-response.md"
+      ],
+      "error": null
+    },
+    "approved_plan": {
+      "name": "Approve plan",
+      "status": "completed",
+      "started_at": "2026-06-11T15:07:17",
+      "completed_at": "2026-06-11T15:07:17",
+      "updated_at": "2026-06-11T15:07:17",
+      "attempt": 0,
+      "artifacts": [
+        "approved-plan.md"
+      ],
+      "error": null
+    },
+    "implementation": {
+      "name": "Run Claude implementation",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "replanning": {
+      "name": "Replan after validation failure",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "review": {
+      "name": "Run reviewer agent",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "post_review": {
+      "name": "Create post-run review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "confidence": {
+      "name": "Run confidence gate",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "implementing",
+    "status_updated_at": "2026-06-11T15:07:17"
+  },
+  "artifacts": {
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/feature-20260611-150449/run-context.json",
+      "attached_at": "2026-06-11T12:05:33Z"
+    },
+    "repository-map.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/repository-map.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "import-map.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/import-map.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "plan.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/plan.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "planner-selected-files.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/planner-selected-files.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "affected-files.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/affected-files.md",
+      "stage": "affected_files",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "architecture-review.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/architecture-review.md",
+      "stage": "architecture",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "qa-plan.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/qa-plan.md",
+      "stage": "qa",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "security-gate.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/security-gate.md",
+      "stage": "security",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "security-gate.json": {
+      "kind": "json",
+      "path": "runs/feature-20260611-150449/security-gate.json",
+      "stage": "security",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "agent-context.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/agent-context.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "execution-graph.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/execution-graph.md",
+      "stage": "planning",
+      "updated_at": "2026-06-11T15:05:33"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/events.md",
+      "updated_at": "2026-06-11T15:07:17"
+    },
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/status.md",
+      "updated_at": "2026-06-11T15:07:17"
+    },
+    "claude-response.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/claude-response.md",
+      "stage": "claude_plan",
+      "updated_at": "2026-06-11T15:07:17"
+    },
+    "approved-plan.md": {
+      "kind": "markdown",
+      "path": "runs/feature-20260611-150449/approved-plan.md",
+      "stage": "approved_plan",
+      "updated_at": "2026-06-11T15:07:17"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T15:05:33",
+      "event": "Security advisory: passed_with_warning"
+    },
+    {
+      "timestamp": "2026-06-11T15:05:33",
+      "event": "Claude planning started"
+    },
+    {
+      "timestamp": "2026-06-11T15:07:17",
+      "event": "Claude planning response recorded"
+    },
+    {
+      "timestamp": "2026-06-11T15:07:17",
+      "event": "Security decision advisory: security_warning"
+    },
+    {
+      "timestamp": "2026-06-11T15:07:17",
+      "event": "Plan automatically approved"
+    },
+    {
+      "timestamp": "2026-06-11T15:07:17",
+      "event": "Claude implementation started"
+    }
+  ],
+  "created_at": "2026-06-11T15:04:49"
+}

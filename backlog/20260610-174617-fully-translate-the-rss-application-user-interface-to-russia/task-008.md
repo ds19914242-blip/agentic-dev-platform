@@ -1,3 +1,5 @@
+Status: in_progress
+
 ### Task 008 — Translate Feedback page
 
 **Goal:** Translate the feedback page labels, KPI captions, and filter buttons to Russian.

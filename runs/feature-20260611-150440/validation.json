@@ -1,0 +1,25 @@
+{
+  "overall_result": "failed",
+  "validators": [
+    {
+      "name": "typecheck",
+      "required": true,
+      "command": "npx tsc --noEmit",
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "name": "build",
+      "required": true,
+      "command": "npm run build",
+      "exit_code": 1,
+      "passed": false,
+      "stdout": "\n> rss-agent-lab@1.0.0 build\n> next build\n\n  ▲ Next.js 14.2.35\n  - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully\n   Linting and checking validity of types ...\n   Collecting page data ...\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n   Generating static pages (0/19) ...\n   Generating static pages (4/19) \n   Generating static pages (9/19) \n   Generating static pages (14/19) \n ✓ Generating static pages (19/19)\n",
+      "stderr": "\n> Build error occurred\nError: ENOENT: no such file or directory, rename '/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/export/500.html' -> '/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/server/pages/500.html'\n    at async Object.rename (node:internal/fs/promises:785:10)\n    at async /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/build/index.js:1873:33\n    at async Span.traceAsyncFn (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/trace/trace.js:154:20)\n    at async /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/build/index.js:1924:25\n    at async Span.traceAsyncFn (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/trace/trace.js:154:20)\n    at async /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/build/index.js:1546:17\n    at async Span.traceAsyncFn (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/trace/trace.js:154:20)\n    at async build (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/build/index.js:368:9) {\n  errno: -2,\n  code: 'ENOENT',\n  syscall: 'rename',\n  path: '/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/export/500.html',\n  dest: '/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/server/pages/500.html'\n}\n",
+      "timed_out": false
+    }
+  ]
+}

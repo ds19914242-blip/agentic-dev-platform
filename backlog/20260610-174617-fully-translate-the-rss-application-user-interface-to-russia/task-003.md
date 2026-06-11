@@ -1,3 +1,6 @@
+PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/9
+Status: pr_created
+
 ### Task 003 — Translate Hero component
 
 **Goal:** Translate the home-page Hero headline, subtext, and any CTA labels to Russian.

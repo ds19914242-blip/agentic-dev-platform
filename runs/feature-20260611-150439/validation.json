@@ -1,0 +1,25 @@
+{
+  "overall_result": "failed",
+  "validators": [
+    {
+      "name": "typecheck",
+      "required": true,
+      "command": "npx tsc --noEmit",
+      "exit_code": 0,
+      "passed": true,
+      "stdout": "",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "name": "build",
+      "required": true,
+      "command": "npm run build",
+      "exit_code": 1,
+      "passed": false,
+      "stdout": "\n> rss-agent-lab@1.0.0 build\n> next build\n\n  ▲ Next.js 14.2.35\n  - Environments: .env\n\n   Creating an optimized production build ...\n ✓ Compiled successfully\n   Linting and checking validity of types ...\n   Collecting page data ...\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n[storage] DATABASE_URL present: no\n[storage] selected backend: local-fs\n   Generating static pages (0/19) ...\n   Generating static pages (4/19) \n   Generating static pages (9/19) \n   Generating static pages (14/19) \n ✓ Generating static pages (19/19)\n",
+      "stderr": "Could not find files for /_error in .next/build-manifest.json\nCould not find files for /_error in .next/build-manifest.json\nCould not find files for /_error in .next/build-manifest.json\nCould not find files for /_error in .next/build-manifest.json\nTypeError: Cannot read properties of undefined (reading 'call')\n    at Object.t [as require] (/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/server/webpack-runtime.js:1:128)\n    at require (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:18811)\n    at s (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:88330)\n    at /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:98875\n    at /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:98962\n    at t (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:99165) {\n  digest: '4061325451'\n}\nTypeError: Cannot read properties of undefined (reading 'call')\n    at Object.t [as require] (/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/server/webpack-runtime.js:1:128)\n    at require (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:18811)\n    at A (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94398)\n    at /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96726\n    at B._fromJSON (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97164)\n    at JSON.parse (<anonymous>)\n    at I (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94119)\n    at t (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100640)\n\nError occurred prerendering page \"/login\". Read more: https://nextjs.org/docs/messages/prerender-error\n\nTypeError: Cannot read properties of undefined (reading 'call')\n    at Object.t [as require] (/Users/danilsmetanev/Projects/rss-agent-lab_2/.next/server/webpack-runtime.js:1:128)\n    at require (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:17:18811)\n    at A (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94398)\n    at /Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96726\n    at B._fromJSON (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97164)\n    at JSON.parse (<anonymous>)\n    at I (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94119)\n    at t (/Users/danilsmetanev/Projects/rss-agent-lab_2/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100640)\n\n> Export encountered errors on following paths:\n\t/login/page: /login\n",
+      "timed_out": false
+    }
+  ]
+}
