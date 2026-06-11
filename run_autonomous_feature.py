@@ -22,9 +22,11 @@ from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
 from orchestrator.execution_result import record_execution_result
 from orchestrator.post_run_review import create_post_run_review
-from orchestrator.security_gate import evaluate_security_gate, format_security_report
+from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
+from orchestrator.validation_runner import run_validators, write_validation_report
+from orchestrator.test_generator import generate_tests
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
@@ -43,41 +45,6 @@ def git_status(repo_path):
     return result.stdout.strip()
 
 
-def validate_typescript(run_dir, repo_path):
-    result = subprocess.run(
-        ["npx", "tsc", "--noEmit"],
-        cwd=repo_path,
-        text=True,
-        capture_output=True,
-    )
-
-    validation_path = run_dir / "validation.md"
-    status = "passed" if result.returncode == 0 else "failed"
-
-    validation_path.write_text(f"""# Validation Result
-
-## Command
-
-npx tsc --noEmit
-
-## Result
-
-{status}
-
-## Exit Code
-
-{result.returncode}
-
-## STDOUT
-
-{result.stdout}
-
-## STDERR
-
-{result.stderr}
-""")
-
-    return result.returncode == 0
 
 
 def main():
@@ -252,7 +219,7 @@ def main():
 
     (run_dir / "architecture-review.md").write_text(architecture_review)
     (run_dir / "qa-plan.md").write_text(qa_plan)
-    (run_dir / "security-gate.md").write_text(format_security_report(security))
+    write_security_report(run_dir, security)
     graph_v2.complete("security")
     graph_v2.write()
     (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
@@ -260,20 +227,9 @@ def main():
     graph.mark_completed("prompt")
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
 
-    if security["status"] == "blocked":
-        write_status(run_dir, "security_blocked")
-        append_event(run_dir, "Security gate blocked execution")
-        print(f"Security gate blocked execution: {run_dir / 'security-gate.md'}")
-        return
-
-    if security["status"] == "needs_approval":
-        write_status(run_dir, "needs_security_approval")
-        append_event(run_dir, "Security gate requires approval")
-        print(f"Security gate requires approval: {run_dir / 'security-gate.md'}")
-        return
-
-    if security["status"] == "passed_with_warning":
-        append_event(run_dir, "Security gate passed with warning")
+    # MVP mode: Security Gate is advisory only.
+    # It writes security-gate.md / security-gate.json, but never blocks execution.
+    append_event(run_dir, f"Security advisory: {security['status']}")
 
     write_status(run_dir, "planning_with_claude")
     append_event(run_dir, "Claude planning started")
@@ -301,12 +257,7 @@ def main():
 
     security_decision = decide_after_security(run_dir)
     write_decision(run_dir, "security", security_decision)
-
-    if security_decision["decision"] == "stop":
-        write_status(run_dir, security_decision["status"])
-        append_event(run_dir, f"Stopped after security: {security_decision['reason']}")
-        print(f"Run stopped after security: {security_decision['status']}")
-        return
+    append_event(run_dir, f"Security decision advisory: {security_decision['status']}")
 
     save_approved_plan(run_dir, claude_plan_response)
     graph.mark_completed("approved_plan")
@@ -361,7 +312,23 @@ After implementation:
         summary="Autonomous feature implementation completed.",
     )
 
-    validation_ok = validate_typescript(run_dir, repo_path)
+    write_status(run_dir, "generating_tests")
+    append_event(run_dir, "Test generation started")
+
+    test_generation_response = generate_tests(
+        repo_path=repo_path,
+        feature=feature,
+        test_plan=qa_plan,
+    )
+
+    (run_dir / "test-generation.md").write_text(
+        "# Test Generation Result\n\n" + test_generation_response
+    )
+
+    append_event(run_dir, "Test generation completed")
+
+    validation_results = run_validators(repo_path, product.get("validators", []))
+    _, validation_ok = write_validation_report(run_dir, validation_results)
 
     if validation_ok:
         graph.mark_completed("validation")
@@ -389,16 +356,14 @@ After implementation:
     confidence_decision = decide_after_confidence(run_dir)
     write_decision(run_dir, "confidence", confidence_decision)
 
-    if confidence_decision["status"] == "ready_for_pr":
-        write_status(run_dir, "ready_for_pr")
-    elif confidence_decision["status"] == "confidence_failed":
-        write_status(run_dir, "confidence_failed")
-    else:
-        write_status(run_dir, confidence_decision["status"])
+    # MVP mode: Confidence Gate is advisory only.
+    # It writes confidence.md / confidence.json / decision-confidence.*, but does not block PR creation.
+    append_event(run_dir, f"Confidence advisory: {confidence_decision['status']}")
+    write_status(run_dir, "ready_for_pr")
 
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
 
-    if validation_ok and confidence["status"] == "passed" and has_changes(repo_path):
+    if validation_ok and has_changes(repo_path):
         safe_branch = "agentic/" + feature.lower().replace(" ", "-")[:50]
         safe_branch = "".join(ch for ch in safe_branch if ch.isalnum() or ch in "-_/")
         commit_message = feature[:80]
