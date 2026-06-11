@@ -9,3 +9,7 @@
 ---
 
 **Sequencing notes:** Tasks 001–003 (shared, globally visible) first for immediate impact. Tasks 004–008 are fully-English standalone pages — fully parallelizable. Tasks 009–014 are shared report/display components. Tasks 015–020 finish partially-translated files (do after their related component tasks to avoid edit overlap). Task 021 is the closing sweep and should run last.
+
+## Depends On
+
+_None_

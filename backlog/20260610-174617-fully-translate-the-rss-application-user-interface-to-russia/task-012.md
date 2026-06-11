@@ -5,3 +5,7 @@
 **Suggested files:** `components/StatsPanel.tsx`
 **Acceptance criteria:** All StatsPanel section titles in Russian; metric values unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

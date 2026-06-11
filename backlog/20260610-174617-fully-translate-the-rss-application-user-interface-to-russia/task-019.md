@@ -5,3 +5,7 @@
 **Suggested files:** `app/benchmark/page.tsx`, `components/BenchmarkTable.tsx`
 **Acceptance criteria:** No English UI text remains on benchmark view; metric data and sort keys unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

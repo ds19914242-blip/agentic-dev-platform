@@ -5,3 +5,7 @@
 **Suggested files:** `components/SourcePicker.tsx`, `components/PreviewPanel.tsx`
 **Acceptance criteria:** All static labels/buttons in Russian; selection/preview logic unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

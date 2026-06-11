@@ -7,3 +7,7 @@ Status: done
 **Suggested files:** `app/layout.tsx`, `components/Footer.tsx`
 **Acceptance criteria:** Browser tab title/description in Russian; Footer static text (if any) in Russian; version rendering unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

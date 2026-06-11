@@ -5,3 +5,7 @@
 **Suggested files:** `app/login/page.tsx`
 **Acceptance criteria:** Submit button and any remaining text in Russian; auth flow unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

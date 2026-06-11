@@ -7,3 +7,7 @@ Status: blocked
 **Suggested files:** `components/NavBar.tsx`
 **Acceptance criteria:** All visible nav labels render in Russian; routes and active-state logic unchanged; typecheck passes. This is highest priority since NavBar appears on every page.
 **Risk:** low
+
+## Depends On
+
+_None_

@@ -5,3 +5,7 @@
 **Suggested files:** `app/sources/page.tsx`
 **Acceptance criteria:** No English UI text remains; form submission payload unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

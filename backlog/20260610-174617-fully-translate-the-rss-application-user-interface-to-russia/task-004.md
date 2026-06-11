@@ -5,3 +5,7 @@
 **Suggested files:** `app/dashboard/page.tsx`
 **Acceptance criteria:** No English UI text remains on the dashboard page; data fetching and links unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

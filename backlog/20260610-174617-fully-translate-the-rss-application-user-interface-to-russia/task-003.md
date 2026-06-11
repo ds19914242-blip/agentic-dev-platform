@@ -5,3 +5,7 @@
 **Suggested files:** `components/Hero.tsx`
 **Acceptance criteria:** All Hero copy renders in Russian; props/structure unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

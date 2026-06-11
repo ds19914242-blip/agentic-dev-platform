@@ -5,3 +5,7 @@
 **Suggested files:** `components/SummaryCards.tsx`
 **Acceptance criteria:** All four+ card labels render in Russian; numeric/data props unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

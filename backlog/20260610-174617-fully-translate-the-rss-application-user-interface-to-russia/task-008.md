@@ -5,3 +5,7 @@
 **Suggested files:** `app/feedback/page.tsx`
 **Acceptance criteria:** All feedback UI text in Russian; metrics/data and filter values unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

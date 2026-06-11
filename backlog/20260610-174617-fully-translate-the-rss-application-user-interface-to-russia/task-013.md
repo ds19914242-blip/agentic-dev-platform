@@ -5,3 +5,7 @@
 **Suggested files:** `components/ProgressTimeline.tsx`, `components/ProgressView.tsx`
 **Acceptance criteria:** All progress UI text in Russian; step/state logic unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

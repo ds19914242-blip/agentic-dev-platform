@@ -5,3 +5,7 @@
 **Suggested files:** `app/reading-list/page.tsx`
 **Acceptance criteria:** All reading-list UI text in Russian; filtering logic and toast triggers unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

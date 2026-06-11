@@ -5,3 +5,7 @@
 **Suggested files:** `app/collections/page.tsx`
 **Acceptance criteria:** No English UI text remains; confirm/toast messages in Russian; CRUD logic and API calls unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

@@ -5,3 +5,7 @@
 **Suggested files:** `app/page.tsx`
 **Acceptance criteria:** No English UI text remains on the home page; mode/source logic and API params unchanged; typecheck passes. Best done after Tasks 003/009 to avoid overlap.
 **Risk:** low
+
+## Depends On
+
+_None_

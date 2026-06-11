@@ -10,6 +10,8 @@ COMMANDS = {
     "sync": "sync_backlog_prs.py",
     "validate": "validate_latest_run.py",
     "confidence": "confidence_latest_run.py",
+    "dag": "backlog_dag.py",
+    "ready": "backlog_ready.py",
 }
 
 
@@ -35,6 +37,8 @@ def print_help():
     print("  sync         Sync backlog PR statuses")
     print("  validate     Validate latest run")
     print("  confidence   Run confidence report for latest run")
+    print("  dag          Show dependency-aware backlog DAG")
+    print("  ready        Show ready backlog tasks")
     print()
     print("Aliases:")
     print("  run          feature")
@@ -48,6 +52,8 @@ def print_help():
     print("  python3 agentic.py next")
     print("  python3 agentic.py progress --detail")
     print("  python3 agentic.py sync")
+    print("  python3 agentic.py dag")
+    print("  python3 agentic.py ready")
 
 
 def main():

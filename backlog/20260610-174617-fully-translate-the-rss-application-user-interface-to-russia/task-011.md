@@ -5,3 +5,7 @@
 **Suggested files:** `components/ExecutiveSummary.tsx`
 **Acceptance criteria:** Section headers in Russian; content props unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

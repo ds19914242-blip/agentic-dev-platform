@@ -5,3 +5,7 @@
 **Suggested files:** `app/settings/page.tsx`
 **Acceptance criteria:** All settings UI text in Russian; saved settings payload/keys unchanged; typecheck passes.
 **Risk:** medium
+
+## Depends On
+
+_None_

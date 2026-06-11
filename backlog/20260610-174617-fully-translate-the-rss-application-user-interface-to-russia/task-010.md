@@ -5,3 +5,7 @@
 **Suggested files:** `components/StrategicSignals.tsx`
 **Acceptance criteria:** Group display names render in Russian; any key-based grouping logic preserved; typecheck passes.
 **Risk:** medium
+
+## Depends On
+
+_None_

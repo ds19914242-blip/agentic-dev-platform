@@ -1,0 +1,154 @@
+{
+  "epic": "20260610-174617-fully-translate-the-rss-application-user-interface-to-russia",
+  "tasks": [
+    {
+      "id": "task-001",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-001.md",
+      "status": "blocked",
+      "depends_on": []
+    },
+    {
+      "id": "task-002",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-002.md",
+      "status": "done",
+      "depends_on": []
+    },
+    {
+      "id": "task-003",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-003.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-004",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-004.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-005",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-005.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-006",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-006.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-007",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-007.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-008",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-008.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-009",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-009.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-010",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-010.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-011",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-011.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-012",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-012.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-013",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-013.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-014",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-014.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-015",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-015.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-016",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-016.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-017",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-017.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-018",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-018.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-019",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-019.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-020",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-020.md",
+      "status": "todo",
+      "depends_on": []
+    },
+    {
+      "id": "task-021",
+      "path": "backlog/20260610-174617-fully-translate-the-rss-application-user-interface-to-russia/task-021.md",
+      "status": "todo",
+      "depends_on": []
+    }
+  ],
+  "ready": [
+    "task-003",
+    "task-004",
+    "task-005",
+    "task-006",
+    "task-007",
+    "task-008",
+    "task-009",
+    "task-010",
+    "task-011",
+    "task-012",
+    "task-013",
+    "task-014",
+    "task-015",
+    "task-016",
+    "task-017",
+    "task-018",
+    "task-019",
+    "task-020",
+    "task-021"
+  ],
+  "blocked": [],
+  "errors": []
+}

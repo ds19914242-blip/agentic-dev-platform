@@ -5,3 +5,7 @@
 **Suggested files:** `components/NewsCard.tsx`
 **Acceptance criteria:** All NewsCard static labels/buttons in Russian; action handlers and props unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_

@@ -5,3 +5,7 @@
 **Suggested files:** `app/profiles/page.tsx`
 **Acceptance criteria:** No English UI text remains; profile save logic unchanged; typecheck passes.
 **Risk:** low
+
+## Depends On
+
+_None_
