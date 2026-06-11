@@ -28,6 +28,7 @@ from orchestrator.run_runtime import RunRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
 from orchestrator.replanner_agent import run_replanner
+from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
 from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
@@ -112,6 +113,7 @@ def main():
         ("implementation", "Run Claude implementation"),
         ("validation", "Run validation"),
         ("replanning", "Replan after validation failure"),
+        ("review", "Run reviewer agent"),
         ("post_review", "Create post-run review"),
         ("confidence", "Run confidence gate"),
     ]:
@@ -409,6 +411,21 @@ After implementation:
             run.event("Validation still failed after replanning")
             graph_v2.fail("validation", error="Validation failed after replanning", artifacts=["validation.md", "validation.json"])
             graph_v2.write()
+
+    run.status("reviewing")
+    run.event("Reviewer started")
+    graph_v2.start("review")
+    graph_v2.write()
+
+    review = run_reviewer(
+        run_dir=run_dir,
+        repo_path=repo_path,
+        feature=feature,
+    )
+
+    graph_v2.complete("review", artifacts=["review.md", "review.json", "review-response.md"])
+    graph_v2.write()
+    update_run_context(run_dir, review=review)
 
     create_post_run_review(run_dir, repo_path)
     run.artifact("post-run-review.md", stage="post_review")
