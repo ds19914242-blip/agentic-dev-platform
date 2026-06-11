@@ -231,7 +231,26 @@ def main():
         set_status(task_path, "in_progress")
 
         try:
-            stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path)
+            if pipeline == "fast":
+                cmd = ["python3", "run_fast_task.py", product_name, str(task_path)]
+                if args.repo_path:
+                    cmd.append(str(args.repo_path))
+
+                result = subprocess.run(
+                    cmd,
+                    text=True,
+                    capture_output=True,
+                )
+
+                print(result.stdout)
+
+                if result.returncode != 0:
+                    print(result.stderr)
+                    raise RuntimeError("Fast backlog task run failed")
+
+                stdout = result.stdout
+            else:
+                stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path)
         except Exception:
             set_status(task_path, "blocked")
             raise
