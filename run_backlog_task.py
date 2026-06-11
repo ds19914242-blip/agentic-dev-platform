@@ -249,6 +249,26 @@ def main():
                     raise RuntimeError("Fast backlog task run failed")
 
                 stdout = result.stdout
+
+            elif pipeline in {"standard", "standard_bugfix"}:
+                cmd = ["python3", "run_standard_task.py", product_name, str(task_path), pipeline]
+                if args.repo_path:
+                    cmd.append(str(args.repo_path))
+
+                result = subprocess.run(
+                    cmd,
+                    text=True,
+                    capture_output=True,
+                )
+
+                print(result.stdout)
+
+                if result.returncode != 0:
+                    print(result.stderr)
+                    raise RuntimeError(f"{pipeline} backlog task run failed")
+
+                stdout = result.stdout
+
             else:
                 stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path)
         except Exception:

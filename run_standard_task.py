@@ -1,5 +1,5 @@
+import json
 import os
-import re
 import sys
 from pathlib import Path
 
@@ -15,22 +15,47 @@ from orchestrator.run_artifacts import register_artifacts
 from orchestrator.bug_task_creator import create_bug_task
 
 
-def safe_branch(feature):
-    branch = "agentic/fast-" + feature.lower().replace(" ", "-")[:60]
+def safe_branch(prefix, title):
+    branch = f"agentic/{prefix}-" + title.lower().replace(" ", "-")[:60]
     return "".join(ch for ch in branch if ch.isalnum() or ch in "-_/")
 
 
-def build_prompt(task_text):
-    return f"""# Fast Task Implementation
+def first_title(task_text):
+    for line in task_text.splitlines():
+        clean = line.replace("#", "").strip()
+        if clean:
+            return clean[:80]
+    return "Agentic task"
 
-You are executing a small, bounded task.
 
-Rules:
-- Make the smallest safe change.
-- Do not redesign architecture.
-- Do not touch auth, billing, secrets, database schema, or deployment config.
-- Prefer modifying only the suggested files in the task.
-- If no change is needed, say so clearly.
+def build_standard_prompt(task_text, pipeline):
+    if pipeline == "standard_bugfix":
+        intro = """You are fixing a known bug.
+
+Steps:
+1. Identify the likely root cause.
+2. Make the smallest safe fix.
+3. Do not redesign unrelated code.
+4. Preserve existing behavior except for the bug.
+"""
+    else:
+        intro = """You are implementing a bounded task.
+
+Steps:
+1. Make a short light plan internally.
+2. Implement the smallest safe change.
+3. Prefer suggested files.
+4. Do not redesign unrelated code.
+"""
+
+    return f"""# Standard Task Execution
+
+{intro}
+
+Safety rules:
+- Do not touch auth, billing, secrets, database schema, or deployment config unless explicitly required.
+- Keep changes minimal.
+- If no code change is needed, say so clearly.
 
 Task:
 
@@ -39,12 +64,16 @@ Task:
 
 
 def main():
-    if len(sys.argv) < 3:
-        raise SystemExit("Usage: python3 run_fast_task.py <product> <task-file> [repo-path]")
+    if len(sys.argv) < 4:
+        raise SystemExit("Usage: python3 run_standard_task.py <product> <task-file> <pipeline> [repo-path]")
 
     product_name = sys.argv[1]
     task_path = Path(sys.argv[2])
-    repo_override = sys.argv[3] if len(sys.argv) > 3 else None
+    pipeline = sys.argv[3]
+    repo_override = sys.argv[4] if len(sys.argv) > 4 else None
+
+    if pipeline not in {"standard", "standard_bugfix"}:
+        raise SystemExit(f"Unsupported standard pipeline: {pipeline}")
 
     task_text = task_path.read_text(errors="ignore")
 
@@ -54,17 +83,17 @@ def main():
 
     ensure_clean_repo(repo_path)
 
-    run_dir = make_run_dir("fast")
+    run_dir = make_run_dir(pipeline.replace("_", "-"))
     run = RunRuntime(
         run_dir,
         product=product_name,
         request=task_text,
-        run_type="fast",
+        run_type=pipeline,
     )
     graph = run.graph
 
     for node_id, name in [
-        ("implementation", "Run fast implementation"),
+        ("implementation", f"Run {pipeline} implementation"),
         ("validation", "Run validation"),
         ("review", "Run lightweight review"),
         ("pr", "Create pull request"),
@@ -73,28 +102,28 @@ def main():
     graph.write()
 
     run.status("created")
-    run.event("Fast task run created")
+    run.event(f"{pipeline} run created")
     update_run_context(
         run_dir,
         product=product_name,
         repo_path=repo_path,
         task_file=str(task_path),
-        pipeline="fast",
+        pipeline=pipeline,
     )
 
     profile = {
-        "pipeline": "fast",
+        "pipeline": pipeline,
         "task_file": str(task_path),
     }
-    (run_dir / "task-profile.json").write_text(__import__("json").dumps(profile, indent=2, ensure_ascii=False))
+    (run_dir / "task-profile.json").write_text(json.dumps(profile, indent=2, ensure_ascii=False))
     run.artifact("task-profile.json", stage="implementation")
 
-    prompt = build_prompt(task_text)
-    (run_dir / "fast-prompt.md").write_text(prompt)
-    run.artifact("fast-prompt.md", stage="implementation")
+    prompt = build_standard_prompt(task_text, pipeline)
+    (run_dir / "standard-prompt.md").write_text(prompt)
+    run.artifact("standard-prompt.md", stage="implementation")
 
     run.status("implementing")
-    run.event("Fast implementation started")
+    run.event(f"{pipeline} implementation started")
     graph.start("implementation")
     graph.write()
 
@@ -102,13 +131,13 @@ def main():
         repo_path=repo_path,
         prompt=prompt,
         allow_writes=True,
-        max_turns=8,
+        max_turns=12,
         retries=2,
     )
 
-    (run_dir / "fast-response.md").write_text("# Fast Implementation Response\n\n" + response)
-    run.artifact("fast-response.md", stage="implementation")
-    graph.complete("implementation", artifacts=["fast-prompt.md", "fast-response.md"])
+    (run_dir / "standard-response.md").write_text("# Standard Implementation Response\n\n" + response)
+    run.artifact("standard-response.md", stage="implementation")
+    graph.complete("implementation", artifacts=["standard-prompt.md", "standard-response.md"])
     graph.write()
 
     run.status("validating")
@@ -143,26 +172,26 @@ def main():
     review = {
         "requirements_covered": True,
         "scope_creep": False,
-        "architecture_risk": "low",
+        "architecture_risk": "low" if pipeline == "standard" else "medium",
         "blocking_issues": [],
-        "summary": "Fast pipeline lightweight review: validation passed and task was bounded.",
+        "summary": f"{pipeline} lightweight review: validation passed.",
     }
 
-    (run_dir / "review.json").write_text(__import__("json").dumps(review, indent=2, ensure_ascii=False))
-    (run_dir / "review.md").write_text("# Fast Review\n\nValidation passed. No blocking issues detected.\n")
+    (run_dir / "review.json").write_text(json.dumps(review, indent=2, ensure_ascii=False))
+    (run_dir / "review.md").write_text(f"# {pipeline} Review\n\nValidation passed. No blocking issues detected.\n")
     register_artifacts(run_dir, ["review.md", "review.json"], stage="review")
     graph.complete("review", artifacts=["review.md", "review.json"])
     graph.write()
 
     if has_changes(repo_path):
-        title = task_text.splitlines()[0].replace("#", "").strip()[:80] or "Fast task"
-        branch = safe_branch(title)
+        title = first_title(task_text)
+        branch = safe_branch(pipeline, title)
 
         pr_url = create_pr(
             repo_path=repo_path,
             branch_name=branch,
             commit_message=title,
-            body=f"Created by Agentic Dev Platform fast run: {run_dir}",
+            body=f"Created by Agentic Dev Platform {pipeline} run: {run_dir}",
         )
 
         if pr_url:
@@ -174,7 +203,7 @@ def main():
         else:
             run.status("done_no_pr")
             run.event("No pull request created")
-
+            graph.skip("pr")
     else:
         run.status("done_no_pr")
         run.event("No changes detected")
