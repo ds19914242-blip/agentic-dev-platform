@@ -1,0 +1,64 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Добавить фильтрацию новостей по домену источника.",
+  "work_item": {
+    "work_item_type": "feature",
+    "reason": "Добавление фильтрации новостей по домену источника — это единичное продуктовое изменение с понятным объёмом: UI-контрол фильтра и логика отбора по домену источника. Это не исправление поломки (bug), не исследование (research) и не прототип (spike), и оно не настолько крупное, чтобы требовать декомпозиции на отдельные задачи (epic).",
+    "should_decompose": false
+  },
+  "plan": "Error: Reached max turns (5)\n\n[WARNING] Claude reached max turns before final response.",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts",
+    "app/api/profiles/[id]/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [],
+      "medium": [
+        "app/api/analyze/route.ts",
+        "app/api/benchmark/route.ts",
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/health/db/route.ts",
+        "app/api/health/route.ts",
+        "app/api/jobs/[jobId]/route.ts",
+        "app/api/overview/route.ts",
+        "app/api/profiles/[id]/route.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/api/auth/logout/route.ts"
+      ],
+      "critical": []
+    }
+  },
+  "validation_passed": true,
+  "review": {
+    "requirements_covered": true,
+    "scope_creep": false,
+    "architecture_risk": "low",
+    "blocking_issues": [],
+    "summary": "Adds a client-side source-domain filter to the report Dashboard news section as requested. Chip row (Все источники + per-domain counts) renders only when ≥2 distinct domains exist; both the TOP and Potentially-Relevant grids filter by the selected domain while preserving original unfiltered ranks. Filter-aware empty states are handled. Change is isolated to components/Dashboard.tsx with no prop/signature changes, no API/schema/config edits; typecheck and build pass. Minor non-blocking note: hostname() is now a 5th duplicated copy (a shared lib/hostname.ts was correctly deferred as an optional follow-up)."
+  },
+  "confidence": {
+    "status": "passed",
+    "reason": "Validation passed and file changes look acceptable.",
+    "validation": "passed",
+    "unexpected": [],
+    "missing": []
+  }
+}

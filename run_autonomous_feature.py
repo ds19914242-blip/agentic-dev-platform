@@ -31,6 +31,7 @@ from orchestrator.test_generator import generate_tests
 from orchestrator.replanner_agent import run_replanner
 from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
+from orchestrator.llm_metrics import start_metrics, finish_metrics
 from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
@@ -86,6 +87,14 @@ def main():
     if work_item.get("should_decompose"):
         classification["route"] = "DECOMPOSE_FIRST"
 
+    human_approved = os.environ.get("AGENTIC_HUMAN_APPROVED") == "1"
+
+    if human_approved and (
+        classification.get("route") == "NEEDS_HUMAN_REVIEW"
+        or "NEEDS_HUMAN_REVIEW" in classification_text
+    ):
+        classification["route"] = "RUN_AUTONOMOUSLY"
+
     if classification["route"] == "DECOMPOSE_FIRST":
         print("Request should be decomposed first.")
         print("Run:")
@@ -112,6 +121,8 @@ def main():
     )
     graph_v2 = run.graph
 
+    start_metrics(run_dir)
+    os.environ["AGENTIC_RUN_DIR"] = str(run_dir)
     run.status("created")
     run.event("Autonomous feature run created")
     update_run_context(
@@ -525,6 +536,8 @@ After implementation:
             run.artifact("pull-request.md", stage="pr")
             run.status("pr_created")
             run.event(f"Pull request created: {pr_url}")
+
+    finish_metrics(run_dir)
 
     print(f"Autonomous run complete: {run_dir}")
     print(f"Validation: {'passed' if validation_ok else 'failed'}")

@@ -1,12 +1,17 @@
 from pathlib import Path
 from datetime import datetime
+import uuid
 
 
 def make_run_dir(prefix="feature"):
     Path("runs").mkdir(exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    run_dir = Path("runs") / f"{prefix}-{stamp}"
+
+    stamp = datetime.now().strftime("%Y%m%d-%H%M%S-%f")
+    suffix = uuid.uuid4().hex[:6]
+
+    run_dir = Path("runs") / f"{prefix}-{stamp}-{suffix}"
     run_dir.mkdir(parents=True, exist_ok=True)
+
     return run_dir
 
 

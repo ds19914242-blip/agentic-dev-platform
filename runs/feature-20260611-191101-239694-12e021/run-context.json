@@ -1,0 +1,49 @@
+{
+  "product": "rss-agent-lab_2",
+  "repo_path": "/Users/danilsmetanev/Projects/rss-agent-lab_2",
+  "feature": "Epic task: Task 007 — Admin user management API and page",
+  "work_item": {
+    "work_item_type": "epic",
+    "reason": "Titled 'Epic task' and bundles two distinct deliverables — an admin user management API and a corresponding page — which should be split into separate backend and frontend implementation tasks.",
+    "should_decompose": true
+  },
+  "plan": "Error: Reached max turns (5)\n\n[WARNING] Claude reached max turns before final response.",
+  "affected_files": [
+    "app/api/analyze/route.ts",
+    "app/api/auth/login/route.ts",
+    "app/api/auth/logout/route.ts",
+    "app/api/auth/me/route.ts",
+    "app/api/benchmark/route.ts",
+    "app/api/favorites/[id]/route.ts",
+    "app/api/favorites/route.ts",
+    "app/api/feedback/route.ts",
+    "app/api/health/db/route.ts",
+    "app/api/health/route.ts",
+    "app/api/jobs/[jobId]/route.ts",
+    "app/api/overview/route.ts"
+  ],
+  "security": {
+    "status": "needs_approval",
+    "reason": "High-risk files are affected.",
+    "risks": {
+      "low": [],
+      "medium": [
+        "app/api/analyze/route.ts",
+        "app/api/benchmark/route.ts",
+        "app/api/favorites/[id]/route.ts",
+        "app/api/favorites/route.ts",
+        "app/api/feedback/route.ts",
+        "app/api/health/db/route.ts",
+        "app/api/health/route.ts",
+        "app/api/jobs/[jobId]/route.ts",
+        "app/api/overview/route.ts"
+      ],
+      "high": [
+        "app/api/auth/login/route.ts",
+        "app/api/auth/logout/route.ts",
+        "app/api/auth/me/route.ts"
+      ],
+      "critical": []
+    }
+  }
+}

@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-181924",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 001 — File-based user store with hashed passwords\n\n**Goal:** Introduce a no-DB user store that persists accounts to a JSON file with salted password hashing, plus a one-time bootstrap of the admin account from existing env vars.\n**Scope:** Define a `User` type (`id`, `username`, `passwordHash`, `salt`, `role`, `createdAt`) and `UserStorage` interface; implement `LocalUserStorage` (writes `data/users.json`, with `create`, `getByUsername`, `getById`, `list`, `delete`, and a password `verify` helper using `node:crypto` scrypt). Register `userStorage` in the storage index. On first access with an empty store, seed an `admin` user from `APP_USERNAME`/`APP_PASSWORD` if present.\n**Suggested files:** `lib/storage/types.ts`, `lib/storage/local.ts`, `lib/storage/index.ts`, new `lib/auth/password.ts` (or inline hashing in the store).\n**Acceptance criteria:** `userStorage` is exported and instantiable without opening any DB connection; passwords are stored only as salt+hash; creating then verifying a user round-trips; duplicate usernames are rejected; bootstrap seeds the admin once and is idempotent; `tsc` passes.\n**Risk:** medium\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T18:21:07",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:19:24",
+      "completed_at": "2026-06-11T18:20:40",
+      "updated_at": "2026-06-11T18:20:40",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:20:40",
+      "completed_at": "2026-06-11T18:21:02",
+      "updated_at": "2026-06-11T18:21:02",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T18:21:02",
+      "completed_at": "2026-06-11T18:21:02",
+      "updated_at": "2026-06-11T18:21:02",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T18:21:07",
+      "completed_at": "2026-06-11T18:21:07",
+      "updated_at": "2026-06-11T18:21:07",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T18:21:07"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/status.md",
+      "updated_at": "2026-06-11T18:21:07"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/events.md",
+      "updated_at": "2026-06-11T18:21:07"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-181924/run-context.json",
+      "attached_at": "2026-06-11T15:19:24Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-181924/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:19:24"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:19:24"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:20:40"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:21:02"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-181924/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:21:02"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:21:02"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-181924/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:21:02"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-181924/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T18:21:07"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:19:24",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:19:24",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:20:40",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:21:02",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:21:02",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:21:07",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/30"
+    }
+  ],
+  "created_at": "2026-06-11T18:19:24"
+}

@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-180427",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 001 — File-based user store with hashed passwords\n\n**Goal:** Introduce a no-DB user store that persists accounts to a JSON file with salted password hashing, plus a one-time bootstrap of the admin account from existing env vars.\n**Scope:** Define a `User` type (`id`, `username`, `passwordHash`, `salt`, `role`, `createdAt`) and `UserStorage` interface; implement `LocalUserStorage` (writes `data/users.json`, with `create`, `getByUsername`, `getById`, `list`, `delete`, and a password `verify` helper using `node:crypto` scrypt). Register `userStorage` in the storage index. On first access with an empty store, seed an `admin` user from `APP_USERNAME`/`APP_PASSWORD` if present.\n**Suggested files:** `lib/storage/types.ts`, `lib/storage/local.ts`, `lib/storage/index.ts`, new `lib/auth/password.ts` (or inline hashing in the store).\n**Acceptance criteria:** `userStorage` is exported and instantiable without opening any DB connection; passwords are stored only as salt+hash; creating then verifying a user round-trips; duplicate usernames are rejected; bootstrap seeds the admin once and is idempotent; `tsc` passes.\n**Risk:** medium\n\n## Depends On\n\n_None_\n",
+  "status": "failed",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T18:05:44",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:04:27",
+      "completed_at": "2026-06-11T18:05:42",
+      "updated_at": "2026-06-11T18:05:42",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "failed",
+      "started_at": "2026-06-11T18:05:42",
+      "completed_at": "2026-06-11T18:05:44",
+      "updated_at": "2026-06-11T18:05:44",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": "Validation failed"
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "validation_failed",
+    "status_updated_at": "2026-06-11T18:05:44"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-180427/status.md",
+      "updated_at": "2026-06-11T18:05:44"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-180427/events.md",
+      "updated_at": "2026-06-11T18:05:44"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-180427/run-context.json",
+      "attached_at": "2026-06-11T15:04:27Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-180427/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:04:27"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-180427/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:04:27"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-180427/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:05:42"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-180427/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:05:44"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-180427/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:05:44"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:04:27",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:04:27",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:05:42",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:05:44",
+      "event": "Validation report written: failed"
+    },
+    {
+      "timestamp": "2026-06-11T18:05:44",
+      "event": "Validation failed"
+    },
+    {
+      "timestamp": "2026-06-11T18:05:44",
+      "event": "Bug task created: backlog/20260611-175957-добавить-систему-аккаунтов-пользователей-без-бд/task-010.md"
+    }
+  ],
+  "created_at": "2026-06-11T18:04:27"
+}

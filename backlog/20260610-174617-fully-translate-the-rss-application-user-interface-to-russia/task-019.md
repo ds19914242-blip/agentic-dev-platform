@@ -1,6 +1,6 @@
 PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/26
 Run: feature-20260611-161106
-Status: pr_created
+Status: merged
 
 ### Task 019 — Finish Benchmark page remaining English
 

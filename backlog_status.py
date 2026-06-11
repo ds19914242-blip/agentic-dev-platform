@@ -2,7 +2,16 @@ from pathlib import Path
 import sys
 
 
-STATUSES = ["merged", "pr_created", "done", "done_no_pr", "in_progress", "blocked", "todo"]
+STATUSES = [
+    "merged",
+    "pr_created",
+    "done",
+    "done_no_pr",
+    "in_progress",
+    "blocked",
+    "blocked_human_review",
+    "todo",
+]
 
 
 def get_status(task_path):
@@ -47,11 +56,13 @@ def epic_progress(epic_path):
         if status not in grouped:
             status = "todo"
 
-        grouped[status].append({
-            "name": task.name,
-            "title": task_title(task),
-            "pr": get_pr(task),
-        })
+        grouped[status].append(
+            {
+                "name": task.name,
+                "title": task_title(task),
+                "pr": get_pr(task),
+            }
+        )
 
     return {
         "total": len(tasks),
@@ -64,19 +75,29 @@ def print_epic_summary(epic_path):
     grouped = progress["grouped"]
 
     total = progress["total"]
+
     merged = len(grouped["merged"])
     pr_created = len(grouped["pr_created"])
+    done = len(grouped["done"])
+    done_no_pr = len(grouped["done_no_pr"])
     in_progress = len(grouped["in_progress"])
     blocked = len(grouped["blocked"])
+    blocked_human_review = len(grouped["blocked_human_review"])
     todo = len(grouped["todo"])
 
-    percent = round((merged / total) * 100) if total else 0
+    completed = merged + pr_created + done + done_no_pr
+
+    percent = round((completed / total) * 100) if total else 0
 
     print(f"Epic: {epic_path.name}")
-    print(f"Progress: {merged}/{total} merged ({percent}%)")
+    print(f"Progress: {completed}/{total} completed ({percent}%)")
+    print(f"Merged: {merged}")
     print(f"PR created: {pr_created}")
+    print(f"Done: {done}")
+    print(f"Done no PR: {done_no_pr}")
     print(f"In progress: {in_progress}")
     print(f"Blocked: {blocked}")
+    print(f"Human review: {blocked_human_review}")
     print(f"Todo: {todo}")
     print()
 
@@ -109,6 +130,7 @@ def print_epic_detail(epic_path):
     print_group("DONE NO PR", "•", grouped["done_no_pr"])
     print_group("IN PROGRESS", "…", grouped["in_progress"])
     print_group("BLOCKED", "⚠", grouped["blocked"])
+    print_group("HUMAN REVIEW", "!", grouped["blocked_human_review"])
     print_group("TODO", "□", grouped["todo"])
 
 

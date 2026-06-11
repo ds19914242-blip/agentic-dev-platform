@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-173148",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 008 — Add footer build info toggle\n\n**Goal:** Add a small footer control that toggles visibility of build information.\n\n**Scope:** Existing footer/layout component only.\n\n**Acceptance criteria:**\n- Footer contains a small button or link to show/hide build information.\n- When hidden, existing footer remains unchanged.\n- When shown, footer displays app name and current year.\n- State is local UI state only.\n- No API, auth, database, or route behavior changes.\n- Validation passes.\n\n**Risk:** medium\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T17:32:45",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:31:48",
+      "completed_at": "2026-06-11T17:32:29",
+      "updated_at": "2026-06-11T17:32:29",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:32:29",
+      "completed_at": "2026-06-11T17:32:45",
+      "updated_at": "2026-06-11T17:32:45",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T17:32:45",
+      "completed_at": "2026-06-11T17:32:45",
+      "updated_at": "2026-06-11T17:32:45",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "skipped",
+      "started_at": null,
+      "completed_at": "2026-06-11T17:32:45",
+      "updated_at": "2026-06-11T17:32:45",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "done_no_pr",
+    "status_updated_at": "2026-06-11T17:32:45"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/status.md",
+      "updated_at": "2026-06-11T17:32:45"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/events.md",
+      "updated_at": "2026-06-11T17:32:45"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-173148/run-context.json",
+      "attached_at": "2026-06-11T14:31:48Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-173148/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:31:48"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:31:48"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:32:29"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:32:45"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-173148/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:32:45"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-173148/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:32:45"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-173148/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:32:45"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T17:31:48",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T17:31:48",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:32:29",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:32:45",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:32:45",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:32:45",
+      "event": "No changes detected"
+    }
+  ],
+  "created_at": "2026-06-11T17:31:48"
+}

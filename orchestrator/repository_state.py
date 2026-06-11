@@ -1,6 +1,11 @@
 import subprocess
 
 
+IGNORED_STATUS_PATTERNS = [
+    "node_modules",
+]
+
+
 def git_status(repo_path):
     result = subprocess.run(
         ["git", "status", "--short"],
@@ -12,8 +17,19 @@ def git_status(repo_path):
     return result.stdout.strip()
 
 
+def filter_status(status):
+    lines = []
+
+    for line in status.splitlines():
+        if any(pattern in line for pattern in IGNORED_STATUS_PATTERNS):
+            continue
+        lines.append(line)
+
+    return "\n".join(lines).strip()
+
+
 def ensure_clean_repo(repo_path):
-    status = git_status(repo_path)
+    status = filter_status(git_status(repo_path))
 
     if status:
         raise RuntimeError(

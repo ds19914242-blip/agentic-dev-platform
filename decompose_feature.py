@@ -16,7 +16,7 @@ def slugify(text):
 
 def make_epic_dir(title):
     stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    path = Path("epics") / f"{stamp}-{slugify(title)}"
+    path = Path("backlog") / f"{stamp}-{slugify(title)}"
     path.mkdir(parents=True, exist_ok=True)
     return path
 
@@ -38,7 +38,7 @@ def main():
 
 You are an analyst agent for an autonomous development platform.
 
-Your job is to decompose a large request into small, safe, independently shippable tasks.
+Your job is to decompose a large request into small, safe, independently shippable backlog tasks.
 
 Do not modify files.
 
@@ -75,6 +75,7 @@ Each task must be:
 - scoped to a few files where possible
 - independently reviewable as a PR
 - safe to validate with typecheck/tests
+- dependency-aware
 
 Use this exact task format:
 
@@ -85,6 +86,19 @@ Use this exact task format:
 **Suggested files:** ...
 **Acceptance criteria:** ...
 **Risk:** low | medium | high
+
+## Depends On
+
+_None_
+
+Dependency rules:
+- Every generated task MUST include a section named exactly: ## Depends On
+- Use _None_ when the task has no dependencies.
+- Use task ids like task-001, task-002 when a task depends on earlier tasks.
+- Prefer a DAG, not a strict chain.
+- Independent tasks should have _None_ so they can run in parallel.
+- Do not create unnecessary dependencies.
+- Put foundational/shared architecture tasks before dependent UI tasks.
 
 Then continue Task 002, Task 003, etc.
 
@@ -132,7 +146,15 @@ Do not include implementation code.
         tasks.append("\n".join(current).strip())
 
     for i, task in enumerate(tasks, start=1):
-        (epic_dir / f"task-{i:03d}.md").write_text(task + "\n")
+        task_text = task.strip()
+
+        if "## Depends On" not in task_text:
+            task_text += "\n\n## Depends On\n\n_None_"
+
+        if not any(line.lower().startswith("status:") for line in task_text.splitlines()):
+            task_text = "Status: todo\n\n" + task_text
+
+        (epic_dir / f"task-{i:03d}.md").write_text(task_text + "\n")
 
     (epic_dir / "tasks.md").write_text(
         "# Tasks\n\n" + "\n\n".join(
@@ -147,14 +169,3 @@ Do not include implementation code.
 
 if __name__ == "__main__":
     main()
-
-
-# Dependency-aware backlog instruction
-
-Dependency-aware backlog requirements:
-- Every generated task MUST include a section:
-  ## Depends On
-- Use _None_ when the task has no dependencies.
-- Use task ids like task-001, task-002 when a task depends on earlier tasks.
-- Prefer a DAG, not a strict chain.
-- Independent tasks should have _None_ so they can run in parallel.

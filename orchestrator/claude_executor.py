@@ -1,5 +1,6 @@
 import subprocess
 import time
+from orchestrator.llm_metrics import increment_model_calls
 from pathlib import Path
 
 
@@ -31,6 +32,8 @@ def run_claude(repo_path, prompt, allow_writes=False, max_turns=15, retries=2):
     last_error = ""
 
     for attempt in range(retries + 1):
+        increment_model_calls()
+
         result = subprocess.run(
             command,
             cwd=repo_path,

@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-184447-033148-e3b3e4",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: high\nStatus: in_progress\n\n### Task 008 — Scope RSS sources and collections to the active user\n\n**Goal:** Replace the `DEFAULT_OWNER` placeholder so each account only sees and manages its own RSS sources and collections.\n**Scope:** In the RSS source/collection route handlers (and `lib/storage/rss.ts` if needed), resolve `currentUser()` and set `ownerId` on create, and filter `list`/`get`/`update`/`delete` by the current user's id. Provide a back-compat path so pre-existing records (owned by `local-user`) remain visible to the admin or are migrated.\n**Suggested files:** `app/api/rss/sources/route.ts`, `app/api/rss/sources/[id]/route.ts`, `app/api/rss/collections/route.ts`, `app/api/rss/collections/[id]/route.ts`, `lib/storage/rss.ts`.\n**Acceptance criteria:** A user sees only their own sources/collections; cannot read/modify another user's records (404/403); newly created records carry the creator's `ownerId`; legacy `local-user` records are handled per the chosen back-compat rule; `tsc` passes.\n**Risk:** high\n\n## Depends On\n\ntask-004\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T18:47:06",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:44:47",
+      "completed_at": "2026-06-11T18:46:43",
+      "updated_at": "2026-06-11T18:46:43",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:46:43",
+      "completed_at": "2026-06-11T18:47:02",
+      "updated_at": "2026-06-11T18:47:02",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T18:47:02",
+      "completed_at": "2026-06-11T18:47:02",
+      "updated_at": "2026-06-11T18:47:02",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T18:47:06",
+      "completed_at": "2026-06-11T18:47:06",
+      "updated_at": "2026-06-11T18:47:06",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T18:47:06"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/status.md",
+      "updated_at": "2026-06-11T18:47:06"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/events.md",
+      "updated_at": "2026-06-11T18:47:06"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/run-context.json",
+      "attached_at": "2026-06-11T15:44:47Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:44:47"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:44:47"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:46:43"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:47:02"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:47:02"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:47:02"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:47:02"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-184447-033148-e3b3e4/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T18:47:06"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:44:47",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:44:47",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:46:43",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:47:02",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:47:02",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:47:06",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/34"
+    }
+  ],
+  "created_at": "2026-06-11T18:44:47"
+}

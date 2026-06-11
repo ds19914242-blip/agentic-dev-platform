@@ -11,6 +11,7 @@ from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_manager import make_run_dir
 from orchestrator.run_runtime import RunRuntime
 from orchestrator.run_context import update_run_context
+from orchestrator.llm_metrics import start_metrics, finish_metrics
 from orchestrator.run_artifacts import register_artifacts
 from orchestrator.bug_task_creator import create_bug_task
 
@@ -101,6 +102,8 @@ def main():
         graph.add(node_id, name)
     graph.write()
 
+    start_metrics(run_dir)
+    os.environ["AGENTIC_RUN_DIR"] = str(run_dir)
     run.status("created")
     run.event(f"{pipeline} run created")
     update_run_context(
@@ -185,7 +188,7 @@ def main():
 
     if has_changes(repo_path):
         title = first_title(task_text)
-        branch = safe_branch(pipeline, title)
+        branch = safe_branch(f"{pipeline}-{run_dir.name}", title)
 
         pr_url = create_pr(
             repo_path=repo_path,
@@ -210,6 +213,7 @@ def main():
         graph.skip("pr")
 
     graph.write()
+    finish_metrics(run_dir)
 
     print(f"Run: {run_dir}")
     print(f"Validation: {'passed' if validation_ok else 'failed'}")

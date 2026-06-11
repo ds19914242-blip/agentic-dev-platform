@@ -64,6 +64,12 @@ def prepare_worktree(base_repo, worktrees_root, task_id):
         cwd=base_repo,
     )
 
+    base_node_modules = base_repo / "node_modules"
+    worktree_node_modules = worktree_path / "node_modules"
+
+    if base_node_modules.exists() and not worktree_node_modules.exists():
+        worktree_node_modules.symlink_to(base_node_modules, target_is_directory=True)
+
     return worktree_path, branch
 
 

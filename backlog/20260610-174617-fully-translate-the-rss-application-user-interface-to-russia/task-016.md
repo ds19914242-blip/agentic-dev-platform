@@ -1,6 +1,6 @@
 PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/24
 Run: feature-20260611-161101
-Status: pr_created
+Status: merged
 
 ### Task 016 — Finish Sources page remaining English labels
 

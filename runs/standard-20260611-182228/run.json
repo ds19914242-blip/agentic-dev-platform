@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-182228",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 002 — Encode user identity in the session token\n\n**Goal:** Extend the stateless session cookie to carry the authenticated user's id/username/role instead of only `authenticated=true`, keeping signing and verification backward-compatible.\n**Scope:** Add `sub` (userId), `username`, and `role` to `SessionPayload`; update `createSessionToken` to accept a user; add a `readSessionPayload(token, secret)` that returns the decoded, verified payload (or `null`). Keep `verifySessionToken` working (boolean) so `middleware.ts` needs no change. Tolerate old-format tokens gracefully (treated as unauthenticated or anonymous).\n**Suggested files:** `lib/session.ts`.\n**Acceptance criteria:** A token created for a user verifies and decodes back to that user's id/username/role; tampered tokens fail; expired tokens fail; existing boolean `verifySessionToken` behavior preserved; `tsc` passes.\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T18:23:52",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:22:28",
+      "completed_at": "2026-06-11T18:23:24",
+      "updated_at": "2026-06-11T18:23:24",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:23:24",
+      "completed_at": "2026-06-11T18:23:45",
+      "updated_at": "2026-06-11T18:23:45",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T18:23:45",
+      "completed_at": "2026-06-11T18:23:45",
+      "updated_at": "2026-06-11T18:23:45",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T18:23:52",
+      "completed_at": "2026-06-11T18:23:52",
+      "updated_at": "2026-06-11T18:23:52",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T18:23:52"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/status.md",
+      "updated_at": "2026-06-11T18:23:52"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/events.md",
+      "updated_at": "2026-06-11T18:23:52"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182228/run-context.json",
+      "attached_at": "2026-06-11T15:22:28Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182228/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:22:28"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:22:28"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:23:24"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:23:45"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182228/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:23:45"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:23:45"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182228/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:23:45"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182228/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T18:23:52"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:22:28",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:22:28",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:23:24",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:23:45",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:23:45",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:23:52",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/31"
+    }
+  ],
+  "created_at": "2026-06-11T18:22:28"
+}

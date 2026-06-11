@@ -116,6 +116,16 @@ def set_task_profile(task_path, profile):
     task_path.write_text("\n".join(header + cleaned) + "\n")
 
 
+def has_human_approval(task_path):
+    text = task_path.read_text(errors="ignore").lower()
+
+    for line in text.splitlines():
+        if line.startswith("human approved:"):
+            return line.split(":", 1)[1].strip() in {"yes", "true", "approved", "ok"}
+
+    return False
+
+
 def task_title(task_text):
     for line in task_text.splitlines():
         line = line.strip()
@@ -158,20 +168,23 @@ def read_pr_url(run_dir):
 
 
 def parse_run_dir_from_stdout(stdout):
-    match = re.search(r"Run:\s+(runs/feature-[0-9\-]+)", stdout)
+    match = re.search(r"Run:\s+(runs/[a-zA-Z0-9\-]+)", stdout)
     if not match:
-        match = re.search(r"Autonomous run complete:\s+(runs/feature-[0-9\-]+)", stdout)
+        match = re.search(r"Autonomous run complete:\s+(runs/[a-zA-Z0-9\-]+)", stdout)
 
     return Path(match.group(1)) if match else None
 
 
-def run_autonomous(product_name, task_text, repo_path_override=None):
+def run_autonomous(product_name, task_text, repo_path_override=None, source_task_path=None):
     feature_request = build_feature_request(task_text)
     input_text = product_name + "\n" + feature_request + "\n"
 
     env = os.environ.copy()
     if repo_path_override:
         env["AGENTIC_REPO_PATH_OVERRIDE"] = str(repo_path_override)
+
+    if source_task_path and has_human_approval(source_task_path):
+        env["AGENTIC_HUMAN_APPROVED"] = "1"
 
     result = subprocess.run(
         ["python3", "run_autonomous_feature.py"],
@@ -270,7 +283,7 @@ def main():
                 stdout = result.stdout
 
             else:
-                stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path)
+                stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path, source_task_path=task_path)
         except Exception:
             set_status(task_path, "blocked")
             raise
@@ -287,6 +300,14 @@ def main():
             print(f"Task marked pr_created: {task_path}")
             print(f"Run: {run_dir}")
             print(f"PR: {pr_url}")
+        elif "NEEDS_HUMAN_REVIEW" in stdout and not has_human_approval(task_path):
+            set_status(task_path, "blocked_human_review")
+            print(f"Task marked blocked_human_review: human review required for {task_path}")
+            print(f"Run: {run_dir}")
+        elif "NEEDS_HUMAN_REVIEW" in stdout and has_human_approval(task_path):
+            set_status(task_path, "blocked_human_review")
+            print(f"Task still requires human review despite approval: {task_path}")
+            print(f"Run: {run_dir}")
         else:
             set_status(task_path, "done_no_pr")
             print(f"Task marked done_no_pr: no PR found for {task_path}")

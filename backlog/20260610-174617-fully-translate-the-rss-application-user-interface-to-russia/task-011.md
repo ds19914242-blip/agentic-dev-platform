@@ -1,6 +1,6 @@
 PR: https://github.com/ds19914242-blip/rss-agent-lab/pull/22
 Run: feature-20260611-161103
-Status: pr_created
+Status: merged
 
 ### Task 011 — Translate ExecutiveSummary and report section headers
 

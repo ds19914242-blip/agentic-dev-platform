@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.5",
+  "run_id": "fast-20260611-172003",
+  "run_type": "fast",
+  "product": "rss-agent-lab_2",
+  "request": "Type: micro_change\nPipeline: fast\nRisk: low\nStatus: in_progress\n\n### Task 004 — Change footer text again\n\n**Goal:** Change footer text to say \"Работает на Agentic Dev Platform\".\n**Scope:** Small UI copy change.\n**Suggested files:** footer or layout component.\n**Acceptance criteria:** Footer renders the requested Russian text; validation passes.\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T17:20:34",
+  "stages": {
+    "implementation": {
+      "name": "Run fast implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:20:03",
+      "completed_at": "2026-06-11T17:20:19",
+      "updated_at": "2026-06-11T17:20:19",
+      "attempt": 1,
+      "artifacts": [
+        "fast-prompt.md",
+        "fast-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:20:19",
+      "completed_at": "2026-06-11T17:20:34",
+      "updated_at": "2026-06-11T17:20:34",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T17:20:34",
+      "completed_at": "2026-06-11T17:20:34",
+      "updated_at": "2026-06-11T17:20:34",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "skipped",
+      "started_at": null,
+      "completed_at": "2026-06-11T17:20:34",
+      "updated_at": "2026-06-11T17:20:34",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "done_no_pr",
+    "status_updated_at": "2026-06-11T17:20:34"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/status.md",
+      "updated_at": "2026-06-11T17:20:34"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/events.md",
+      "updated_at": "2026-06-11T17:20:34"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/fast-20260611-172003/run-context.json",
+      "attached_at": "2026-06-11T14:20:03Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/fast-20260611-172003/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:20:03"
+    },
+    "fast-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/fast-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:20:03"
+    },
+    "fast-response.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/fast-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:20:19"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:20:34"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/fast-20260611-172003/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:20:34"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/fast-20260611-172003/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:20:34"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/fast-20260611-172003/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:20:34"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T17:20:03",
+      "event": "Fast task run created"
+    },
+    {
+      "timestamp": "2026-06-11T17:20:03",
+      "event": "Fast implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:20:19",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:20:34",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:20:34",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:20:34",
+      "event": "No changes detected"
+    }
+  ],
+  "created_at": "2026-06-11T17:20:03"
+}

@@ -32,7 +32,12 @@ def read_task(path):
         for line in body.splitlines():
             item = line.strip().lstrip("-").strip()
             if item and item.lower() not in {"none", "_none_", "n/a"}:
-                depends_on.append(item)
+                parts = [
+                    part.strip()
+                    for part in item.replace(" and ", ",").split(",")
+                    if part.strip()
+                ]
+                depends_on.extend(parts)
 
     return {
         "id": task_id_from_path(path),

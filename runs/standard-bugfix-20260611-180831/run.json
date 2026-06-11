@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-bugfix-20260611-180831",
+  "run_type": "standard_bugfix",
+  "product": "rss-agent-lab_2",
+  "request": "Type: bug_fix\nPipeline: standard_bugfix\nRisk: medium\nStatus: in_progress\nSource: validation_failed\nRun: standard-20260611-180422\n\n### Bug Fix — Recover failed run standard-20260611-180422\n\n**Problem:** A previous Agentic Dev Platform run failed or did not complete successfully.\n\n**Source task:** task-002.md\n\n**Evidence:**\n- runs/standard-20260611-180422/validation.md\n- runs/standard-20260611-180422/run.json\n\n**Goal:** Fix the issue with the smallest safe change.\n\n**Acceptance criteria:**\n- Validation passes.\n- The original task can be completed or safely marked resolved.\n- No unrelated files are changed.\n\n**Risk:** medium\n\n## Depends On\n\n_None_\n",
+  "status": "failed",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T18:09:46",
+  "stages": {
+    "implementation": {
+      "name": "Run standard_bugfix implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:08:31",
+      "completed_at": "2026-06-11T18:09:45",
+      "updated_at": "2026-06-11T18:09:45",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "failed",
+      "started_at": "2026-06-11T18:09:45",
+      "completed_at": "2026-06-11T18:09:46",
+      "updated_at": "2026-06-11T18:09:46",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": "Validation failed"
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "validation_failed",
+    "status_updated_at": "2026-06-11T18:09:46"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-180831/status.md",
+      "updated_at": "2026-06-11T18:09:46"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-180831/events.md",
+      "updated_at": "2026-06-11T18:09:46"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-180831/run-context.json",
+      "attached_at": "2026-06-11T15:08:31Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-180831/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:08:31"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-180831/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:08:31"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-180831/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:09:45"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-180831/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:09:46"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-180831/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:09:46"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:08:31",
+      "event": "standard_bugfix run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:08:31",
+      "event": "standard_bugfix implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:09:45",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:09:46",
+      "event": "Validation report written: failed"
+    },
+    {
+      "timestamp": "2026-06-11T18:09:46",
+      "event": "Validation failed"
+    },
+    {
+      "timestamp": "2026-06-11T18:09:46",
+      "event": "Bug task created: backlog/20260611-175957-добавить-систему-аккаунтов-пользователей-без-бд/task-013.md"
+    }
+  ],
+  "created_at": "2026-06-11T18:08:31"
+}

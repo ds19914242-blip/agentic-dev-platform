@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-172621",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 006 — Add footer year display\n\n**Goal:** Add a current year display to the application footer.\n\n**Scope:** Existing footer/layout component only.\n\n**Acceptance criteria:**\n- Footer shows the current year.\n- Existing footer text remains visible.\n- No route or data fetching behavior changes.\n- Validation passes.\n\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T17:27:15",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:26:21",
+      "completed_at": "2026-06-11T17:26:53",
+      "updated_at": "2026-06-11T17:26:53",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T17:26:53",
+      "completed_at": "2026-06-11T17:27:10",
+      "updated_at": "2026-06-11T17:27:10",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T17:27:10",
+      "completed_at": "2026-06-11T17:27:10",
+      "updated_at": "2026-06-11T17:27:10",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T17:27:15",
+      "completed_at": "2026-06-11T17:27:15",
+      "updated_at": "2026-06-11T17:27:15",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T17:27:15"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/status.md",
+      "updated_at": "2026-06-11T17:27:15"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/events.md",
+      "updated_at": "2026-06-11T17:27:15"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-172621/run-context.json",
+      "attached_at": "2026-06-11T14:26:21Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-172621/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:26:21"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:26:21"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T17:26:53"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:27:10"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-172621/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T17:27:10"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:27:10"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-172621/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T17:27:10"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-172621/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T17:27:15"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T17:26:21",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T17:26:21",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:26:53",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T17:27:10",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:27:10",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T17:27:15",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/28"
+    }
+  ],
+  "created_at": "2026-06-11T17:26:21"
+}

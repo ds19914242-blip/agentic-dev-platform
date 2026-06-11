@@ -1,0 +1,96 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-182734",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 003 — Authenticate login against the user store\n\n**Goal:** Replace the single env-var credential check with lookup + password verification against the user store, issuing an identity-bearing session.\n**Scope:** Update `POST /api/auth/login` to fetch the user by username from `userStorage`, verify the password hash in constant time, and on success call the new `createSessionToken(user, secret)`. Preserve the existing cookie attributes, error messages, and 500-when-unconfigured behavior (now keyed on `SESSION_SECRET`).\n**Suggested files:** `app/api/auth/login/route.ts`.\n**Acceptance criteria:** Valid stored credentials log in and set an identity session cookie; invalid credentials return 401 with the existing Russian error; the seeded admin (from Task 001) can still log in with the env credentials; `tsc` passes.\n**Risk:** medium\n\n## Depends On\n\ntask-001, task-002\n",
+  "status": "running",
+  "current_stage": "implementation",
+  "updated_at": "2026-06-11T18:27:34",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "running",
+      "started_at": "2026-06-11T18:27:34",
+      "completed_at": null,
+      "updated_at": "2026-06-11T18:27:34",
+      "attempt": 1,
+      "artifacts": [],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "implementing",
+    "status_updated_at": "2026-06-11T18:27:34"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182734/status.md",
+      "updated_at": "2026-06-11T18:27:34"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182734/events.md",
+      "updated_at": "2026-06-11T18:27:34"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182734/run-context.json",
+      "attached_at": "2026-06-11T15:27:34Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-182734/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:27:34"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-182734/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:27:34"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:27:34",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:27:34",
+      "event": "standard implementation started"
+    }
+  ],
+  "created_at": "2026-06-11T18:27:34"
+}

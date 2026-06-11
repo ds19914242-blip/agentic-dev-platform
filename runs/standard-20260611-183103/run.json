@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-183103",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 003 — Authenticate login against the user store\n\n**Goal:** Replace the single env-var credential check with lookup + password verification against the user store, issuing an identity-bearing session.\n**Scope:** Update `POST /api/auth/login` to fetch the user by username from `userStorage`, verify the password hash in constant time, and on success call the new `createSessionToken(user, secret)`. Preserve the existing cookie attributes, error messages, and 500-when-unconfigured behavior (now keyed on `SESSION_SECRET`).\n**Suggested files:** `app/api/auth/login/route.ts`.\n**Acceptance criteria:** Valid stored credentials log in and set an identity session cookie; invalid credentials return 401 with the existing Russian error; the seeded admin (from Task 001) can still log in with the env credentials; `tsc` passes.\n**Risk:** medium\n\n## Depends On\n\ntask-001, task-002\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T18:32:34",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:31:03",
+      "completed_at": "2026-06-11T18:32:16",
+      "updated_at": "2026-06-11T18:32:16",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T18:32:16",
+      "completed_at": "2026-06-11T18:32:34",
+      "updated_at": "2026-06-11T18:32:34",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T18:32:34",
+      "completed_at": "2026-06-11T18:32:34",
+      "updated_at": "2026-06-11T18:32:34",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "skipped",
+      "started_at": null,
+      "completed_at": "2026-06-11T18:32:34",
+      "updated_at": "2026-06-11T18:32:34",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "done_no_pr",
+    "status_updated_at": "2026-06-11T18:32:34"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/status.md",
+      "updated_at": "2026-06-11T18:32:34"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/events.md",
+      "updated_at": "2026-06-11T18:32:34"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-183103/run-context.json",
+      "attached_at": "2026-06-11T15:31:03Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-183103/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:31:03"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:31:03"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T18:32:16"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:32:34"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-183103/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T18:32:34"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-183103/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:32:34"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-183103/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T18:32:34"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T18:31:03",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T18:31:03",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:32:16",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T18:32:34",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:32:34",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T18:32:34",
+      "event": "No changes detected"
+    }
+  ],
+  "created_at": "2026-06-11T18:31:03"
+}
