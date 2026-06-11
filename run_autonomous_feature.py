@@ -8,6 +8,7 @@ from orchestrator.import_analyzer import analyze_imports, format_import_map
 from orchestrator.affected_file_detector import detect_affected_files
 from orchestrator.repository_intelligence_v2 import rank_affected_files
 from orchestrator.context_builder import read_context
+from orchestrator.context_curator import write_memory_context
 from orchestrator.planner_agent import create_plan
 from orchestrator.llm_planner_agent import create_llm_plan
 from orchestrator.architect_agent import create_architecture_review
@@ -33,6 +34,7 @@ from orchestrator.run_context import update_run_context
 from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
+from orchestrator.memory_store import update_product_memory, ingest_run
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 
@@ -92,6 +94,22 @@ def main():
     run.event("Autonomous feature run created")
     update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
 
+    update_product_memory(product_name, {
+        "name": product.get("name", product_name),
+        "repo_path": repo_path,
+        "type": product.get("type"),
+        "status": product.get("status"),
+        "framework": product.get("framework"),
+        "capabilities": product.get("capabilities", {}),
+        "validators": product.get("validators", []),
+    })
+
+    memory_context_path, memory_context = write_memory_context(
+        run_dir=run_dir,
+        product_name=product_name,
+        feature=feature,
+    )
+
     run = RunRuntime(
         run_dir,
         product=product_name,
@@ -139,6 +157,8 @@ def main():
     graph_v2.complete('affected_files')
     graph_v2.write()
     context = read_context(repo_path, affected)
+
+    context = context + "\n\n" + memory_context
 
     agent_context = AgentContext()
 
@@ -474,6 +494,12 @@ After implementation:
     print(f"Validation: {'passed' if validation_ok else 'failed'}")
     print(f"Review: {run_dir / 'post-run-review.md'}")
     print(f"Confidence: {confidence_path}")
+    try:
+        ingest_run(product_name, run_dir)
+        run.event("Run memory ingested")
+    except Exception as err:
+        run.event(f"Run memory ingestion failed: {err}")
+
     print(f"Confidence status: {confidence['status']}")
 
 
