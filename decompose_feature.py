@@ -147,3 +147,14 @@ Do not include implementation code.
 
 if __name__ == "__main__":
     main()
+
+
+# Dependency-aware backlog instruction
+
+Dependency-aware backlog requirements:
+- Every generated task MUST include a section:
+  ## Depends On
+- Use _None_ when the task has no dependencies.
+- Use task ids like task-001, task-002 when a task depends on earlier tasks.
+- Prefer a DAG, not a strict chain.
+- Independent tasks should have _None_ so they can run in parallel.

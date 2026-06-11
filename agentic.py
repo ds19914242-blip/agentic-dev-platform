@@ -12,13 +12,15 @@ COMMANDS = {
     "confidence": "confidence_latest_run.py",
     "dag": "backlog_dag.py",
     "ready": "backlog_ready.py",
+    "schedule": "backlog_scheduler.py",
+    "parallel": "backlog_parallel.py",
 }
 
 
 ALIASES = {
     "run": "feature",
     "epic": "decompose",
-    "next": "backlog",
+    "next": "schedule",
     "progress": "status",
 }
 
@@ -39,6 +41,8 @@ def print_help():
     print("  confidence   Run confidence report for latest run")
     print("  dag          Show dependency-aware backlog DAG")
     print("  ready        Show ready backlog tasks")
+    print("  schedule     Run next dependency-ready backlog task")
+    print("  parallel     Run ready backlog tasks in parallel")
     print()
     print("Aliases:")
     print("  run          feature")

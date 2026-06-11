@@ -1,3 +1,4 @@
+import sys
 from pathlib import Path
 import subprocess
 import re
@@ -194,3 +195,9 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+# Compatibility note:
+# Dependency-aware scheduler calls:
+#   python3 run_backlog_task.py backlog/<epic>/task-001.md
+# If this script does not yet consume sys.argv[1], keep old behavior.
