@@ -71,7 +71,7 @@ COMMANDS = {
     },
     "acceptance": {
         "script": "run_acceptance.py",
-        "description": "Run acceptance verification for an epic",
+        "description": "Run acceptance verification or generated Playwright tests for an epic",
         "legacy": False,
     },
     "acceptance-status": {
