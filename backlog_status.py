@@ -1,63 +1,16 @@
 from pathlib import Path
 import sys
 
-
-STATUSES = [
-    "merged",
-    "pr_created",
-    "done",
-    "done_no_pr",
-    "already_satisfied",
-    "no_changes_needed",
-    "manual_verification_required",
-    "manual_verification_passed",
-    "manual_verification_failed",
-    "in_progress",
-    "blocked",
-    "blocked_human_review",
-    "todo",
-]
+from orchestrator.backlog_store import get_pr, get_status, list_epics, task_title
+from orchestrator.task_status import COMPLETED_STATUSES, ORDERED_STATUSES
 
 
-def get_status(task_path):
-    text = task_path.read_text(errors="ignore").lower()
-
-    for line in text.splitlines():
-        if line.startswith("status:"):
-            return line.split(":", 1)[1].strip()
-
-    return "todo"
-
-
-def get_pr(task_path):
-    text = task_path.read_text(errors="ignore")
-
-    for line in text.splitlines():
-        if line.lower().startswith("pr:"):
-            return line.split(":", 1)[1].strip()
-
-    return ""
-
-
-def task_title(task_path):
-    text = task_path.read_text(errors="ignore")
-
-    for line in text.splitlines():
-        line = line.strip()
-
-        if line.startswith("### Task "):
-            return line.replace("### ", "")
-
-    return task_path.name
-
-
-def epic_progress(epic_path):
+def epic_progress(epic_path: Path):
     tasks = sorted(epic_path.glob("task-*.md"))
-    grouped = {status: [] for status in STATUSES}
+    grouped = {status: [] for status in ORDERED_STATUSES}
 
     for task in tasks:
         status = get_status(task)
-
         if status not in grouped:
             status = "todo"
 
@@ -75,45 +28,20 @@ def epic_progress(epic_path):
     }
 
 
-def print_epic_summary(epic_path):
+def print_epic_summary(epic_path: Path):
     progress = epic_progress(epic_path)
     grouped = progress["grouped"]
-
     total = progress["total"]
 
-    merged = len(grouped["merged"])
-    pr_created = len(grouped["pr_created"])
-    done = len(grouped["done"])
-    done_no_pr = len(grouped["done_no_pr"])
-    already_satisfied = len(grouped["already_satisfied"])
-    no_changes_needed = len(grouped["no_changes_needed"])
-    manual_required = len(grouped["manual_verification_required"])
-    manual_passed = len(grouped["manual_verification_passed"])
-    manual_failed = len(grouped["manual_verification_failed"])
-    in_progress = len(grouped["in_progress"])
-    blocked = len(grouped["blocked"])
-    blocked_human_review = len(grouped["blocked_human_review"])
-    todo = len(grouped["todo"])
-
-    completed = merged + pr_created + done + done_no_pr + already_satisfied + no_changes_needed + manual_passed
-
+    completed = sum(len(grouped[status]) for status in COMPLETED_STATUSES)
     percent = round((completed / total) * 100) if total else 0
 
     print(f"Epic: {epic_path.name}")
     print(f"Progress: {completed}/{total} completed ({percent}%)")
-    print(f"Merged: {merged}")
-    print(f"PR created: {pr_created}")
-    print(f"Done: {done}")
-    print(f"Done no PR: {done_no_pr}")
-    print(f"Already satisfied: {already_satisfied}")
-    print(f"No changes needed: {no_changes_needed}")
-    print(f"Manual verification required: {manual_required}")
-    print(f"Manual verification passed: {manual_passed}")
-    print(f"Manual verification failed: {manual_failed}")
-    print(f"In progress: {in_progress}")
-    print(f"Blocked: {blocked}")
-    print(f"Human review: {blocked_human_review}")
-    print(f"Todo: {todo}")
+
+    for status in ORDERED_STATUSES:
+        print(f"{status}: {len(grouped[status])}")
+
     print()
 
 
@@ -133,34 +61,30 @@ def print_group(title, icon, items):
     print()
 
 
-def print_epic_detail(epic_path):
+def print_epic_detail(epic_path: Path):
     progress = epic_progress(epic_path)
     grouped = progress["grouped"]
 
     print_epic_summary(epic_path)
 
-    print_group("MERGED", "✓", grouped["merged"])
-    print_group("PR CREATED", "◉", grouped["pr_created"])
-    print_group("DONE", "✓", grouped["done"])
-    print_group("DONE NO PR", "•", grouped["done_no_pr"])
-    print_group("ALREADY SATISFIED", "=", grouped["already_satisfied"])
-    print_group("NO CHANGES NEEDED", "•", grouped["no_changes_needed"])
-    print_group("MANUAL VERIFICATION REQUIRED", "?", grouped["manual_verification_required"])
-    print_group("MANUAL VERIFICATION PASSED", "✓", grouped["manual_verification_passed"])
-    print_group("MANUAL VERIFICATION FAILED", "✗", grouped["manual_verification_failed"])
-    print_group("IN PROGRESS", "…", grouped["in_progress"])
-    print_group("BLOCKED", "⚠", grouped["blocked"])
-    print_group("HUMAN REVIEW", "!", grouped["blocked_human_review"])
-    print_group("TODO", "□", grouped["todo"])
+    icons = {
+        "merged": "✓",
+        "pr_created": "◉",
+        "done": "✓",
+        "done_no_pr": "•",
+        "already_satisfied": "=",
+        "no_changes_needed": "•",
+        "manual_verification_required": "?",
+        "manual_verification_passed": "✓",
+        "manual_verification_failed": "✗",
+        "in_progress": "…",
+        "blocked": "⚠",
+        "blocked_human_review": "!",
+        "todo": "□",
+    }
 
-
-def list_epics():
-    backlog = Path("backlog")
-
-    if not backlog.exists():
-        return []
-
-    return sorted(p for p in backlog.iterdir() if p.is_dir())
+    for status in ORDERED_STATUSES:
+        print_group(status.upper().replace("_", " "), icons.get(status, "-"), grouped[status])
 
 
 def main():
@@ -179,7 +103,6 @@ def main():
 
     if "--detail" in args:
         index = 0
-
         for arg in args:
             if arg.isdigit():
                 index = int(arg) - 1
