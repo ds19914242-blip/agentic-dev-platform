@@ -1,6 +1,7 @@
 import subprocess
 from pathlib import Path
 from orchestrator.acceptance.result import AcceptanceResult, write_acceptance_result
+from orchestrator.acceptance.auto_command import infer_acceptance_command
 from orchestrator.product_registry import load_product_config
 from orchestrator.acceptance.bug_recovery import create_acceptance_bug_task
 
@@ -26,7 +27,7 @@ def product_acceptance_config(product_name):
 def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
     epic_dir = Path(epic_dir)
     config = product_acceptance_config(product_name)
-    command = command or config.get("command") or load_acceptance_command(epic_dir)
+    command = command or config.get("command") or infer_acceptance_command(epic_dir) or load_acceptance_command(epic_dir)
     cwd = cwd or config.get("cwd") or "."
 
     env = None
