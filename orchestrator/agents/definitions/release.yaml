@@ -1,0 +1,15 @@
+name: release
+mission: Finalize run state and prepare pull request readiness.
+blocking: true
+inputs:
+  - validation result
+  - acceptance result
+  - review result
+  - confidence result
+outputs:
+  - pull-request.md
+  - final run status
+success_criteria:
+  - PR is created only when gates are acceptable
+  - failed gates do not silently pass
+  - run memory is ingested

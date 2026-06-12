@@ -1,0 +1,13 @@
+name: validator
+mission: Run validators and determine whether implementation is technically valid.
+blocking: true
+inputs:
+  - product validators
+  - changed files
+  - run artifacts
+outputs:
+  - validation.md
+  - validation.json
+success_criteria:
+  - required validators pass
+  - validation failures create recovery work

@@ -1,0 +1,14 @@
+name: implementer
+mission: Implement the approved plan with the smallest safe code change.
+blocking: true
+inputs:
+  - approved-plan.md
+  - feature
+  - repository context
+outputs:
+  - changed files
+  - claude-implementation-response.md
+success_criteria:
+  - approved plan is followed
+  - no unrelated files are changed
+  - implementation can be validated

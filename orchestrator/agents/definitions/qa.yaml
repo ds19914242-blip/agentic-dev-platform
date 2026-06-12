@@ -1,0 +1,13 @@
+name: qa
+mission: Create verification strategy for the requested change.
+blocking: false
+inputs:
+  - feature
+  - plan.md
+  - architecture-review.md
+outputs:
+  - qa-plan.md
+success_criteria:
+  - validation strategy is described
+  - manual verification is described when needed
+  - acceptance criteria are testable

@@ -1,0 +1,14 @@
+name: architect
+mission: Review architectural impact before implementation.
+blocking: true
+inputs:
+  - feature
+  - affected_files
+  - repository_map
+  - plan.md
+outputs:
+  - architecture-review.md
+success_criteria:
+  - architectural risks are explicit
+  - unsafe broad changes are rejected
+  - boundaries and affected modules are identified
