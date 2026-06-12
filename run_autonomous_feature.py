@@ -1,11 +1,6 @@
 from pathlib import Path
 
 from orchestrator.repository_state import ensure_clean_repo
-from orchestrator.planner_agent import create_plan
-from orchestrator.llm_planner_agent import create_llm_plan
-from orchestrator.architect_agent import create_architecture_review
-from orchestrator.qa_agent import create_qa_plan
-from orchestrator.agent_context import AgentContext
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.run_manager import write_run_files
@@ -31,8 +26,8 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_planning_service import run_autonomous_planning
 from orchestrator.services.autonomous_run_service import (
-    apply_planner_selected_files,
     create_autonomous_run,
     initialize_autonomous_graph,
     prepare_repository_context,
@@ -109,33 +104,22 @@ def main():
     graph_v2.complete("affected_files")
     graph_v2.write()
 
-    agent_context = AgentContext()
-
-    plan = create_llm_plan(repo_path, feature, affected, repo_map_text)
-    agent_context.set("plan", plan)
-    update_run_context(run_dir, plan=plan, affected_files=affected)
-    graph_v2.complete("planning", artifacts=["plan.md"])
-    graph_v2.write()
-
-    architecture_review = create_architecture_review(
-        feature,
-        affected,
-        repo_map_text,
-        agent_context.get("plan"),
+    planning_state = run_autonomous_planning(
+        run_dir=run_dir,
+        run=run,
+        graph_v2=graph_v2,
+        repo_path=repo_path,
+        feature=feature,
+        files=files,
+        affected=affected,
+        repo_map_text=repo_map_text,
     )
-    agent_context.set("architecture_review", architecture_review)
-    graph_v2.complete("architecture", artifacts=["architecture-review.md"])
-    graph_v2.write()
-
-    qa_plan = create_qa_plan(
-        feature,
-        affected,
-        agent_context.get("plan"),
-        agent_context.get("architecture_review"),
-    )
-    agent_context.set("qa_plan", qa_plan)
-    graph_v2.complete("qa", artifacts=["qa-plan.md"])
-    graph_v2.write()
+    agent_context = planning_state["agent_context"]
+    plan = planning_state["plan"]
+    architecture_review = planning_state["architecture_review"]
+    qa_plan = planning_state["qa_plan"]
+    affected = planning_state["affected"]
+    planner_selected_files = planning_state["planner_selected_files"]
 
     graph = ExecutionGraph()
     for node_id, name in [
@@ -192,14 +176,6 @@ def main():
         "import-map.md",
         "plan.md",
     ], stage="planning")
-
-    affected, planner_selected_files = apply_planner_selected_files(
-        run_dir,
-        plan,
-        files,
-        affected,
-        run,
-    )
 
     security = evaluate_security_gate(affected)
 
