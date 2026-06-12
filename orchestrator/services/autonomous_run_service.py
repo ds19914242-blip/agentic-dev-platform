@@ -81,6 +81,7 @@ def initialize_autonomous_graph(graph_v2):
         ("replanning", "Replan after validation failure"),
         ("review", "Run reviewer agent"),
         ("post_review", "Create post-run review"),
+        ("acceptance", "Run acceptance gate"),
         ("confidence", "Run confidence gate"),
     ]:
         graph_v2.add(node_id, name)

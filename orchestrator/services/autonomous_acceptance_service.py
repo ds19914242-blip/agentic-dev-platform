@@ -37,6 +37,8 @@ def run_acceptance_gate(product_name, run, graph_v2):
 
     run.status("acceptance_running")
     run.event(f"Acceptance gate started: {epic_dir}")
+    graph_v2.start("acceptance")
+    graph_v2.write()
 
     try:
         result = run_acceptance(
@@ -46,13 +48,19 @@ def run_acceptance_gate(product_name, run, graph_v2):
     except Exception as err:
         run.status("acceptance_failed")
         run.event(f"Acceptance gate failed with exception: {err}")
+        graph_v2.fail("acceptance", error=str(err))
+        graph_v2.write()
         return False
 
     if result.passed:
         run.status("acceptance_passed")
         run.event("Acceptance gate passed")
+        graph_v2.complete("acceptance", artifacts=["acceptance-result.md", "acceptance-result.json"])
+        graph_v2.write()
         return True
 
     run.status("acceptance_failed")
     run.event("Acceptance gate failed; recovery bug task should be available in epic")
+    graph_v2.fail("acceptance", error="Acceptance failed", artifacts=["acceptance-result.md", "acceptance-result.json"])
+    graph_v2.write()
     return False
