@@ -54,3 +54,28 @@ def create_autonomous_run(product_name, product, repo_path, feature, work_item):
         "memory_context_path": memory_context_path,
         "memory_context": memory_context,
     }
+
+
+def initialize_autonomous_graph(graph_v2):
+    for node_id, name in [
+        ("repo_state", "Check clean repository"),
+        ("repo_scan", "Scan repository"),
+        ("repo_intelligence", "Build repository intelligence"),
+        ("affected_files", "Detect affected files"),
+        ("planning", "Create plan"),
+        ("architecture", "Create architecture review"),
+        ("qa", "Create QA plan"),
+        ("security", "Run security gate"),
+        ("claude_plan", "Run Claude planning"),
+        ("approved_plan", "Approve plan"),
+        ("implementation", "Run Claude implementation"),
+        ("validation", "Run validation"),
+        ("replanning", "Replan after validation failure"),
+        ("review", "Run reviewer agent"),
+        ("post_review", "Create post-run review"),
+        ("confidence", "Run confidence gate"),
+    ]:
+        graph_v2.add(node_id, name)
+
+    graph_v2.complete("repo_state")
+    graph_v2.write()

@@ -38,7 +38,7 @@ from orchestrator.memory_store import ingest_run
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
-from orchestrator.services.autonomous_run_service import create_autonomous_run
+from orchestrator.services.autonomous_run_service import create_autonomous_run, initialize_autonomous_graph
 
 import subprocess
 import os
@@ -94,27 +94,7 @@ def main():
     run = run_state["run"]
     graph_v2 = run_state["graph_v2"]
     memory_context = run_state["memory_context"]
-    for node_id, name in [
-        ("repo_state", "Check clean repository"),
-        ("repo_scan", "Scan repository"),
-        ("repo_intelligence", "Build repository intelligence"),
-        ("affected_files", "Detect affected files"),
-        ("planning", "Create plan"),
-        ("architecture", "Create architecture review"),
-        ("qa", "Create QA plan"),
-        ("security", "Run security gate"),
-        ("claude_plan", "Run Claude planning"),
-        ("approved_plan", "Approve plan"),
-        ("implementation", "Run Claude implementation"),
-        ("validation", "Run validation"),
-        ("replanning", "Replan after validation failure"),
-        ("review", "Run reviewer agent"),
-        ("post_review", "Create post-run review"),
-        ("confidence", "Run confidence gate"),
-    ]:
-        graph_v2.add(node_id, name)
-    graph_v2.complete("repo_state")
-    graph_v2.write()
+    initialize_autonomous_graph(graph_v2)
 
     print(f"Run: {run_dir}")
     print(f"Repo: {repo_path}")
