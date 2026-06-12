@@ -2,6 +2,7 @@ import subprocess
 from pathlib import Path
 from orchestrator.acceptance.result import AcceptanceResult, write_acceptance_result
 from orchestrator.acceptance.auto_command import infer_acceptance_command
+from orchestrator.acceptance.auto_command import infer_acceptance_command
 from orchestrator.product_registry import load_product_config
 from orchestrator.acceptance.bug_recovery import create_acceptance_bug_task
 
