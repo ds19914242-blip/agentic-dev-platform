@@ -1,10 +1,6 @@
 from pathlib import Path
 
 from orchestrator.repository_state import ensure_clean_repo
-from orchestrator.execution_graph import ExecutionGraph
-from orchestrator.prompt_builder import build_feature_prompt
-from orchestrator.run_manager import write_run_files
-from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.run_context import update_run_context
 from orchestrator.llm_metrics import finish_metrics
@@ -15,6 +11,11 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_artifacts_service import (
+    initialize_legacy_execution_graph,
+    write_planning_artifacts,
+    write_security_and_agent_artifacts,
+)
 from orchestrator.services.autonomous_claude_planning_service import run_claude_planning_and_approve
 from orchestrator.services.autonomous_implementation_service import run_autonomous_implementation_and_tests
 from orchestrator.services.autonomous_review_service import run_autonomous_review_and_confidence
@@ -114,84 +115,34 @@ def main():
     affected = planning_state["affected"]
     planner_selected_files = planning_state["planner_selected_files"]
 
-    graph = ExecutionGraph()
-    for node_id, name in [
-        ("repository_scan", "Scan repository"),
-        ("repository_intelligence", "Build repository map"),
-        ("affected_files", "Detect affected files"),
-        ("planning", "Create implementation plan"),
-        ("architecture_review", "Create architecture review"),
-        ("qa_plan", "Create QA plan"),
-        ("prompt", "Create Claude prompt"),
-        ("claude_plan", "Run Claude planning"),
-        ("approved_plan", "Approve plan"),
-        ("implementation", "Implement approved plan"),
-        ("validation", "Validate implementation"),
-        ("post_run_review", "Create post run review"),
-    ]:
-        graph.add_node(node_id, name)
-
-    for node_id in [
-        "repository_scan",
-        "repository_intelligence",
-        "affected_files",
-        "planning",
-        "architecture_review",
-        "qa_plan",
-    ]:
-        graph.mark_completed(node_id)
-
-    plan_prompt = build_feature_prompt(
-        feature,
-        repo_path,
-        affected,
-        context,
-        mode="plan_only",
-    )
+    graph = initialize_legacy_execution_graph()
 
     status_before = git_status(repo_path)
 
-    write_run_files(
-        run_dir,
-        feature,
-        repo_path,
-        files,
-        affected,
-        status_before,
-        plan_prompt,
+    write_planning_artifacts(
+        run_dir=run_dir,
+        run=run,
+        graph=graph,
+        feature=feature,
+        repo_path=repo_path,
+        files=files,
+        affected=affected,
+        context=context,
+        status_before=status_before,
+        repo_map_text=repo_map_text,
+        import_map_text=import_map_text,
+        plan=plan,
     )
 
-    (run_dir / "repository-map.md").write_text(repo_map_text)
-    (run_dir / "import-map.md").write_text(import_map_text)
-    (run_dir / "plan.md").write_text(plan)
-    register_artifacts(run_dir, [
-        "repository-map.md",
-        "import-map.md",
-        "plan.md",
-    ], stage="planning")
-
-    security = evaluate_security_gate(affected)
-
-    (run_dir / "affected-files.md").write_text(
-        "# Affected Files\n\n" + "\n".join(f"- {f}" for f in affected) + "\n"
+    security = write_security_and_agent_artifacts(
+        run_dir=run_dir,
+        run=run,
+        graph_v2=graph_v2,
+        affected=affected,
+        architecture_review=architecture_review,
+        qa_plan=qa_plan,
+        agent_context=agent_context,
     )
-
-    (run_dir / "architecture-review.md").write_text(architecture_review)
-    (run_dir / "qa-plan.md").write_text(qa_plan)
-    write_security_report(run_dir, security)
-    run.artifact("affected-files.md", stage="affected_files")
-    run.artifact("architecture-review.md", stage="architecture")
-    run.artifact("qa-plan.md", stage="qa")
-    register_artifacts(run_dir, ["security-gate.md", "security-gate.json"], stage="security")
-    update_run_context(run_dir, security=security)
-    graph_v2.complete("security", artifacts=["security-gate.md", "security-gate.json"])
-    graph_v2.write()
-    (run_dir / "agent-context.md").write_text(agent_context.to_markdown())
-    run.artifact("agent-context.md", stage="planning")
-
-    graph.mark_completed("prompt")
-    (run_dir / "execution-graph.md").write_text(graph.to_markdown())
-    run.artifact("execution-graph.md", stage="planning")
 
     # MVP mode: Security Gate is advisory only.
     # It writes security-gate.md / security-gate.json, but never blocks execution.
