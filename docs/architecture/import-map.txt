@@ -74,6 +74,15 @@ memory_report.py
   -> orchestrator.failure_memory
   -> orchestrator.memory_store
 
+orchestrator/acceptance/runner.py
+  -> orchestrator.acceptance.auto_command
+  -> orchestrator.acceptance.bug_recovery
+  -> orchestrator.acceptance.result
+  -> orchestrator.product_registry
+
+orchestrator/acceptance/scenario_parser.py
+  -> orchestrator.acceptance.scenario_model
+
 orchestrator/artifact_store.py
   -> orchestrator.run_state
 
@@ -121,6 +130,9 @@ orchestrator/run_runtime.py
   -> orchestrator.graph_runtime
   -> orchestrator.run_artifacts
   -> orchestrator.run_status
+
+orchestrator/services/autonomous_acceptance_service.py
+  -> orchestrator.acceptance.runner
 
 orchestrator/services/autonomous_artifacts_service.py
   -> orchestrator.execution_graph
@@ -234,6 +246,7 @@ orchestrator/work_item_analyst.py
 orchestrator/workflows/autonomous_workflow.py
   -> orchestrator.repository_state
   -> orchestrator.run_decision
+  -> orchestrator.services.autonomous_acceptance_service
   -> orchestrator.services.autonomous_artifacts_service
   -> orchestrator.services.autonomous_claude_planning_service
   -> orchestrator.services.autonomous_implementation_service
@@ -257,6 +270,16 @@ review_latest_run.py
   -> orchestrator.post_run_review
   -> orchestrator.product_registry
   -> orchestrator.run_status
+
+run_acceptance.py
+  -> orchestrator.acceptance.runner
+
+run_acceptance_scenarios.py
+  -> orchestrator.acceptance.playwright_command
+  -> orchestrator.acceptance.playwright_generator
+  -> orchestrator.acceptance.playwright_install
+  -> orchestrator.acceptance.scenario_parser
+  -> orchestrator.acceptance.scenario_report
 
 run_autonomous_feature.py
   -> orchestrator.workflows.autonomous_workflow

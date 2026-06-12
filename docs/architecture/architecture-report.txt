@@ -11,7 +11,7 @@
 
 ## Workflow layer
 
-- orchestrator/workflows/autonomous_workflow.py: present, 218 lines
+- orchestrator/workflows/autonomous_workflow.py: present, 222 lines
 
 ## Backlog state layer
 
@@ -23,11 +23,11 @@
 
 ## Service layer
 
-- orchestrator/services/task_execution_service.py: present, 299 lines
+- orchestrator/services/task_execution_service.py: present, 302 lines
 - orchestrator/services/pipeline_runner.py: present, 177 lines
 - orchestrator/services/verification_service.py: present, 127 lines
 - orchestrator/services/autonomous_preflight_service.py: present, 51 lines
-- orchestrator/services/autonomous_run_service.py: present, 123 lines
+- orchestrator/services/autonomous_run_service.py: present, 124 lines
 - orchestrator/services/autonomous_planning_service.py: present, 62 lines
 - orchestrator/services/autonomous_claude_planning_service.py: present, 58 lines
 - orchestrator/services/autonomous_implementation_service.py: present, 93 lines
@@ -36,4 +36,4 @@
 - orchestrator/services/autonomous_finalize_service.py: present, 60 lines
 - orchestrator/services/autonomous_artifacts_service.py: present, 133 lines
 
-Total tracked architecture lines: 2228
+Total tracked architecture lines: 2236
