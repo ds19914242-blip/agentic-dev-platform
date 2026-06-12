@@ -1,0 +1,290 @@
+
+approve_feature_spec.py
+  -> orchestrator.acceptance_scenarios
+  -> orchestrator.claude_executor
+
+approve_latest_plan.py
+  -> orchestrator.approved_plan
+  -> orchestrator.run_status
+
+backlog_dag.py
+  -> orchestrator.backlog_dag
+  -> orchestrator.backlog_query
+
+backlog_parallel.py
+  -> orchestrator.backlog_dag
+
+backlog_parallel_worktree.py
+  -> orchestrator.backlog_dag
+  -> orchestrator.product_registry
+
+backlog_ready.py
+  -> orchestrator.backlog_dag
+  -> orchestrator.backlog_query
+
+backlog_status.py
+  -> orchestrator.backlog_store
+  -> orchestrator.task_status
+
+classify_task.py
+  -> orchestrator.execution_router
+  -> orchestrator.product_registry
+  -> orchestrator.task_classifier
+
+confidence_latest_run.py
+  -> orchestrator.confidence_gate
+  -> orchestrator.run_status
+
+create_pr_latest_run.py
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+
+decompose_feature.py
+  -> orchestrator.claude_executor
+  -> orchestrator.product_registry
+  -> orchestrator.repository_intelligence
+  -> orchestrator.repository_scanner
+
+execute_latest_run.py
+  -> orchestrator.claude_executor
+  -> orchestrator.claude_response
+  -> orchestrator.execution_result
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+
+implement_latest_plan.py
+  -> orchestrator.approved_plan
+  -> orchestrator.claude_executor
+  -> orchestrator.claude_response
+  -> orchestrator.execution_result
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+
+main.py
+  -> orchestrator.orchestrator
+  -> orchestrator.work_item
+
+mark_manual_verified.py
+  -> orchestrator.services.verification_service
+
+memory_report.py
+  -> orchestrator.failure_memory
+  -> orchestrator.memory_store
+
+orchestrator/artifact_store.py
+  -> orchestrator.run_state
+
+orchestrator/backlog_dag.py
+  -> orchestrator.backlog_store
+  -> orchestrator.task_status
+
+orchestrator/backlog_query.py
+  -> orchestrator.backlog_store
+
+orchestrator/backlog_store.py
+  -> orchestrator.task_model
+  -> orchestrator.task_status
+
+orchestrator/claude_executor.py
+  -> orchestrator.llm_metrics
+
+orchestrator/complexity_classifier.py
+  -> orchestrator.claude_executor
+
+orchestrator/context_curator.py
+  -> orchestrator.failure_memory
+  -> orchestrator.memory_store
+
+orchestrator/llm_planner_agent.py
+  -> orchestrator.claude_executor
+
+orchestrator/orchestrator.py
+  -> orchestrator.work_item
+
+orchestrator/replanner_agent.py
+  -> orchestrator.claude_executor
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_status
+
+orchestrator/reviewer_agent.py
+  -> orchestrator.claude_executor
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_status
+
+orchestrator/run_context.py
+  -> orchestrator.run_state
+
+orchestrator/run_runtime.py
+  -> orchestrator.graph_runtime
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_status
+
+orchestrator/services/autonomous_artifacts_service.py
+  -> orchestrator.execution_graph
+  -> orchestrator.prompt_builder
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_context
+  -> orchestrator.run_manager
+  -> orchestrator.security_gate
+
+orchestrator/services/autonomous_claude_planning_service.py
+  -> orchestrator.approved_plan
+  -> orchestrator.claude_executor
+  -> orchestrator.claude_response
+  -> orchestrator.run_decision
+
+orchestrator/services/autonomous_finalize_service.py
+  -> orchestrator.failure_memory
+  -> orchestrator.llm_metrics
+  -> orchestrator.memory_store
+  -> orchestrator.pr_creator
+
+orchestrator/services/autonomous_implementation_service.py
+  -> orchestrator.approved_plan
+  -> orchestrator.claude_executor
+  -> orchestrator.execution_result
+  -> orchestrator.manual_verification
+  -> orchestrator.test_generator
+
+orchestrator/services/autonomous_planning_service.py
+  -> orchestrator.agent_context
+  -> orchestrator.architect_agent
+  -> orchestrator.llm_planner_agent
+  -> orchestrator.qa_agent
+  -> orchestrator.run_context
+  -> orchestrator.services.autonomous_run_service
+
+orchestrator/services/autonomous_preflight_service.py
+  -> orchestrator.complexity_classifier
+  -> orchestrator.product_registry
+  -> orchestrator.repository_intelligence
+  -> orchestrator.repository_scanner
+  -> orchestrator.work_item_analyst
+
+orchestrator/services/autonomous_review_service.py
+  -> orchestrator.confidence_gate
+  -> orchestrator.post_run_review
+  -> orchestrator.reviewer_agent
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_context
+
+orchestrator/services/autonomous_run_service.py
+  -> orchestrator.affected_file_detector
+  -> orchestrator.context_builder
+  -> orchestrator.context_curator
+  -> orchestrator.import_analyzer
+  -> orchestrator.llm_metrics
+  -> orchestrator.memory_store
+  -> orchestrator.planner_selected_files
+  -> orchestrator.repository_intelligence
+  -> orchestrator.repository_intelligence_v2
+  -> orchestrator.repository_scanner
+  -> orchestrator.run_context
+  -> orchestrator.run_manager
+  -> orchestrator.run_runtime
+
+orchestrator/services/autonomous_validation_service.py
+  -> orchestrator.failure_memory
+  -> orchestrator.replanner_agent
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_context
+  -> orchestrator.validation_runner
+
+orchestrator/services/pipeline_runner.py
+  -> orchestrator.bug_task_creator
+  -> orchestrator.claude_executor
+  -> orchestrator.llm_metrics
+  -> orchestrator.pr_creator
+  -> orchestrator.product_registry
+  -> orchestrator.repository_state
+  -> orchestrator.run_artifacts
+  -> orchestrator.run_context
+  -> orchestrator.run_manager
+  -> orchestrator.run_runtime
+  -> orchestrator.validation_runner
+
+orchestrator/services/task_execution_service.py
+  -> orchestrator.backlog_store
+  -> orchestrator.execution_router
+  -> orchestrator.product_registry
+  -> orchestrator.task_classifier
+  -> orchestrator.task_status
+
+orchestrator/services/verification_service.py
+  -> orchestrator.backlog_store
+
+orchestrator/task_classifier.py
+  -> orchestrator.claude_executor
+
+orchestrator/task_model.py
+  -> orchestrator.task_status
+
+orchestrator/test_generator.py
+  -> orchestrator.claude_executor
+
+orchestrator/validation_runner.py
+  -> orchestrator.run_status
+
+orchestrator/work_item_analyst.py
+  -> orchestrator.claude_executor
+
+orchestrator/workflows/autonomous_workflow.py
+  -> orchestrator.repository_state
+  -> orchestrator.run_decision
+  -> orchestrator.services.autonomous_artifacts_service
+  -> orchestrator.services.autonomous_claude_planning_service
+  -> orchestrator.services.autonomous_implementation_service
+  -> orchestrator.services.autonomous_planning_service
+  -> orchestrator.services.autonomous_preflight_service
+  -> orchestrator.services.autonomous_review_service
+  -> orchestrator.services.autonomous_run_service
+  -> orchestrator.services.autonomous_validation_service
+
+record_claude_response.py
+  -> orchestrator.claude_response
+  -> orchestrator.run_status
+
+record_result.py
+  -> orchestrator.execution_result
+  -> orchestrator.post_run_review
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+
+review_latest_run.py
+  -> orchestrator.post_run_review
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+
+run_autonomous_feature.py
+  -> orchestrator.workflows.autonomous_workflow
+
+run_backlog_task.py
+  -> orchestrator.services.task_execution_service
+
+run_fast_task.py
+  -> orchestrator.services.pipeline_runner
+
+run_feature.py
+  -> orchestrator.affected_file_detector
+  -> orchestrator.agent_context
+  -> orchestrator.architect_agent
+  -> orchestrator.context_builder
+  -> orchestrator.execution_graph
+  -> orchestrator.import_analyzer
+  -> orchestrator.planner_agent
+  -> orchestrator.product_registry
+  -> orchestrator.prompt_builder
+  -> orchestrator.qa_agent
+  -> orchestrator.repository_intelligence
+  -> orchestrator.repository_scanner
+  -> orchestrator.repository_state
+  -> orchestrator.run_manager
+  -> orchestrator.run_status
+
+run_standard_task.py
+  -> orchestrator.services.pipeline_runner
+
+validate_latest_run.py
+  -> orchestrator.product_registry
+  -> orchestrator.run_status
+  -> orchestrator.validation_runner
