@@ -1,0 +1,68 @@
+{
+  "epic": "20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей",
+  "tasks": [
+    {
+      "id": "task-001",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-001.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-002",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-002.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-001"
+      ]
+    },
+    {
+      "id": "task-003",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-003.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-001",
+        "task-002"
+      ]
+    },
+    {
+      "id": "task-004",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-004.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-001",
+        "task-002"
+      ]
+    },
+    {
+      "id": "task-005",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-005.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-002"
+      ]
+    },
+    {
+      "id": "task-006",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-006.md",
+      "status": "no_changes_needed",
+      "depends_on": [
+        "task-004",
+        "task-005"
+      ]
+    },
+    {
+      "id": "task-007",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-007.md",
+      "status": "todo",
+      "depends_on": [
+        "task-003",
+        "task-006"
+      ]
+    }
+  ],
+  "ready": [
+    "task-007"
+  ],
+  "blocked": [],
+  "errors": []
+}

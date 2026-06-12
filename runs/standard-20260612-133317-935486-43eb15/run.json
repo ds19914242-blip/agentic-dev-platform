@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-133317-935486-43eb15",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 008 — Show YouTube in Sources UI\n\n**Goal:** Make YouTube visible and selectable in the Sources UI.\n\n**Problem:** Production Sources UI shows RSS, Telegram and Reddit, but YouTube is missing.\n\n**Scope:** Sources UI only.\n\n**Acceptance criteria:**\n- YouTube appears as a source type option next to RSS, Telegram and Reddit.\n- Selecting YouTube shows channel-specific input placeholder, e.g. `@OpenAI` or YouTube channel URL.\n- Existing RSS, Telegram and Reddit options still work.\n- Validation passes.\n\n**Risk:** low\n\n## Depends On\n\ntask-006\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T13:35:28",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T13:33:17",
+      "completed_at": "2026-06-12T13:35:06",
+      "updated_at": "2026-06-12T13:35:06",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T13:35:06",
+      "completed_at": "2026-06-12T13:35:22",
+      "updated_at": "2026-06-12T13:35:22",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T13:35:22",
+      "completed_at": "2026-06-12T13:35:22",
+      "updated_at": "2026-06-12T13:35:22",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T13:35:28",
+      "completed_at": "2026-06-12T13:35:28",
+      "updated_at": "2026-06-12T13:35:28",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T13:35:28"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/status.md",
+      "updated_at": "2026-06-12T13:35:28"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/events.md",
+      "updated_at": "2026-06-12T13:35:28"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-133317-935486-43eb15/run-context.json",
+      "attached_at": "2026-06-12T10:33:17Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-133317-935486-43eb15/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T13:33:17"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T13:33:17"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T13:35:06"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T13:35:22"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-133317-935486-43eb15/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T13:35:22"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T13:35:22"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-133317-935486-43eb15/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T13:35:22"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-133317-935486-43eb15/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T13:35:28"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T13:33:17",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T13:33:17",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T13:35:06",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T13:35:22",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T13:35:22",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T13:35:28",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/54"
+    }
+  ],
+  "created_at": "2026-06-12T13:33:17"
+}

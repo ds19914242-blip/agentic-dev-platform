@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-123235-557644-289b86",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 005 — API test-endpoint branch\n\n**Goal:** Support test-before-save for YouTube sources.\n**Scope:** Add a branch in the test route for `sourceType === \"youtube\"` that reuses `fetchYouTubeChannel()` and returns a result indicating whether the input resolves to a valid channel and how many videos it returns. Clear error on invalid/unresolvable input; empty channel reported as empty, not an error.\n**Suggested files:** `app/api/rss/test/route.ts`\n**Acceptance criteria:** Test branch resolves a valid channel and reports video count; invalid input returns a clear error (no crash); empty channel handled gracefully; other source types' test behavior unchanged.\n**Risk:** low\n\n## Depends On\n\ntask-002\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T12:35:11",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:32:35",
+      "completed_at": "2026-06-12T12:34:45",
+      "updated_at": "2026-06-12T12:34:45",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:34:45",
+      "completed_at": "2026-06-12T12:35:06",
+      "updated_at": "2026-06-12T12:35:06",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T12:35:06",
+      "completed_at": "2026-06-12T12:35:06",
+      "updated_at": "2026-06-12T12:35:06",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T12:35:11",
+      "completed_at": "2026-06-12T12:35:11",
+      "updated_at": "2026-06-12T12:35:11",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T12:35:11"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/status.md",
+      "updated_at": "2026-06-12T12:35:11"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/events.md",
+      "updated_at": "2026-06-12T12:35:11"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-557644-289b86/run-context.json",
+      "attached_at": "2026-06-12T09:32:35Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-557644-289b86/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:32:35"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:32:35"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:34:45"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:35:06"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-557644-289b86/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:35:06"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:35:06"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-557644-289b86/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:35:06"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-557644-289b86/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T12:35:11"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T12:32:35",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T12:32:35",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:34:45",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:35:06",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:35:06",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:35:11",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/51"
+    }
+  ],
+  "created_at": "2026-06-12T12:32:35"
+}

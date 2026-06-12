@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-122750-909852-095d39",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 002 — YouTube fetcher + normalizer module\n\n**Goal:** Implement `fetchYouTubeChannel()` and `normalizeYouTube()`, including channel-input → `channel_id` resolution, returning the standard fetch-result shape. This is the largest/riskiest task and is unit-checkable in isolation against real channels.\n**Scope:** New module exporting `fetchYouTubeChannel()` returning `{ ok, status, itemCount, error?, articles }` and `normalizeYouTube()` mapping a video to `NormalizedArticle`. Resolve channel input from: raw `channel_id` (`UC…`), `/channel/UC…` URL, `@handle` (bare or URL), `/c/…`, `/user/…` — handles/custom URLs that don't directly carry a `channel_id` require an extra HTML fetch to extract it; time-box and fail clearly when unresolvable. Build the native feed URL and fetch via the existing `fetchFeed()` parser; if Atom/Media-RSS namespace extraction of title/link/date/description is incomplete, add a small dedicated parse step. Normalize each video: `title`=video title, `link`=canonical watch URL, `summary`=description truncated consistently with other sources (sensible fallback when empty), `publishedAt`=ISO publish date, `sourceName`=channel name. Apply `timeWindowDays` and max-items limit matching Telegram/Reddit. Zero recent videos → `status: \"empty\"` (not an error). Guard against live/upcoming/Shorts items with missing/future dates so filtering and sorting don't break.\n**Suggested files:** `lib/youtube/fetchYouTubeChannel.ts` (new); reference `lib/rss/fetchFeed.ts` and the existing Telegram/Reddit fetchers.\n**Acceptance criteria:** All resolution forms (channel URL, `@handle`, raw `UC…`, `/channel/`, `/c/`, `/user/`) resolve to a usable feed; normalization fields exactly as specified; `timeWindowDays` + max-items applied; invalid/unresolvable input returns a clear error (no crash); empty channel returns `status: \"empty\"`; standard result shape returned.\n**Risk:** high\n\n## Depends On\n\ntask-001\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T12:31:53",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:27:50",
+      "completed_at": "2026-06-12T12:31:35",
+      "updated_at": "2026-06-12T12:31:35",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:31:35",
+      "completed_at": "2026-06-12T12:31:48",
+      "updated_at": "2026-06-12T12:31:48",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T12:31:48",
+      "completed_at": "2026-06-12T12:31:48",
+      "updated_at": "2026-06-12T12:31:48",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T12:31:53",
+      "completed_at": "2026-06-12T12:31:53",
+      "updated_at": "2026-06-12T12:31:53",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T12:31:53"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/status.md",
+      "updated_at": "2026-06-12T12:31:53"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/events.md",
+      "updated_at": "2026-06-12T12:31:53"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-122750-909852-095d39/run-context.json",
+      "attached_at": "2026-06-12T09:27:50Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-122750-909852-095d39/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:27:50"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:27:50"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:31:35"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:31:48"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-122750-909852-095d39/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:31:48"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:31:48"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-122750-909852-095d39/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:31:48"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-122750-909852-095d39/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T12:31:53"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T12:27:50",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T12:27:50",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:31:35",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:31:48",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:31:48",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:31:53",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/50"
+    }
+  ],
+  "created_at": "2026-06-12T12:27:50"
+}

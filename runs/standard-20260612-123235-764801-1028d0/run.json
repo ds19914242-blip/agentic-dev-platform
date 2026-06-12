@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-123235-764801-1028d0",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 004 — API create/update branches\n\n**Goal:** Persist YouTube sources via the create and update endpoints with validation.\n**Scope:** Add a YouTube branch to the POST route that validates the channel input and persists `sourceType: \"youtube\"` with a populated `youtube` config. Add the parallel YouTube branch to the PATCH route for editing limits/config. Invalid input (non-YouTube URL, malformed handle) produces a clear, user-visible error with no crash. Follow the existing Telegram/Reddit branches' structure.\n**Suggested files:** `app/api/rss/sources/route.ts` (POST), `app/api/rss/sources/[id]/route.ts` (PATCH)\n**Acceptance criteria:** POST creates a `youtube` source with validated input and config; PATCH updates a `youtube` source's config; invalid input returns a clear error; existing source types' create/update paths unaffected; TypeScript compiles.\n**Risk:** medium\n\n## Depends On\n\ntask-001, task-002\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T12:36:17",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:32:35",
+      "completed_at": "2026-06-12T12:35:51",
+      "updated_at": "2026-06-12T12:35:51",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T12:35:51",
+      "completed_at": "2026-06-12T12:36:13",
+      "updated_at": "2026-06-12T12:36:13",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T12:36:13",
+      "completed_at": "2026-06-12T12:36:13",
+      "updated_at": "2026-06-12T12:36:13",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T12:36:17",
+      "completed_at": "2026-06-12T12:36:17",
+      "updated_at": "2026-06-12T12:36:17",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T12:36:17"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/status.md",
+      "updated_at": "2026-06-12T12:36:17"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/events.md",
+      "updated_at": "2026-06-12T12:36:17"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-764801-1028d0/run-context.json",
+      "attached_at": "2026-06-12T09:32:35Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-764801-1028d0/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:32:35"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:32:35"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T12:35:51"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:36:13"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-764801-1028d0/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T12:36:13"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:36:13"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-123235-764801-1028d0/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T12:36:13"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-123235-764801-1028d0/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T12:36:17"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T12:32:35",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T12:32:35",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:35:51",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T12:36:13",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:36:13",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T12:36:17",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/53"
+    }
+  ],
+  "created_at": "2026-06-12T12:32:35"
+}
