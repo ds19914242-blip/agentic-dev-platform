@@ -36,6 +36,9 @@ def main():
         if "Source: acceptance_failed" in text:
             bug_tasks.append(task)
 
+    if result.get("bug_task"):
+        print(f"Bug task: {result.get(bug_task)}")
+
     if bug_tasks:
         print("Bug tasks:")
         for task in bug_tasks:

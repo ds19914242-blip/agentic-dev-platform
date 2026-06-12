@@ -42,6 +42,8 @@ def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
 
     if not acceptance_result.passed:
         bug_task = create_acceptance_bug_task(epic_dir, acceptance_result)
+        acceptance_result.bug_task = str(bug_task)
+        write_acceptance_result(epic_dir, acceptance_result)
         print(f"Acceptance bug task: {bug_task}")
 
     return acceptance_result

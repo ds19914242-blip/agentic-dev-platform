@@ -10,6 +10,7 @@ class AcceptanceResult:
     returncode: int
     stdout: str
     stderr: str
+    bug_task: str = ""
 
     def to_dict(self):
         return asdict(self)
