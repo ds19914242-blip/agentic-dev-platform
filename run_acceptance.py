@@ -14,6 +14,7 @@ def main():
     parser.add_argument("epic_dir", nargs="?")
     parser.add_argument("--command", default=None)
     parser.add_argument("--cwd", default=None)
+    parser.add_argument("--product", default=None)
     args = parser.parse_args()
     epic_dir = Path(args.epic_dir) if args.epic_dir else latest_epic_dir()
     result = run_acceptance(epic_dir=epic_dir, command=args.command, cwd=args.cwd)
