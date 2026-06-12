@@ -1,8 +1,6 @@
 from orchestrator.agent_context import AgentContext
 from orchestrator.agents.context import AgentRunContext
 from orchestrator.agents.runtime import run_agent
-from orchestrator.architect_agent import create_architecture_review
-from orchestrator.qa_agent import create_qa_plan
 
 
 def run_autonomous_planning(
@@ -39,22 +37,40 @@ def run_autonomous_planning(
     graph_v2.complete("planning", artifacts=["plan.md", "planner-selected-files.md"])
     graph_v2.write()
 
-    architecture_review = create_architecture_review(
-        feature,
-        affected,
-        repo_map_text,
-        agent_context.get("plan"),
+    architect_result = run_agent(
+        "architect",
+        AgentRunContext(
+            agent="architect",
+            run_dir=str(run_dir),
+            repo_path=repo_path,
+            feature=feature,
+            inputs={
+                "affected": affected,
+                "repo_map_text": repo_map_text,
+                "plan": agent_context.get("plan"),
+            },
+        ),
     )
+    architecture_review = architect_result.metadata.get("architecture_review", "")
     agent_context.set("architecture_review", architecture_review)
     graph_v2.complete("architecture", artifacts=["architecture-review.md"])
     graph_v2.write()
 
-    qa_plan = create_qa_plan(
-        feature,
-        affected,
-        agent_context.get("plan"),
-        agent_context.get("architecture_review"),
+    qa_result = run_agent(
+        "qa",
+        AgentRunContext(
+            agent="qa",
+            run_dir=str(run_dir),
+            repo_path=repo_path,
+            feature=feature,
+            inputs={
+                "affected": affected,
+                "plan": agent_context.get("plan"),
+                "architecture_review": agent_context.get("architecture_review"),
+            },
+        ),
     )
+    qa_plan = qa_result.metadata.get("qa_plan", "")
     agent_context.set("qa_plan", qa_plan)
     graph_v2.complete("qa", artifacts=["qa-plan.md"])
     graph_v2.write()

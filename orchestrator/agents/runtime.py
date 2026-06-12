@@ -3,6 +3,8 @@ from orchestrator.agents.planner_runtime import execute_planner
 from orchestrator.agents.reviewer_runtime import execute_reviewer
 from orchestrator.agents.acceptance_runtime import execute_acceptance
 from orchestrator.agents.validator_runtime import execute_validator
+from orchestrator.agents.architect_runtime import execute_architect
+from orchestrator.agents.qa_runtime import execute_qa
 from orchestrator.agents.context import AgentRunContext
 from orchestrator.agents.registry import describe_agent
 from orchestrator.agents.definition_loader import load_agent_definition
@@ -35,6 +37,18 @@ def run_agent(agent_name, context):
 
     if agent_name == "validator":
         result = execute_validator(context)
+        if context.run_dir:
+            write_agent_result(context.run_dir, result)
+        return result
+
+    if agent_name == "architect":
+        result = execute_architect(context)
+        if context.run_dir:
+            write_agent_result(context.run_dir, result)
+        return result
+
+    if agent_name == "qa":
+        result = execute_qa(context)
         if context.run_dir:
             write_agent_result(context.run_dir, result)
         return result
