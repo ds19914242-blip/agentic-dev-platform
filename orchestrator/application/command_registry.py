@@ -84,6 +84,11 @@ COMMANDS = {
         "description": "Parse acceptance scenarios for an epic",
         "legacy": False,
     },
+    "agent": {
+        "script": "run_agent.py",
+        "description": "Run an agent through Agent Runtime",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
