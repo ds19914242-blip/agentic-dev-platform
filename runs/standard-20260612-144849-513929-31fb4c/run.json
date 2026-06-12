@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-144849-513929-31fb4c",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 003 — Accessibility pass on the indicator\n\n**Goal:** Ensure the check indicator conveys status via text/aria/icon, not color alone, and is keyboard/screen-reader accessible.\n**Scope:** In `app/sources/page.tsx`, add text labels and appropriate ARIA to the indicator from Task 002 (e.g. visible text \"Проверено\"/\"Пусто\"/\"Ошибка\", and an `aria-live`/`role=\"status\"` region or `aria-label` so the success/empty/error state is announced). Confirm color is never the sole signal. No new components required unless trivially extracted.\n**Suggested files:** `app/sources/page.tsx`\n**Acceptance criteria:** Indicator status is discernible without color (text + icon/aria); the state change on check completion is announced to assistive tech; focus/keyboard interaction with the row is unaffected.\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T14:50:52",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:48:49",
+      "completed_at": "2026-06-12T14:50:25",
+      "updated_at": "2026-06-12T14:50:25",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:50:25",
+      "completed_at": "2026-06-12T14:50:46",
+      "updated_at": "2026-06-12T14:50:46",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T14:50:46",
+      "completed_at": "2026-06-12T14:50:46",
+      "updated_at": "2026-06-12T14:50:46",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T14:50:52",
+      "completed_at": "2026-06-12T14:50:52",
+      "updated_at": "2026-06-12T14:50:52",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T14:50:52"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/status.md",
+      "updated_at": "2026-06-12T14:50:52"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/events.md",
+      "updated_at": "2026-06-12T14:50:52"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/run-context.json",
+      "attached_at": "2026-06-12T11:48:49Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:48:49"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:48:49"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:50:25"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:50:46"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:50:46"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:50:46"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:50:46"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144849-513929-31fb4c/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T14:50:52"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T14:48:49",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T14:48:49",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:50:25",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:50:46",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:50:46",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:50:52",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/61"
+    }
+  ],
+  "created_at": "2026-06-12T14:48:49"
+}

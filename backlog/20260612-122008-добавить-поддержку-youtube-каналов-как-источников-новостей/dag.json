@@ -44,7 +44,7 @@
     {
       "id": "task-006",
       "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-006.md",
-      "status": "no_changes_needed",
+      "status": "manual_verification_failed",
       "depends_on": [
         "task-004",
         "task-005"
@@ -53,16 +53,30 @@
     {
       "id": "task-007",
       "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-007.md",
-      "status": "todo",
+      "status": "done_no_pr",
       "depends_on": [
         "task-003",
         "task-006"
       ]
+    },
+    {
+      "id": "task-008",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-008.md",
+      "status": "manual_verification_passed",
+      "depends_on": [
+        "task-006"
+      ]
+    },
+    {
+      "id": "task-009",
+      "path": "backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-009.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-008"
+      ]
     }
   ],
-  "ready": [
-    "task-007"
-  ],
+  "ready": [],
   "blocked": [],
   "errors": []
 }

@@ -3,7 +3,7 @@ Run: standard-20260612-133317-935486-43eb15
 Type: implementation_task
 Pipeline: standard
 Risk: low
-Status: manual_verification_passed
+Status: manual_verification_failed
 
 ### Task 008 — Show YouTube in Sources UI
 
@@ -27,6 +27,7 @@ task-006
 
 ## Manual Verification Result
 
-Status: manual_verification_passed
-Verified At: 2026-06-12T14:03:01
-Note: YouTube option is visible in production Sources UI
+Status: manual_verification_failed
+Verified At: 2026-06-12T14:09:26
+Note: Production collection returns no articles for YouTube/Reddit sources
+Manual Bug Task: backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-010.md

@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-144546-462568-29d0cc",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 001 — Capture manual-check result into per-source session state\n\n**Goal:** Stop discarding the `/api/rss/test` response. Store each row's last manual-check result in React state keyed by `source.id`, alongside the existing toast.\n**Scope:** In `app/sources/page.tsx`, add a state map (e.g. `checkResults: Record<string, { status: \"ok\" | \"empty\" | \"error\"; itemCount?: number; error?: string; sourceType: SourceType; checkedAt: number }>`). In `test()`, after parsing `r`, write the result for `s.id` into that map (success, empty, and error branches) while keeping the existing toast calls unchanged. Do not yet render anything new. Ensure per-row isolation: writing one source's result must not touch other entries. Clear/replace only the clicked row's entry at the start of a re-check.\n**Suggested files:** `app/sources/page.tsx`\n**Acceptance criteria:** Result object (status, itemCount, error, sourceType, checkedAt) is recorded per `source.id` for all three outcome branches; existing toast behavior preserved; checking one source leaves other entries in the map untouched.\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T14:46:50",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:45:46",
+      "completed_at": "2026-06-12T14:46:20",
+      "updated_at": "2026-06-12T14:46:20",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:46:20",
+      "completed_at": "2026-06-12T14:46:44",
+      "updated_at": "2026-06-12T14:46:44",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T14:46:44",
+      "completed_at": "2026-06-12T14:46:44",
+      "updated_at": "2026-06-12T14:46:44",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T14:46:50",
+      "completed_at": "2026-06-12T14:46:50",
+      "updated_at": "2026-06-12T14:46:50",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T14:46:50"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/status.md",
+      "updated_at": "2026-06-12T14:46:50"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/events.md",
+      "updated_at": "2026-06-12T14:46:50"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/run-context.json",
+      "attached_at": "2026-06-12T11:45:46Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:45:46"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:45:46"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:46:20"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:46:44"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:46:44"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:46:44"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:46:44"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144546-462568-29d0cc/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T14:46:50"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T14:45:46",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T14:45:46",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:46:20",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:46:44",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:46:44",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:46:50",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/58"
+    }
+  ],
+  "created_at": "2026-06-12T14:45:46"
+}

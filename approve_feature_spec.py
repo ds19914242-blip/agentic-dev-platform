@@ -3,6 +3,10 @@ import argparse
 import re
 
 from orchestrator.claude_executor import run_claude
+from orchestrator.acceptance_scenarios import (
+    write_acceptance_scenarios,
+    create_e2e_verification_task,
+)
 
 
 def extract_section(text, heading):
@@ -43,6 +47,16 @@ def parse_tasks(response):
     return tasks
 
 
+def normalize_depends_on(task_text):
+    task_text = re.sub(r"\n#### Depends On\n\n.*?(?=\n---|\n## |\Z)", "", task_text, flags=re.DOTALL)
+    task_text = re.sub(r"\n---\n\n## Depends On\n\n.*$", "", task_text, flags=re.DOTALL)
+
+    if "## Depends On" not in task_text:
+        task_text += "\n\n## Depends On\n\n_None_"
+
+    return task_text
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("epic_dir")
@@ -56,6 +70,8 @@ def main():
 
     product, repo_path, request = parse_epic(epic_dir)
     spec = spec_path.read_text(errors="ignore")
+
+    scenarios_path, scenarios_text = write_acceptance_scenarios(epic_dir)
 
     prompt = f"""# Backlog Decomposer
 
@@ -78,6 +94,10 @@ Do not modify files.
 ## Approved Feature Specification
 
 {spec}
+
+## Acceptance Scenarios
+
+{scenarios_text}
 
 ## Output Requirements
 
@@ -117,6 +137,7 @@ Dependency rules:
 - Prefer a DAG, not a strict chain.
 - Independent tasks should have _None_ so they can run in parallel.
 - Do not create unnecessary dependencies.
+- Do not create a final manual QA task yourself; the platform will add it automatically.
 
 Do not include implementation code.
 """
@@ -136,27 +157,29 @@ Do not include implementation code.
         old_task.unlink()
 
     for i, task in enumerate(tasks, start=1):
-        task_text = task.strip()
-
-        if "## Depends On" not in task_text:
-            task_text += "\n\n## Depends On\n\n_None_"
+        task_text = normalize_depends_on(task.strip())
 
         if not any(line.lower().startswith("status:") for line in task_text.splitlines()):
             task_text = "Status: todo\n\n" + task_text
 
         (epic_dir / f"task-{i:03d}.md").write_text(task_text + "\n")
 
+    e2e_task = create_e2e_verification_task(epic_dir, len(tasks), scenarios_text)
+    total_tasks = len(tasks) + 1
+
     (epic_dir / "tasks.md").write_text(
         "# Tasks\n\n" + "\n\n".join(
             f"- [task-{i:03d}.md](task-{i:03d}.md)"
-            for i in range(1, len(tasks) + 1)
+            for i in range(1, total_tasks + 1)
         ) + "\n"
     )
 
     (epic_dir / "spec-status.txt").write_text("spec_approved\n")
 
     print(f"Feature spec approved: {epic_dir}")
-    print(f"Tasks created: {len(tasks)}")
+    print(f"Acceptance scenarios: {scenarios_path}")
+    print(f"E2E/manual verification task: {e2e_task}")
+    print(f"Tasks created: {total_tasks}")
 
 
 if __name__ == "__main__":

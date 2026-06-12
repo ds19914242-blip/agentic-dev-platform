@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260612-144547-889657-be7ff4",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 002 — Render persistent inline check indicator (success / empty / error variants)\n\n**Goal:** Render a persistent inline badge on each source row from the session state captured in Task 001, with success/empty/error variants, count + correct unit, and a check timestamp.\n**Scope:** In `app/sources/page.tsx`, in the row block near the existing status line (`:245-268`), render a badge when a check result exists for `s.id`:\n- Success (`ok === true && status === \"ok\"`): green \"Проверено\" badge including `itemCount` + unit (`элементов` for `rss`, `постов` for `telegram`/`reddit`/`youtube`) + check time (relative/short, e.g. \"только что\").\n- Empty (`status === \"empty\"`): neutral/info styling, clearly not green; no success checkmark.\n- Error (`!ok` or error): red/error styling; no success badge.\nWhile `testing === s.id`, show the in-progress \"Проверка…\" state for that row and suppress its success/error indicator until the result returns (the button already shows \"Проверка…\" at `:271-273`). Keep the existing `lastStatus`/`lastItemCount` line intact. Reuse the existing unit logic (`:154`).\n**Suggested files:** `app/sources/page.tsx`\n**Acceptance criteria:** Maps to acceptance criteria — success badge with count+unit+time persists after toast fades; empty visually distinct (not green); error visually distinct, no success badge; in-progress row shows \"Проверка…\" and hides its indicator until result; other rows' indicators unaffected; success requires `ok === true && status === \"ok\"`.\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T14:47:33",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:45:47",
+      "completed_at": "2026-06-12T14:47:08",
+      "updated_at": "2026-06-12T14:47:08",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:47:08",
+      "completed_at": "2026-06-12T14:47:28",
+      "updated_at": "2026-06-12T14:47:28",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T14:47:28",
+      "completed_at": "2026-06-12T14:47:28",
+      "updated_at": "2026-06-12T14:47:28",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-12T14:47:33",
+      "completed_at": "2026-06-12T14:47:33",
+      "updated_at": "2026-06-12T14:47:33",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-12T14:47:33"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/status.md",
+      "updated_at": "2026-06-12T14:47:33"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/events.md",
+      "updated_at": "2026-06-12T14:47:33"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/run-context.json",
+      "attached_at": "2026-06-12T11:45:47Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:45:47"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:45:47"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:47:08"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:47:28"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:47:28"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:47:28"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:47:28"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260612-144547-889657-be7ff4/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-12T14:47:33"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T14:45:47",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-12T14:45:47",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:47:08",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:47:28",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:47:28",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:47:33",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/59"
+    }
+  ],
+  "created_at": "2026-06-12T14:45:47"
+}

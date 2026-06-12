@@ -78,6 +78,10 @@ Use checkboxes:
 
 ## Risks
 
+## Acceptance Scenarios
+
+Use concrete end-to-end user flows. Each scenario should describe actions and expected visible result.
+
 ## Manual Verification Scenarios
 
 Use concrete user flows that must be checked manually if automated E2E tests are unavailable.

@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-bugfix-20260612-141817-914584-385e44",
+  "run_type": "standard_bugfix",
+  "product": "rss-agent-lab_2",
+  "request": "Type: bug_fix\nPipeline: standard_bugfix\nRisk: medium\nStatus: in_progress\nSource: manual_verification_failed\n\n### Bug Fix — Recover manual verification failure for task-010\n\n**Problem:** Manual verification failed for `backlog/20260612-122008-добавить-поддержку-youtube-каналов-как-источников-новостей/task-010.md`.\n\n**Source task:** task-010.md\n\n**Evidence:**\n- Manual verification note: Production still shows no articles collected after PR #56\n\n**Goal:** Fix the issue with the smallest safe change.\n\n**Acceptance criteria:**\n- The failed manual verification scenario now passes.\n- Existing related behavior still works.\n- Validation passes.\n- No unrelated files are changed.\n\n**Risk:** medium\n\n## Depends On\n\ntask-010\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-12T14:20:08",
+  "stages": {
+    "implementation": {
+      "name": "Run standard_bugfix implementation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:18:17",
+      "completed_at": "2026-06-12T14:19:53",
+      "updated_at": "2026-06-12T14:19:53",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-12T14:19:53",
+      "completed_at": "2026-06-12T14:20:07",
+      "updated_at": "2026-06-12T14:20:07",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-12T14:20:07",
+      "completed_at": "2026-06-12T14:20:07",
+      "updated_at": "2026-06-12T14:20:07",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "skipped",
+      "started_at": null,
+      "completed_at": "2026-06-12T14:20:08",
+      "updated_at": "2026-06-12T14:20:08",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "done_no_pr",
+    "status_updated_at": "2026-06-12T14:20:08"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/status.md",
+      "updated_at": "2026-06-12T14:20:08"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/events.md",
+      "updated_at": "2026-06-12T14:20:08"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/run-context.json",
+      "attached_at": "2026-06-12T11:18:17Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:18:17"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:18:17"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-12T14:19:53"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:20:07"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-12T14:20:07"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:20:07"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260612-141817-914584-385e44/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-12T14:20:07"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-12T14:18:17",
+      "event": "standard_bugfix run created"
+    },
+    {
+      "timestamp": "2026-06-12T14:18:17",
+      "event": "standard_bugfix implementation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:19:53",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-12T14:20:07",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:20:07",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-12T14:20:08",
+      "event": "No changes detected"
+    }
+  ],
+  "created_at": "2026-06-12T14:18:17"
+}
