@@ -69,6 +69,11 @@ COMMANDS = {
         "description": "Mark manual verification passed/failed",
         "legacy": False,
     },
+    "acceptance": {
+        "script": "run_acceptance.py",
+        "description": "Run acceptance verification for an epic",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
