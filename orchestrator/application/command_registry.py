@@ -89,6 +89,11 @@ COMMANDS = {
         "description": "Run an agent through Agent Runtime",
         "legacy": False,
     },
+    "agents": {
+        "script": "run_agent_registry.py",
+        "description": "List registered agents and definitions",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
