@@ -1,25 +1,20 @@
 from pathlib import Path
-import re
 import json
+import re
+
+from orchestrator.backlog_store import list_tasks, load_task
+from orchestrator.task_status import COMPLETED_STATUSES
 
 
-TERMINAL_STATUSES = {"merged", "done", "completed", "pr_created", "done_no_pr", "already_satisfied", "no_changes_needed", "manual_verification_passed"}
+TERMINAL_STATUSES = set(COMPLETED_STATUSES) | {"completed"}
 
 
 def task_id_from_path(path):
     return Path(path).stem
 
 
-def read_task(path):
-    path = Path(path)
-    text = path.read_text()
-
-    status = "todo"
+def extract_depends_on(text):
     depends_on = []
-
-    status_match = re.search(r"^status:\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
-    if status_match:
-        status = status_match.group(1).strip().lower()
 
     section_match = re.search(
         r"^##\s*Depends On\s*$([\s\S]*?)(?=^##\s+|\Z)",
@@ -27,34 +22,40 @@ def read_task(path):
         re.MULTILINE | re.IGNORECASE,
     )
 
-    if section_match:
-        body = section_match.group(1).strip()
-        for line in body.splitlines():
-            item = line.strip().lstrip("-").strip()
-            if item and item.lower() not in {"none", "_none_", "n/a"}:
-                parts = [
-                    part.strip()
-                    for part in item.replace(" and ", ",").split(",")
-                    if part.strip()
-                ]
-                depends_on.extend(parts)
+    if not section_match:
+        return depends_on
+
+    body = section_match.group(1).strip()
+
+    for line in body.splitlines():
+        item = line.strip().lstrip("-").strip()
+
+        if not item or item.lower() in {"none", "_none_", "n/a"}:
+            continue
+
+        parts = [
+            part.strip()
+            for part in item.replace(" and ", ",").split(",")
+            if part.strip()
+        ]
+        depends_on.extend(parts)
+
+    return depends_on
+
+
+def read_task(path):
+    task = load_task(path)
 
     return {
         "id": task_id_from_path(path),
         "path": str(path),
-        "status": status,
-        "depends_on": depends_on,
+        "status": task.status,
+        "depends_on": extract_depends_on(task.text),
     }
 
 
 def load_epic_tasks(epic_dir):
-    epic_dir = Path(epic_dir)
-    tasks = []
-
-    for path in sorted(epic_dir.glob("task-*.md")):
-        tasks.append(read_task(path))
-
-    return tasks
+    return [read_task(path) for path in list_tasks(epic_dir)]
 
 
 def task_map(tasks):
@@ -82,8 +83,10 @@ def is_ready(task, tasks_by_id):
 
     for dep in task["depends_on"]:
         dep_task = tasks_by_id.get(dep)
+
         if not dep_task:
             return False
+
         if dep_task["status"] not in TERMINAL_STATUSES:
             return False
 
@@ -104,8 +107,10 @@ def blocked_tasks(tasks):
             continue
 
         unmet = []
+
         for dep in task["depends_on"]:
             dep_task = tasks_by_id.get(dep)
+
             if not dep_task or dep_task["status"] not in TERMINAL_STATUSES:
                 unmet.append(dep)
 
@@ -154,7 +159,9 @@ def ensure_depends_on_section(task_path):
 
 def ensure_epic_depends_on_sections(epic_dir):
     changed = []
-    for path in sorted(Path(epic_dir).glob("task-*.md")):
+
+    for path in list_tasks(epic_dir):
         if ensure_depends_on_section(path):
             changed.append(str(path))
+
     return changed

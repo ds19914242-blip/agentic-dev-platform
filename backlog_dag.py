@@ -2,21 +2,14 @@ import sys
 from pathlib import Path
 
 from orchestrator.backlog_dag import (
-    load_epic_tasks,
-    ready_tasks,
     blocked_tasks,
     dependency_errors,
-    write_dag_json,
     ensure_epic_depends_on_sections,
+    load_epic_tasks,
+    ready_tasks,
+    write_dag_json,
 )
-
-
-def latest_epic_dir():
-    dirs = sorted(Path("backlog").glob("*"), key=lambda p: p.stat().st_mtime, reverse=True)
-    dirs = [p for p in dirs if p.is_dir()]
-    if not dirs:
-        raise SystemExit("No backlog epic directories found")
-    return dirs[0]
+from orchestrator.backlog_query import latest_epic_dir
 
 
 def main():
