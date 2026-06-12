@@ -79,6 +79,11 @@ COMMANDS = {
         "description": "Show latest acceptance verification result",
         "legacy": False,
     },
+    "acceptance-scenarios": {
+        "script": "run_acceptance_scenarios.py",
+        "description": "Parse acceptance scenarios for an epic",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
