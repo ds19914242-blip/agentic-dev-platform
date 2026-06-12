@@ -1,9 +1,21 @@
+import subprocess
+
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.run_artifacts import register_artifacts
 from orchestrator.run_context import update_run_context
 from orchestrator.run_manager import write_run_files
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
+
+
+def git_status(repo_path):
+    result = subprocess.run(
+        ["git", "status", "--short"],
+        cwd=repo_path,
+        text=True,
+        capture_output=True,
+    )
+    return result.stdout.strip()
 
 
 def initialize_legacy_execution_graph():

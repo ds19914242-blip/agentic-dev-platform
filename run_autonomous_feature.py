@@ -1,17 +1,10 @@
 from pathlib import Path
 
 from orchestrator.repository_state import ensure_clean_repo
-from orchestrator.graph_runtime import GraphRuntime
-from orchestrator.run_context import update_run_context
-from orchestrator.llm_metrics import finish_metrics
-from orchestrator.run_artifacts import register_artifacts, register_artifact
-from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_confidence, write_decision
-from orchestrator.failure_memory import ingest_validation_failure
-from orchestrator.memory_store import ingest_run
-from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
 from orchestrator.services.autonomous_artifacts_service import (
+    git_status,
     initialize_legacy_execution_graph,
     write_planning_artifacts,
     write_security_and_agent_artifacts,
@@ -27,18 +20,7 @@ from orchestrator.services.autonomous_run_service import (
     prepare_repository_context,
 )
 
-import subprocess
-import os
 
-
-def git_status(repo_path):
-    result = subprocess.run(
-        ["git", "status", "--short"],
-        cwd=repo_path,
-        text=True,
-        capture_output=True,
-    )
-    return result.stdout.strip()
 
 
 
