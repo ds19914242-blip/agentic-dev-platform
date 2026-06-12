@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from orchestrator.acceptance.scenario_parser import write_scenarios_json
+from orchestrator.acceptance.scenario_report import write_scenario_report
 
 
 def latest_epic_dir():
@@ -18,9 +19,11 @@ def main():
     args = parser.parse_args()
     epic_dir = Path(args.epic_dir) if args.epic_dir else latest_epic_dir()
     output_path, scenarios = write_scenarios_json(epic_dir)
+    report_path = write_scenario_report(epic_dir, scenarios)
     print(f"Epic: {epic_dir}")
     print(f"Scenarios: {len(scenarios)}")
     print(f"Output: {output_path}")
+    print(f"Report: {report_path}")
 
 
 if __name__ == "__main__":
