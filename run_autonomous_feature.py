@@ -8,13 +8,10 @@ from orchestrator.claude_executor import run_claude_from_file, run_claude
 from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
 from orchestrator.execution_result import record_execution_result
-from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
-from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.test_generator import generate_tests
 from orchestrator.manual_verification import write_manual_verification
-from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
 from orchestrator.llm_metrics import finish_metrics
 from orchestrator.run_artifacts import register_artifacts, register_artifact
@@ -24,6 +21,7 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_review_service import run_autonomous_review_and_confidence
 from orchestrator.services.autonomous_validation_service import run_validation_with_replan
 from orchestrator.services.autonomous_planning_service import run_autonomous_planning
 from orchestrator.services.autonomous_run_service import (
@@ -326,34 +324,16 @@ After implementation:
         feature=feature,
     )
 
-    run.status("reviewing")
-    run.event("Reviewer started")
-    graph_v2.start("review")
-    graph_v2.write()
-
-    review = run_reviewer(
+    review_state = run_autonomous_review_and_confidence(
         run_dir=run_dir,
         repo_path=repo_path,
+        run=run,
+        graph=graph,
+        graph_v2=graph_v2,
         feature=feature,
     )
-
-    graph_v2.complete("review", artifacts=["review.md", "review.json", "review-response.md"])
-    graph_v2.write()
-    update_run_context(run_dir, review=review)
-
-    create_post_run_review(run_dir, repo_path)
-    run.artifact("post-run-review.md", stage="post_review")
-    graph.mark_completed("post_run_review")
-    run.event("Post run review created")
-    graph_v2.complete("post_review", artifacts=["post-run-review.md"])
-    graph_v2.write()
-
-    confidence_path, confidence = write_confidence_report(run_dir)
-    register_artifacts(run_dir, ["confidence.md", "confidence.json"], stage="confidence")
-    update_run_context(run_dir, confidence=confidence)
-    run.event(f"Confidence gate: {confidence['status']}")
-    graph_v2.complete("confidence", artifacts=["confidence.md", "confidence.json"])
-    graph_v2.write()
+    confidence_path = review_state["confidence_path"]
+    confidence = review_state["confidence"]
 
     confidence_decision = decide_after_confidence(run_dir)
     write_decision(run_dir, "confidence", confidence_decision)
