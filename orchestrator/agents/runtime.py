@@ -9,6 +9,14 @@ def run_agent(agent_name, context):
     if not isinstance(context, AgentRunContext):
         raise TypeError("context must be AgentRunContext")
 
+    if agent_name == "planner":
+        result = execute_planner(context)
+
+        if context.run_dir:
+            write_agent_result(context.run_dir, result)
+
+        return result
+
     description = describe_agent(agent_name)
     definition = load_agent_definition(agent_name)
 
