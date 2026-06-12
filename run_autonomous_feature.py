@@ -1,6 +1,5 @@
 from pathlib import Path
 
-from orchestrator.product_registry import load_product_config
 from orchestrator.repository_state import ensure_clean_repo
 from orchestrator.repository_scanner import scan_repo
 from orchestrator.repository_intelligence import build_repository_map, format_repository_map
@@ -39,7 +38,6 @@ from orchestrator.run_decision import decide_after_planning, decide_after_securi
 from orchestrator.memory_store import update_product_memory, ingest_run
 from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
-from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
 
