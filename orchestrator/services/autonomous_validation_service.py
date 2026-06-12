@@ -1,8 +1,7 @@
 from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.replanner_agent import run_replanner
-from orchestrator.run_artifacts import register_artifacts
-from orchestrator.run_context import update_run_context
-from orchestrator.validation_runner import run_validators, write_validation_report
+from orchestrator.agents.context import AgentRunContext
+from orchestrator.agents.runtime import run_agent
 
 
 def run_validation_with_replan(
@@ -15,10 +14,18 @@ def run_validation_with_replan(
     graph_v2,
     feature,
 ):
-    validation_results = run_validators(repo_path, product.get("validators", []))
-    _, validation_ok = write_validation_report(run_dir, validation_results)
-    register_artifacts(run_dir, ["validation.md", "validation.json"], stage="validation")
-    update_run_context(run_dir, validation_passed=validation_ok)
+    validator_result = run_agent(
+        "validator",
+        AgentRunContext(
+            agent="validator",
+            run_dir=str(run_dir),
+            product_name=product_name,
+            repo_path=repo_path,
+            feature=feature,
+            inputs={"product": product},
+        ),
+    )
+    validation_ok = validator_result.status == "passed"
 
     if validation_ok:
         graph.mark_completed("validation")
