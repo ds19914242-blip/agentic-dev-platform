@@ -1,7 +1,8 @@
 import os
-from pathib import Path
+from pathlib import Path
 
-from orchestrator.acceptance.runner import run_acceptance
+from orchestrator.agents.context import AgentRunContext
+from orchestrator.agents.runtime import run_agent
 
 
 def epic_dir_from_source_task():
@@ -41,9 +42,14 @@ def run_acceptance_gate(product_name, run, graph_v2):
     graph_v2.write()
 
     try:
-        result = run_acceptance(
-            epic_dir=epic_dir,
-            product_name=product_name,
+        acceptance_result = run_agent(
+            "acceptance",
+            AgentRunContext(
+                agent="acceptance",
+                run_dir=str(run.run_dir),
+                product_name=product_name,
+                inputs={"epic_dir": str(epic_dir)},
+            ),
         )
     except Exception as err:
         run.status("acceptance_failed")
@@ -52,7 +58,7 @@ def run_acceptance_gate(product_name, run, graph_v2):
         graph_v2.write()
         return False
 
-    if result.passed:
+    if acceptance_result.status == "passed":
         run.status("acceptance_passed")
         run.event("Acceptance gate passed")
         graph_v2.complete("acceptance", artifacts=["acceptance-result.md", "acceptance-result.json"])
