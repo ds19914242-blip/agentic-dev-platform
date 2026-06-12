@@ -1,8 +1,9 @@
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.post_run_review import create_post_run_review
-from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_artifacts import register_artifacts
 from orchestrator.run_context import update_run_context
+from orchestrator.agents.context import AgentRunContext
+from orchestrator.agents.runtime import run_agent
 
 
 def run_autonomous_review_and_confidence(run_dir, repo_path, run, graph, graph_v2, feature):
@@ -11,15 +12,19 @@ def run_autonomous_review_and_confidence(run_dir, repo_path, run, graph, graph_v
     graph_v2.start("review")
     graph_v2.write()
 
-    review = run_reviewer(
-        run_dir=run_dir,
-        repo_path=repo_path,
-        feature=feature,
+    reviewer_result = run_agent(
+        "reviewer",
+        AgentRunContext(
+            agent="reviewer",
+            run_dir=str(run_dir),
+            repo_path=repo_path,
+            feature=feature,
+        ),
     )
+    review = reviewer_result.metadata.get("review", {})
 
     graph_v2.complete("review", artifacts=["review.md", "review.json", "review-response.md"])
     graph_v2.write()
-    update_run_context(run_dir, review=review)
 
     create_post_run_review(run_dir, repo_path)
     run.artifact("post-run-review.md", stage="post_review")
