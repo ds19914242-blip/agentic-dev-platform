@@ -1,0 +1,13 @@
+name: acceptance
+mission: Verify user-visible behavior through acceptance scenarios or executable acceptance command.
+blocking: true
+inputs:
+  - acceptance-scenarios.md
+  - acceptance-command.txt
+  - product config
+outputs:
+  - acceptance-result.md
+  - acceptance-result.json
+success_criteria:
+  - acceptance command exits with code 0
+  - failure creates recovery bug task

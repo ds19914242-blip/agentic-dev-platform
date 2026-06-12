@@ -1,0 +1,14 @@
+name: reviewer
+mission: Critically review implementation output.
+blocking: true
+inputs:
+  - plan.md
+  - changed files
+  - validation results
+outputs:
+  - review.md
+  - review.json
+success_criteria:
+  - scope creep is detected
+  - architecture risks are identified
+  - blocking issues are reported

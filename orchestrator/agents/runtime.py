@@ -1,5 +1,6 @@
 from orchestrator.agents.context import AgentRunContext
 from orchestrator.agents.registry import describe_agent
+from orchestrator.agents.definition_loader import load_agent_definition
 from orchestrator.agents.result import passed, failed, write_agent_result
 
 
@@ -8,8 +9,9 @@ def run_agent(agent_name, context):
         raise TypeError("context must be AgentRunContext")
 
     description = describe_agent(agent_name)
+    definition = load_agent_definition(agent_name)
 
-    if not description:
+    if not description and not definition:
         result = failed(
             agent_name,
             f"Unknown agent: {agent_name}",
@@ -21,6 +23,7 @@ def run_agent(agent_name, context):
             f"Agent '{agent_name}' contract loaded. Runtime execution is available.",
             metadata={
                 "description": description,
+                "definition": definition or {},
                 "product_name": context.product_name,
                 "repo_path": context.repo_path,
                 "feature": context.feature,

@@ -1,0 +1,14 @@
+name: planner
+mission: Create the smallest safe implementation plan.
+blocking: false
+inputs:
+  - feature
+  - repo_map
+  - affected_files
+outputs:
+  - plan.md
+  - planner-selected-files.md
+success_criteria:
+  - affected files are identified
+  - implementation steps are explicit
+  - no code is modified by the planner
