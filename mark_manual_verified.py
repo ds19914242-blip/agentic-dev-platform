@@ -3,17 +3,13 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.backlog_store import load_task, save_task
+
 
 RESULT_BLOCK_RE = re.compile(
     r"\n## Manual Verification Result\n\n.*?(?=\n## |\Z)",
     flags=re.DOTALL,
 )
-
-
-def upsert_status(text, status):
-    if re.search(r"^Status:", text, flags=re.MULTILINE):
-        return re.sub(r"^Status:.*$", f"Status: {status}", text, flags=re.MULTILINE)
-    return f"Status: {status}\n\n{text}"
 
 
 def remove_previous_result_blocks(text):
@@ -106,14 +102,15 @@ def main():
     )
     timestamp = datetime.now().isoformat(timespec="seconds")
 
-    original_text = path.read_text(errors="ignore")
+    task = load_task(path)
+    original_text = task.text
     bug_task = None
 
     if args.failed:
         bug_task = create_manual_bug_task(path, original_text, note)
 
-    text = upsert_status(original_text, status)
-    text = remove_previous_result_blocks(text)
+    task.set_status(status)
+    text = remove_previous_result_blocks(task.text)
 
     text += f"""
 ## Manual Verification Result
@@ -126,7 +123,8 @@ Note: {note}
     if bug_task:
         text += f"Manual Bug Task: {bug_task}\n"
 
-    path.write_text(text)
+    task.text = text
+    save_task(task)
     print(f"{path} marked {status}")
 
     if bug_task:
