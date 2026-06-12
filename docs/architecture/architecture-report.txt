@@ -1,0 +1,39 @@
+# Architecture Report
+
+## CLI entrypoints
+
+- agentic.py: present, 64 lines
+- run_backlog_task.py: present, 28 lines
+- run_fast_task.py: present, 59 lines
+- run_standard_task.py: present, 80 lines
+- run_autonomous_feature.py: present, 12 lines
+- mark_manual_verified.py: present, 35 lines
+
+## Workflow layer
+
+- orchestrator/workflows/autonomous_workflow.py: present, 218 lines
+
+## Backlog state layer
+
+- orchestrator/task_status.py: present, 78 lines
+- orchestrator/task_model.py: present, 94 lines
+- orchestrator/backlog_store.py: present, 68 lines
+- orchestrator/backlog_query.py: present, 16 lines
+- orchestrator/backlog_dag.py: present, 167 lines
+
+## Service layer
+
+- orchestrator/services/task_execution_service.py: present, 299 lines
+- orchestrator/services/pipeline_runner.py: present, 177 lines
+- orchestrator/services/verification_service.py: present, 127 lines
+- orchestrator/services/autonomous_preflight_service.py: present, 51 lines
+- orchestrator/services/autonomous_run_service.py: present, 123 lines
+- orchestrator/services/autonomous_planning_service.py: present, 62 lines
+- orchestrator/services/autonomous_claude_planning_service.py: present, 58 lines
+- orchestrator/services/autonomous_implementation_service.py: present, 93 lines
+- orchestrator/services/autonomous_validation_service.py: present, 84 lines
+- orchestrator/services/autonomous_review_service.py: present, 42 lines
+- orchestrator/services/autonomous_finalize_service.py: present, 60 lines
+- orchestrator/services/autonomous_artifacts_service.py: present, 133 lines
+
+Total tracked architecture lines: 2228

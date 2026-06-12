@@ -1,4 +1,7 @@
 
+agentic.py
+  -> orchestrator.application.command_registry
+
 approve_feature_spec.py
   -> orchestrator.acceptance_scenarios
   -> orchestrator.claude_executor
