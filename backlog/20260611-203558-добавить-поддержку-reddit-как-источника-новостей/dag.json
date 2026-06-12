@@ -1,0 +1,93 @@
+{
+  "epic": "20260611-203558-добавить-поддержку-reddit-как-источника-новостей",
+  "tasks": [
+    {
+      "id": "task-001",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-001.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-002",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-002.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-003",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-003.md",
+      "status": "done_no_pr",
+      "depends_on": []
+    },
+    {
+      "id": "task-004",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-004.md",
+      "status": "done_no_pr",
+      "depends_on": []
+    },
+    {
+      "id": "task-005",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-005.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-006",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-006.md",
+      "status": "done_no_pr",
+      "depends_on": []
+    },
+    {
+      "id": "task-007",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-007.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-008",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-008.md",
+      "status": "pr_created",
+      "depends_on": []
+    },
+    {
+      "id": "task-009",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-009.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-001",
+        "task-002"
+      ]
+    },
+    {
+      "id": "task-010",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-010.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-009"
+      ]
+    },
+    {
+      "id": "task-011",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-011.md",
+      "status": "pr_created",
+      "depends_on": [
+        "task-010"
+      ]
+    },
+    {
+      "id": "task-012",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-012.md",
+      "status": "blocked",
+      "depends_on": []
+    },
+    {
+      "id": "task-013",
+      "path": "backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-013.md",
+      "status": "pr_created",
+      "depends_on": []
+    }
+  ],
+  "ready": [],
+  "blocked": [],
+  "errors": []
+}

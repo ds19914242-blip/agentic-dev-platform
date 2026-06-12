@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-204815-190480-eba67f",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 005 — Support Reddit in the source test endpoint\n\n**Goal:** Let users test-fetch a Reddit source before saving, like RSS/Telegram.\n**Scope:** Add a `sourceType === \"reddit\"` branch to `/api/rss/test` that calls the Reddit fetcher and returns the standard `{ ok, status, itemCount, error?, sample }` response with a few sample titles.\n**Suggested files:** `app/api/rss/test/route.ts`\n**Acceptance criteria:**\n- Testing a valid subreddit returns `ok: true` with `itemCount > 0` and sample titles when posts exist.\n- Testing an invalid/empty subreddit returns `ok: false` with an error message.\n- RSS/Telegram test behavior is unchanged.\n- `tsc` passes.\n**Risk:** low\n\n#### Depends On\ntask-002\n\n---\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T20:50:07",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:48:15",
+      "completed_at": "2026-06-11T20:49:37",
+      "updated_at": "2026-06-11T20:49:37",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:49:37",
+      "completed_at": "2026-06-11T20:50:02",
+      "updated_at": "2026-06-11T20:50:02",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T20:50:02",
+      "completed_at": "2026-06-11T20:50:02",
+      "updated_at": "2026-06-11T20:50:02",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T20:50:07",
+      "completed_at": "2026-06-11T20:50:07",
+      "updated_at": "2026-06-11T20:50:07",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T20:50:07"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/status.md",
+      "updated_at": "2026-06-11T20:50:07"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/events.md",
+      "updated_at": "2026-06-11T20:50:07"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204815-190480-eba67f/run-context.json",
+      "attached_at": "2026-06-11T17:48:15Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204815-190480-eba67f/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:48:15"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:48:15"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:49:37"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:50:02"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204815-190480-eba67f/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:50:02"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:50:02"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204815-190480-eba67f/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:50:02"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204815-190480-eba67f/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T20:50:07"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T20:48:15",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T20:48:15",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:49:37",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:50:02",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:50:02",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:50:07",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/41"
+    }
+  ],
+  "created_at": "2026-06-11T20:48:15"
+}

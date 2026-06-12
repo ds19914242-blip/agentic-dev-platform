@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-bugfix-20260611-214034-880986-de0e19",
+  "run_type": "standard_bugfix",
+  "product": "rss-agent-lab_2",
+  "request": "Type: bug_fix\nPipeline: standard_bugfix\nRisk: medium\nStatus: in_progress\nSource: validation_failed\nRun: standard-20260611-213452-735629-6f5335\n\n### Bug Fix — Recover failed run standard-20260611-213452-735629-6f5335\n\n**Problem:** A previous Agentic Dev Platform run failed or did not complete successfully.\n\n**Source task:** task-012.md\n\n**Evidence:**\n- runs/standard-20260611-213452-735629-6f5335/validation.md\n- runs/standard-20260611-213452-735629-6f5335/run.json\n\n**Goal:** Fix the issue with the smallest safe change.\n\n**Acceptance criteria:**\n- Validation passes.\n- The original task can be completed or safely marked resolved.\n- No unrelated files are changed.\n\n**Risk:** medium\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T21:42:05",
+  "stages": {
+    "implementation": {
+      "name": "Run standard_bugfix implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T21:40:34",
+      "completed_at": "2026-06-11T21:41:43",
+      "updated_at": "2026-06-11T21:41:43",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T21:41:43",
+      "completed_at": "2026-06-11T21:41:58",
+      "updated_at": "2026-06-11T21:41:58",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T21:41:58",
+      "completed_at": "2026-06-11T21:41:58",
+      "updated_at": "2026-06-11T21:41:58",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T21:42:05",
+      "completed_at": "2026-06-11T21:42:05",
+      "updated_at": "2026-06-11T21:42:05",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T21:42:05"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/status.md",
+      "updated_at": "2026-06-11T21:42:05"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/events.md",
+      "updated_at": "2026-06-11T21:42:05"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/run-context.json",
+      "attached_at": "2026-06-11T18:40:34Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:40:34"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:40:34"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:41:43"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T21:41:58"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T21:41:58"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T21:41:58"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T21:41:58"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-bugfix-20260611-214034-880986-de0e19/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T21:42:05"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T21:40:34",
+      "event": "standard_bugfix run created"
+    },
+    {
+      "timestamp": "2026-06-11T21:40:34",
+      "event": "standard_bugfix implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T21:41:43",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T21:41:58",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T21:41:58",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T21:42:05",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/47"
+    }
+  ],
+  "created_at": "2026-06-11T21:40:34"
+}

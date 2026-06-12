@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-204220-703595-2ffbe4",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 001 — Add Reddit to source type model and storage types\n\n**Goal:** Extend the source data model so Reddit is a recognized source kind with its own config, without changing existing behavior.\n**Scope:** Add `\"reddit\"` to the `SourceType` union; add a `RedditConfig` interface (parallel to `TelegramConfig`); add an optional `reddit?: RedditConfig` field to `RssSource`. Ensure the local storage layer (create/update) accepts and persists the new field and default. No fetcher or route logic yet.\n**Suggested files:** `lib/storage/types.ts`, `lib/storage/rss.ts`\n**Acceptance criteria:**\n- `SourceType` is `\"rss\" | \"telegram\" | \"reddit\"`.\n- `RedditConfig` exists with at least `subredditName: string`, `webUrl: string`, `maxPosts: number`, `timeWindowDays: number` (plus any optional fields like `lastFetchedAt?`).\n- `RssSource` gains optional `reddit?: RedditConfig`.\n- Storage create/update round-trips a `reddit` config and still defaults missing `sourceType` to `\"rss\"`.\n- `tsc` passes; no existing source behavior changes.\n**Risk:** low\n\n#### Depends On\n_None_\n\n---\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T20:44:03",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:42:20",
+      "completed_at": "2026-06-11T20:43:37",
+      "updated_at": "2026-06-11T20:43:37",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:43:37",
+      "completed_at": "2026-06-11T20:43:58",
+      "updated_at": "2026-06-11T20:43:58",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T20:43:58",
+      "completed_at": "2026-06-11T20:43:58",
+      "updated_at": "2026-06-11T20:43:58",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T20:44:03",
+      "completed_at": "2026-06-11T20:44:03",
+      "updated_at": "2026-06-11T20:44:03",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T20:44:03"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/status.md",
+      "updated_at": "2026-06-11T20:44:03"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/events.md",
+      "updated_at": "2026-06-11T20:44:03"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/run-context.json",
+      "attached_at": "2026-06-11T17:42:20Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:42:20"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:42:20"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:43:37"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:43:58"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:43:58"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:43:58"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:43:58"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204220-703595-2ffbe4/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T20:44:03"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T20:42:20",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T20:42:20",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:43:37",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:43:58",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:43:58",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:44:03",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/39"
+    }
+  ],
+  "created_at": "2026-06-11T20:42:20"
+}

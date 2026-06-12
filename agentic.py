@@ -17,6 +17,8 @@ COMMANDS = {
     "memory": "memory_report.py",
     "classify": "classify_task.py",
     "metrics": "agentic_metrics.py",
+    "approve-spec": "approve_feature_spec.py",
+    "verify": "mark_manual_verified.py",
 }
 
 
@@ -49,6 +51,8 @@ def print_help():
     print("  memory       Show product memory report")
     print("  classify     Classify a task and show selected pipeline")
     print("  metrics      Show Agentic runtime metrics")
+    print("  approve-spec Approve feature spec and generate backlog tasks")
+    print("  verify       Mark manual verification passed/failed")
     print()
     print("Aliases:")
     print("  run          feature")

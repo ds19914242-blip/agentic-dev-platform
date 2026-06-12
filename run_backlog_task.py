@@ -1,6 +1,7 @@
 import sys
 import argparse
 import os
+import json
 from pathlib import Path
 
 from orchestrator.product_registry import load_product_config
@@ -10,8 +11,8 @@ import subprocess
 import re
 
 
-ACTIVE_STATUSES = {"todo", "blocked"}
-SKIP_STATUSES = {"in_progress", "pr_created", "merged"}
+ACTIVE_STATUSES = {"todo", "blocked", "manual_verification_failed"}
+SKIP_STATUSES = {"in_progress", "pr_created", "merged", "manual_verification_passed"}
 
 
 def list_epics():
@@ -150,6 +151,27 @@ def latest_run_dir():
     if not runs:
         return None
     return runs[-1]
+
+
+def run_requires_manual_verification(run_dir):
+    if not run_dir:
+        return False
+
+    manual_path = Path(run_dir) / "manual-verification.json"
+    if manual_path.exists():
+        try:
+            return bool(json.loads(manual_path.read_text()).get("required"))
+        except Exception:
+            return False
+
+    run_json = Path(run_dir) / "run.json"
+    if run_json.exists():
+        try:
+            return json.loads(run_json.read_text()).get("status") == "manual_verification_required"
+        except Exception:
+            return False
+
+    return False
 
 
 def read_pr_url(run_dir):
@@ -294,7 +316,13 @@ def main():
 
         pr_url = read_pr_url(run_dir)
 
-        if pr_url:
+        if pr_url and run_requires_manual_verification(run_dir):
+            set_pr_url(task_path, pr_url)
+            set_status(task_path, "manual_verification_required")
+            print(f"Task marked manual_verification_required: {task_path}")
+            print(f"Run: {run_dir}")
+            print(f"PR: {pr_url}")
+        elif pr_url:
             set_pr_url(task_path, pr_url)
             set_status(task_path, "pr_created")
             print(f"Task marked pr_created: {task_path}")
@@ -308,9 +336,17 @@ def main():
             set_status(task_path, "blocked_human_review")
             print(f"Task still requires human review despite approval: {task_path}")
             print(f"Run: {run_dir}")
+        elif "already_satisfied" in stdout.lower():
+            set_status(task_path, "already_satisfied")
+            print(f"Task marked already_satisfied: {task_path}")
+            print(f"Run: {run_dir}")
+        elif run_requires_manual_verification(run_dir):
+            set_status(task_path, "manual_verification_required")
+            print(f"Task marked manual_verification_required: {task_path}")
+            print(f"Run: {run_dir}")
         else:
-            set_status(task_path, "done_no_pr")
-            print(f"Task marked done_no_pr: no PR found for {task_path}")
+            set_status(task_path, "no_changes_needed")
+            print(f"Task marked no_changes_needed: no PR found for {task_path}")
             print(f"Run: {run_dir}")
 
         return
@@ -378,8 +414,8 @@ def main():
         print(f"\nTask marked pr_created: {task_path}")
         print(f"PR: {pr_url}")
     else:
-        set_status(task_path, "blocked")
-        print(f"\nTask marked blocked: no PR found for {task_path}")
+        set_status(task_path, "no_changes_needed")
+        print(f"\nTask marked no_changes_needed: no PR found for {task_path}")
 
 
 if __name__ == "__main__":

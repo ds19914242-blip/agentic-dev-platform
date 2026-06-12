@@ -1,0 +1,25 @@
+{
+  "overall_result": "failed",
+  "validators": [
+    {
+      "name": "typecheck",
+      "required": true,
+      "command": "npx tsc --noEmit",
+      "exit_code": 2,
+      "passed": false,
+      "stdout": "app/sources/page.tsx(264,14): error TS1005: ';' expected.\n",
+      "stderr": "",
+      "timed_out": false
+    },
+    {
+      "name": "build",
+      "required": true,
+      "command": "npm run build",
+      "exit_code": 1,
+      "passed": false,
+      "stdout": "\n> rss-agent-lab@1.0.0 build\n> next build\n\n  ▲ Next.js 14.2.35\n  - Environments: .env\n\n   Creating an optimized production build ...\n",
+      "stderr": "Failed to compile.\n\n./app/sources/page.tsx\nError: \n  \u001b[31mx\u001b[0m Unexpected token `div`. Expected jsx identifier\n     ,-[\u001b[36;1;4m/Users/danilsmetanev/Projects/rss-agent-lab_2/app/sources/page.tsx\u001b[0m:156:1]\n \u001b[2m156\u001b[0m |   }\n \u001b[2m157\u001b[0m | \n \u001b[2m158\u001b[0m |   return (\n \u001b[2m159\u001b[0m |     <div className=\"animate-rise grid gap-6 py-4 lg:grid-cols-3\">\n     : \u001b[31;1m     ^^^\u001b[0m\n \u001b[2m160\u001b[0m |       {/* List */}\n \u001b[2m161\u001b[0m |       <div className=\"lg:col-span-2\">\n \u001b[2m162\u001b[0m |         <div className=\"mb-4 flex items-center justify-between\">\n     `----\n\nCaused by:\n    Syntax Error\n\nImport trace for requested module:\n./app/sources/page.tsx\n\n\n> Build failed because of webpack errors\n",
+      "timed_out": false
+    }
+  ]
+}

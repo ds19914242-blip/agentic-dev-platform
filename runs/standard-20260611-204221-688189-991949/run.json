@@ -1,0 +1,159 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-204221-688189-991949",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 002 — Build the Reddit fetcher module\n\n**Goal:** Implement a self-contained Reddit subreddit fetcher mirroring `fetchTelegramChannel.ts`, producing normalized articles.\n**Scope:** Create a fetcher that takes a subreddit + `maxPosts`/`timeWindowDays`, calls Reddit's public JSON endpoint with a proper `User-Agent`, parses posts, applies the time-window filter, caps post count, and returns the same result shape used by the collector (status, itemCount, error, and `NormalizedArticle[]`). Include a `normalizeReddit(input)` helper that accepts `r/<sub>`, `<sub>`, and full URLs and returns `{ subredditName, webUrl }`. Define default/cap constants (e.g. default max posts, hard cap, default window days).\n**Suggested files:** `lib/reddit/fetchRedditSubreddit.ts` (new), referencing `lib/rss/fetchFeed.ts` `NormalizedArticle` for the output shape and `lib/telegram/fetchTelegramChannel.ts` as the structural template.\n**Acceptance criteria:**\n- `normalizeReddit` correctly parses the documented input forms and rejects invalid input (returns `null` or throws consistently with Telegram's pattern).\n- Fetcher returns normalized articles with `title`, `link`, `summary`, `publishedAt`, `sourceName`, and a `sourceType: \"reddit\"` marker where the Telegram equivalent sets one.\n- Network/parse failures return a structured error result instead of throwing uncaught.\n- Time-window filtering and max-post cap are applied.\n- `tsc` passes; module is importable and has no side effects on import.\n**Risk:** medium\n\n#### Depends On\ntask-001\n\n---\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T20:44:42",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:42:21",
+      "completed_at": "2026-06-11T20:44:18",
+      "updated_at": "2026-06-11T20:44:18",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:44:18",
+      "completed_at": "2026-06-11T20:44:38",
+      "updated_at": "2026-06-11T20:44:38",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T20:44:38",
+      "completed_at": "2026-06-11T20:44:38",
+      "updated_at": "2026-06-11T20:44:38",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "completed",
+      "started_at": "2026-06-11T20:44:42",
+      "completed_at": "2026-06-11T20:44:42",
+      "updated_at": "2026-06-11T20:44:42",
+      "attempt": 0,
+      "artifacts": [
+        "pull-request.md"
+      ],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "pr_created",
+    "status_updated_at": "2026-06-11T20:44:42"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/status.md",
+      "updated_at": "2026-06-11T20:44:42"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/events.md",
+      "updated_at": "2026-06-11T20:44:42"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204221-688189-991949/run-context.json",
+      "attached_at": "2026-06-11T17:42:21Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204221-688189-991949/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:42:21"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:42:21"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:44:18"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:44:38"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204221-688189-991949/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:44:38"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:44:38"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204221-688189-991949/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:44:38"
+    },
+    "pull-request.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204221-688189-991949/pull-request.md",
+      "stage": "pr",
+      "updated_at": "2026-06-11T20:44:42"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T20:42:21",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T20:42:21",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:44:18",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:44:38",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:44:38",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:44:42",
+      "event": "Pull request created: https://github.com/ds19914242-blip/rss-agent-lab/pull/40"
+    }
+  ],
+  "created_at": "2026-06-11T20:42:21"
+}

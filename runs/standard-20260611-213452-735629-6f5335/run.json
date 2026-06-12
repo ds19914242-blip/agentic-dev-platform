@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-213452-735629-6f5335",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 012 — Show Reddit as a source type in Sources UI\n\n**Goal:** Make Reddit selectable when adding a new source.\n\n**Problem:** Reddit support was added in backend/types, but the Sources UI still only shows RSS feed and Telegram channel.\n\n**Scope:** Sources UI only.\n\n**Suggested files:** `components/SourcePicker.tsx`, source form components, Sources page components.\n\n**Acceptance criteria:**\n- The new source form shows Reddit as a selectable source type.\n- Selecting Reddit changes the input label/placeholder to subreddit format, e.g. `r/OpenAI`.\n- Existing RSS and Telegram source options still work.\n- Validation passes.\n\n**Risk:** low\n\n## Depends On\n\n_None_\n",
+  "status": "failed",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T21:37:29",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T21:34:52",
+      "completed_at": "2026-06-11T21:37:22",
+      "updated_at": "2026-06-11T21:37:22",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "failed",
+      "started_at": "2026-06-11T21:37:22",
+      "completed_at": "2026-06-11T21:37:29",
+      "updated_at": "2026-06-11T21:37:29",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": "Validation failed"
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "validation_failed",
+    "status_updated_at": "2026-06-11T21:37:29"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-213452-735629-6f5335/status.md",
+      "updated_at": "2026-06-11T21:37:29"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-213452-735629-6f5335/events.md",
+      "updated_at": "2026-06-11T21:37:29"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-213452-735629-6f5335/run-context.json",
+      "attached_at": "2026-06-11T18:34:52Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-213452-735629-6f5335/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:34:52"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-213452-735629-6f5335/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:34:52"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-213452-735629-6f5335/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T21:37:22"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-213452-735629-6f5335/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T21:37:29"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-213452-735629-6f5335/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T21:37:29"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T21:34:52",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T21:34:52",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T21:37:22",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T21:37:29",
+      "event": "Validation report written: failed"
+    },
+    {
+      "timestamp": "2026-06-11T21:37:29",
+      "event": "Validation failed"
+    },
+    {
+      "timestamp": "2026-06-11T21:37:29",
+      "event": "Bug task created: backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-013.md"
+    }
+  ],
+  "created_at": "2026-06-11T21:34:52"
+}

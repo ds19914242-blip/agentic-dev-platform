@@ -34,13 +34,12 @@ def main():
     files = scan_repo(repo_path)
     repo_map = format_repository_map(build_repository_map(files))
 
-    prompt = f"""# Analyst / Decomposer Agent
+    prompt = f"""# Product Analyst Agent
 
-You are an analyst agent for an autonomous development platform.
-
-Your job is to decompose a large request into small, safe, independently shippable backlog tasks.
+You are creating a feature specification before task decomposition.
 
 Do not modify files.
+Do not create implementation tasks yet.
 
 ## Product
 
@@ -50,7 +49,7 @@ Do not modify files.
 
 {repo_path}
 
-## Big Request
+## Request
 
 {request}
 
@@ -58,54 +57,37 @@ Do not modify files.
 
 {repo_map}
 
-## Output Requirements
+## Output
 
-Return markdown with:
+Return markdown with exactly these sections:
 
-# Epic
+# Feature Specification
 
 ## Summary
 
-## Assumptions
+## User Stories
 
-## Task List
+## Acceptance Criteria
 
-Each task must be:
-- small enough for one autonomous coding run
-- scoped to a few files where possible
-- independently reviewable as a PR
-- safe to validate with typecheck/tests
-- dependency-aware
+Use checkboxes:
+- [ ] ...
 
-Use this exact task format:
+## Scope
 
-### Task 001 — <title>
+## Out of Scope
 
-**Goal:** ...
-**Scope:** ...
-**Suggested files:** ...
-**Acceptance criteria:** ...
-**Risk:** low | medium | high
+## Risks
 
-## Depends On
+## Manual Verification Scenarios
 
-_None_
+Use concrete user flows that must be checked manually if automated E2E tests are unavailable.
 
-Dependency rules:
-- Every generated task MUST include a section named exactly: ## Depends On
-- Use _None_ when the task has no dependencies.
-- Use task ids like task-001, task-002 when a task depends on earlier tasks.
-- Prefer a DAG, not a strict chain.
-- Independent tasks should have _None_ so they can run in parallel.
-- Do not create unnecessary dependencies.
-- Put foundational/shared architecture tasks before dependent UI tasks.
+## Decomposition Notes
 
-Then continue Task 002, Task 003, etc.
-
-Do not include implementation code.
+Explain how this should later be split into backlog tasks.
 """
 
-    response = run_claude(
+    spec = run_claude(
         repo_path=repo_path,
         prompt=prompt,
         allow_writes=False,
@@ -129,42 +111,14 @@ Do not include implementation code.
 {request}
 """)
 
-    (epic_dir / "decomposition.md").write_text(response)
+    (epic_dir / "feature-spec.md").write_text(spec)
+    (epic_dir / "spec-status.txt").write_text("spec_pending_review\n")
 
-    tasks = []
-    current = []
-
-    for line in response.splitlines():
-        if line.startswith("### Task "):
-            if current:
-                tasks.append("\n".join(current).strip())
-            current = [line]
-        elif current:
-            current.append(line)
-
-    if current:
-        tasks.append("\n".join(current).strip())
-
-    for i, task in enumerate(tasks, start=1):
-        task_text = task.strip()
-
-        if "## Depends On" not in task_text:
-            task_text += "\n\n## Depends On\n\n_None_"
-
-        if not any(line.lower().startswith("status:") for line in task_text.splitlines()):
-            task_text = "Status: todo\n\n" + task_text
-
-        (epic_dir / f"task-{i:03d}.md").write_text(task_text + "\n")
-
-    (epic_dir / "tasks.md").write_text(
-        "# Tasks\n\n" + "\n\n".join(
-            f"- [task-{i:03d}.md](task-{i:03d}.md)"
-            for i in range(1, len(tasks) + 1)
-        ) + "\n"
-    )
-
+    print(f"Feature spec created: {epic_dir / 'feature-spec.md'}")
     print(f"Epic created: {epic_dir}")
-    print(f"Tasks created: {len(tasks)}")
+    print()
+    print("Review the spec, then run:")
+    print(f"python3 agentic.py approve-spec {epic_dir}")
 
 
 if __name__ == "__main__":

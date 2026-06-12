@@ -1,0 +1,151 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-204816-401757-67bc4e",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: medium\nStatus: in_progress\n\n### Task 004 — Support Reddit in the sources API (create/update)\n\n**Goal:** Allow creating and editing Reddit sources via the sources API with validation.\n**Scope:** In the POST (`/api/rss/sources`) and PATCH (`/api/rss/sources/[id]`) handlers, add a `sourceType === \"reddit\"` branch: validate the subreddit input via `normalizeReddit`, build a `RedditConfig` (subredditName, webUrl, maxPosts, timeWindowDays with caps/defaults), and persist. Support converting a source to/from `\"reddit\"` the way telegram conversion is handled. Reuse the existing `maxPosts`/`timeWindowDays` body fields.\n**Suggested files:** `app/api/rss/sources/route.ts`, `app/api/rss/sources/[id]/route.ts`\n**Acceptance criteria:**\n- POST with `sourceType: \"reddit\"` and a valid subreddit creates a source with a populated `reddit` config; invalid subreddit input returns a 400 with a clear message.\n- PATCH can edit Reddit source fields and switch a source's type to/from `\"reddit\"`.\n- RSS and Telegram create/update paths are unchanged.\n- `tsc` passes.\n**Risk:** medium\n\n#### Depends On\ntask-001, task-002\n\n---\n\n## Depends On\n\n_None_\n",
+  "status": "completed",
+  "current_stage": "pr",
+  "updated_at": "2026-06-11T20:49:54",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:48:16",
+      "completed_at": "2026-06-11T20:49:30",
+      "updated_at": "2026-06-11T20:49:30",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:49:30",
+      "completed_at": "2026-06-11T20:49:54",
+      "updated_at": "2026-06-11T20:49:54",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": null
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "completed",
+      "started_at": "2026-06-11T20:49:54",
+      "completed_at": "2026-06-11T20:49:54",
+      "updated_at": "2026-06-11T20:49:54",
+      "attempt": 0,
+      "artifacts": [
+        "review.md",
+        "review.json"
+      ],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "skipped",
+      "started_at": null,
+      "completed_at": "2026-06-11T20:49:54",
+      "updated_at": "2026-06-11T20:49:54",
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "done_no_pr",
+    "status_updated_at": "2026-06-11T20:49:54"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/status.md",
+      "updated_at": "2026-06-11T20:49:54"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/events.md",
+      "updated_at": "2026-06-11T20:49:54"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/run-context.json",
+      "attached_at": "2026-06-11T17:48:16Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:48:16"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:48:16"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:49:30"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:49:54"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:49:54"
+    },
+    "review.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/review.md",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:49:54"
+    },
+    "review.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-204816-401757-67bc4e/review.json",
+      "stage": "review",
+      "updated_at": "2026-06-11T20:49:54"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T20:48:16",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T20:48:16",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:49:30",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:49:54",
+      "event": "Validation report written: passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:49:54",
+      "event": "Validation passed"
+    },
+    {
+      "timestamp": "2026-06-11T20:49:54",
+      "event": "No changes detected"
+    }
+  ],
+  "created_at": "2026-06-11T20:48:16"
+}

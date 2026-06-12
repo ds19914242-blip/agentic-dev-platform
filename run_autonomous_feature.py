@@ -28,6 +28,7 @@ from orchestrator.graph_runtime import GraphRuntime
 from orchestrator.run_runtime import RunRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
+from orchestrator.manual_verification import write_manual_verification
 from orchestrator.replanner_agent import run_replanner
 from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
@@ -421,7 +422,18 @@ After implementation:
     )
     run.artifact("test-generation.md", stage="test_generation")
 
-    run.event("Test generation completed")
+    manual_verification_required = write_manual_verification(
+        run_dir,
+        feature,
+        test_generation_response,
+    )
+    run.artifact("manual-verification.md", stage="test_generation")
+    run.artifact("manual-verification.json", stage="test_generation")
+
+    if manual_verification_required:
+        run.event("Manual verification required")
+    else:
+        run.event("Test generation completed")
 
     validation_results = run_validators(repo_path, product.get("validators", []))
     _, validation_ok = write_validation_report(run_dir, validation_results)
@@ -514,7 +526,12 @@ After implementation:
     # MVP mode: Confidence Gate is advisory only.
     # It writes confidence.md / confidence.json / decision-confidence.*, but does not block PR creation.
     run.event(f"Confidence advisory: {confidence_decision['status']}")
-    run.status("ready_for_pr")
+
+    if manual_verification_required:
+        run.status("manual_verification_required")
+        run.event("Run requires manual verification before task completion")
+    else:
+        run.status("ready_for_pr")
 
     (run_dir / "execution-graph.md").write_text(graph.to_markdown())
     run.artifact("execution-graph.md", stage="planning")

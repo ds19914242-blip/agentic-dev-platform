@@ -1,0 +1,136 @@
+{
+  "schema_version": "0.5",
+  "run_id": "standard-20260611-205233-486996-fb1bc5",
+  "run_type": "standard",
+  "product": "rss-agent-lab_2",
+  "request": "Type: implementation_task\nPipeline: standard\nRisk: low\nStatus: in_progress\n\n### Task 007 — Recognize Reddit sources in article display and favorites\n\n**Goal:** Ensure saved/displayed articles correctly attribute Reddit as their source type.\n**Scope:** Update the article source-type detection (currently hostname-based: `t.me → telegram`, else `rss`) so Reddit links (`reddit.com` / `redd.it`) are tagged `\"reddit\"`, and ensure favorites/reading-list store the `\"reddit\"` `sourceType`. Add any minimal styling/label for a Reddit source where Telegram/RSS are already distinguished.\n**Suggested files:** `components/NewsCard.tsx`, `lib/saveFavorite.ts` (and `lib/storage/types.ts` `FavoriteArticle.sourceType` comment if it enumerates kinds)\n**Acceptance criteria:**\n- Articles with Reddit links are detected and labeled as `\"reddit\"` rather than falling back to `\"rss\"`.\n- Saving a Reddit article to favorites persists `sourceType: \"reddit\"`.\n- Telegram/RSS detection and display are unchanged.\n- `tsc` passes.\n**Risk:** low\n\n#### Depends On\ntask-001\n\n## Depends On\n\n_None_\n",
+  "status": "failed",
+  "current_stage": "validation",
+  "updated_at": "2026-06-11T20:53:45",
+  "stages": {
+    "implementation": {
+      "name": "Run standard implementation",
+      "status": "completed",
+      "started_at": "2026-06-11T20:52:33",
+      "completed_at": "2026-06-11T20:53:33",
+      "updated_at": "2026-06-11T20:53:33",
+      "attempt": 1,
+      "artifacts": [
+        "standard-prompt.md",
+        "standard-response.md"
+      ],
+      "error": null
+    },
+    "validation": {
+      "name": "Run validation",
+      "status": "failed",
+      "started_at": "2026-06-11T20:53:33",
+      "completed_at": "2026-06-11T20:53:45",
+      "updated_at": "2026-06-11T20:53:45",
+      "attempt": 1,
+      "artifacts": [
+        "validation.md",
+        "validation.json"
+      ],
+      "error": "Validation failed"
+    },
+    "review": {
+      "name": "Run lightweight review",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    },
+    "pr": {
+      "name": "Create pull request",
+      "status": "pending",
+      "started_at": null,
+      "completed_at": null,
+      "updated_at": null,
+      "attempt": 0,
+      "artifacts": [],
+      "error": null
+    }
+  },
+  "metadata": {
+    "last_status": "validation_failed",
+    "status_updated_at": "2026-06-11T20:53:45"
+  },
+  "artifacts": {
+    "status.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/status.md",
+      "updated_at": "2026-06-11T20:53:45"
+    },
+    "events.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/events.md",
+      "updated_at": "2026-06-11T20:53:45"
+    },
+    "run-context.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/run-context.json",
+      "attached_at": "2026-06-11T17:52:33Z"
+    },
+    "task-profile.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/task-profile.json",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:52:33"
+    },
+    "standard-prompt.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/standard-prompt.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:52:33"
+    },
+    "standard-response.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/standard-response.md",
+      "stage": "implementation",
+      "updated_at": "2026-06-11T20:53:33"
+    },
+    "validation.md": {
+      "kind": "markdown",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/validation.md",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:53:45"
+    },
+    "validation.json": {
+      "kind": "json",
+      "path": "runs/standard-20260611-205233-486996-fb1bc5/validation.json",
+      "stage": "validation",
+      "updated_at": "2026-06-11T20:53:45"
+    }
+  },
+  "events": [
+    {
+      "timestamp": "2026-06-11T20:52:33",
+      "event": "standard run created"
+    },
+    {
+      "timestamp": "2026-06-11T20:52:33",
+      "event": "standard implementation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:53:33",
+      "event": "Validation started"
+    },
+    {
+      "timestamp": "2026-06-11T20:53:45",
+      "event": "Validation report written: failed"
+    },
+    {
+      "timestamp": "2026-06-11T20:53:45",
+      "event": "Validation failed"
+    },
+    {
+      "timestamp": "2026-06-11T20:53:45",
+      "event": "Bug task created: backlog/20260611-203558-добавить-поддержку-reddit-как-источника-новостей/task-008.md"
+    }
+  ],
+  "created_at": "2026-06-11T20:52:33"
+}

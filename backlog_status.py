@@ -7,6 +7,11 @@ STATUSES = [
     "pr_created",
     "done",
     "done_no_pr",
+    "already_satisfied",
+    "no_changes_needed",
+    "manual_verification_required",
+    "manual_verification_passed",
+    "manual_verification_failed",
     "in_progress",
     "blocked",
     "blocked_human_review",
@@ -80,12 +85,17 @@ def print_epic_summary(epic_path):
     pr_created = len(grouped["pr_created"])
     done = len(grouped["done"])
     done_no_pr = len(grouped["done_no_pr"])
+    already_satisfied = len(grouped["already_satisfied"])
+    no_changes_needed = len(grouped["no_changes_needed"])
+    manual_required = len(grouped["manual_verification_required"])
+    manual_passed = len(grouped["manual_verification_passed"])
+    manual_failed = len(grouped["manual_verification_failed"])
     in_progress = len(grouped["in_progress"])
     blocked = len(grouped["blocked"])
     blocked_human_review = len(grouped["blocked_human_review"])
     todo = len(grouped["todo"])
 
-    completed = merged + pr_created + done + done_no_pr
+    completed = merged + pr_created + done + done_no_pr + already_satisfied + no_changes_needed + manual_passed
 
     percent = round((completed / total) * 100) if total else 0
 
@@ -95,6 +105,11 @@ def print_epic_summary(epic_path):
     print(f"PR created: {pr_created}")
     print(f"Done: {done}")
     print(f"Done no PR: {done_no_pr}")
+    print(f"Already satisfied: {already_satisfied}")
+    print(f"No changes needed: {no_changes_needed}")
+    print(f"Manual verification required: {manual_required}")
+    print(f"Manual verification passed: {manual_passed}")
+    print(f"Manual verification failed: {manual_failed}")
     print(f"In progress: {in_progress}")
     print(f"Blocked: {blocked}")
     print(f"Human review: {blocked_human_review}")
@@ -128,6 +143,11 @@ def print_epic_detail(epic_path):
     print_group("PR CREATED", "◉", grouped["pr_created"])
     print_group("DONE", "✓", grouped["done"])
     print_group("DONE NO PR", "•", grouped["done_no_pr"])
+    print_group("ALREADY SATISFIED", "=", grouped["already_satisfied"])
+    print_group("NO CHANGES NEEDED", "•", grouped["no_changes_needed"])
+    print_group("MANUAL VERIFICATION REQUIRED", "?", grouped["manual_verification_required"])
+    print_group("MANUAL VERIFICATION PASSED", "✓", grouped["manual_verification_passed"])
+    print_group("MANUAL VERIFICATION FAILED", "✗", grouped["manual_verification_failed"])
     print_group("IN PROGRESS", "…", grouped["in_progress"])
     print_group("BLOCKED", "⚠", grouped["blocked"])
     print_group("HUMAN REVIEW", "!", grouped["blocked_human_review"])
