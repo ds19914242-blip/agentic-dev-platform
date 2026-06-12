@@ -1,3 +1,10 @@
+# DEPRECATED ENTRYPOINT
+#
+# This file belongs to an older workflow path.
+# It is kept temporarily for compatibility while the v0.4 architecture stabilizes.
+# Do not extend this file. Prefer agentic.py + orchestrator/workflows + orchestrator/services.
+#
+
 from pathlib import Path
 
 PROMPT_FILE = "runs/latest-feature-prompt.md"
