@@ -100,6 +100,9 @@ def run_autonomous(product_name, task_text, repo_path_override=None, source_task
     if repo_path_override:
         env["AGENTIC_REPO_PATH_OVERRIDE"] = str(repo_path_override)
 
+    if source_task_path:
+        env["AGENTIC_SOURCE_TASK_PATH"] = str(source_task_path)
+
     if source_task_path and has_human_approval(source_task_path):
         env["AGENTIC_HUMAN_APPROVED"] = "1"
 

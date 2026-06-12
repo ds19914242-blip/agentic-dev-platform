@@ -3,6 +3,7 @@ from pathlib import Path
 from orchestrator.repository_state import ensure_clean_repo
 from orchestrator.run_decision import decide_after_confidence, write_decision
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_acceptance_service import run_acceptance_gate
 from orchestrator.services.autonomous_artifacts_service import (
     git_status,
     initialize_legacy_execution_graph,
@@ -156,6 +157,9 @@ def run_autonomous_workflow(product_name, feature):
         graph_v2=graph_v2,
         feature=feature,
     )
+
+    acceptance_ok = run_acceptance_gate(product_name, run, graph_v2)
+    validation_ok = validation_ok and acceptance_ok
 
     review_state = run_autonomous_review_and_confidence(
         run_dir=run_dir,
