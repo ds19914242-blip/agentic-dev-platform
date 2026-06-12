@@ -5,6 +5,7 @@ from orchestrator.acceptance.scenario_parser import write_scenarios_json
 from orchestrator.acceptance.scenario_report import write_scenario_report
 from orchestrator.acceptance.playwright_generator import generate_playwright_test
 from orchestrator.acceptance.playwright_command import write_playwright_command
+from orchestrator.acceptance.playwright_install import write_playwright_setup_guide
 
 
 def latest_epic_dir():
@@ -24,6 +25,7 @@ def main():
     report_path = write_scenario_report(epic_dir, scenarios)
     playwright_path = generate_playwright_test(epic_dir, scenarios)
     command_path, command = write_playwright_command(epic_dir)
+    setup_path = write_playwright_setup_guide(epic_dir)
     print(f"Epic: {epic_dir}")
     print(f"Scenarios: {len(scenarios)}")
     print(f"Output: {output_path}")
@@ -31,6 +33,7 @@ def main():
     print(f"Playwright: {playwright_path}")
     print(f"Command file: {command_path}")
     print(f"Command: {command}")
+    print(f"Setup: {setup_path}")
 
 
 if __name__ == "__main__":
