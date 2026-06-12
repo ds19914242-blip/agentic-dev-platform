@@ -41,6 +41,7 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.complexity_classifier import classify_request_with_llm, parse_complexity
 from orchestrator.work_item_analyst import analyze_work_item
+from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
 
 import subprocess
 import os
@@ -62,39 +63,12 @@ def main():
     product_name = input("Product name: ").strip()
     feature = input("Feature request: ").strip()
 
-    product = load_product_config(product_name)
-    repo_path = product["repo_path"]
-
-    repo_path_override = os.environ.get("AGENTIC_REPO_PATH_OVERRIDE")
-    if repo_path_override:
-        repo_path = repo_path_override
-        product["repo_path"] = repo_path_override
-
-    files_for_classification = scan_repo(repo_path)
-    repo_map_for_classification = format_repository_map(
-        build_repository_map(files_for_classification)
-    )
-
-    work_item = analyze_work_item(repo_path, feature)
-
-    classification_text = classify_request_with_llm(
-        repo_path,
-        feature,
-        repo_map_for_classification,
-    )
-
-    classification = parse_complexity(classification_text)
-
-    if work_item.get("should_decompose"):
-        classification["route"] = "DECOMPOSE_FIRST"
-
-    human_approved = os.environ.get("AGENTIC_HUMAN_APPROVED") == "1"
-
-    if human_approved and (
-        classification.get("route") == "NEEDS_HUMAN_REVIEW"
-        or "NEEDS_HUMAN_REVIEW" in classification_text
-    ):
-        classification["route"] = "RUN_AUTONOMOUSLY"
+    preflight = prepare_autonomous_run(product_name, feature)
+    product = preflight["product"]
+    repo_path = preflight["repo_path"]
+    work_item = preflight["work_item"]
+    classification = preflight["classification"]
+    classification_text = preflight["classification_text"]
 
     if classification["route"] == "DECOMPOSE_FIRST":
         print("Request should be decomposed first.")
