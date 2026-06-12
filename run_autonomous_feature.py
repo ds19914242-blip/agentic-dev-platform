@@ -7,7 +7,6 @@ from orchestrator.import_analyzer import analyze_imports, format_import_map
 from orchestrator.affected_file_detector import detect_affected_files
 from orchestrator.repository_intelligence_v2 import rank_affected_files
 from orchestrator.context_builder import read_context
-from orchestrator.context_curator import write_memory_context
 from orchestrator.planner_agent import create_plan
 from orchestrator.llm_planner_agent import create_llm_plan
 from orchestrator.architect_agent import create_architecture_review
@@ -15,7 +14,7 @@ from orchestrator.qa_agent import create_qa_plan
 from orchestrator.agent_context import AgentContext
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.prompt_builder import build_feature_prompt
-from orchestrator.run_manager import make_run_dir, write_run_files
+from orchestrator.run_manager import write_run_files
 from orchestrator.claude_executor import run_claude_from_file, run_claude
 from orchestrator.claude_response import save_claude_response
 from orchestrator.approved_plan import save_approved_plan, load_approved_plan
@@ -24,22 +23,22 @@ from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
-from orchestrator.run_runtime import RunRuntime
 from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
 from orchestrator.manual_verification import write_manual_verification
 from orchestrator.replanner_agent import run_replanner
 from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
-from orchestrator.llm_metrics import start_metrics, finish_metrics
+from orchestrator.llm_metrics import finish_metrics
 from orchestrator.run_artifacts import register_artifacts, register_artifact
 from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
-from orchestrator.memory_store import update_product_memory, ingest_run
 from orchestrator.failure_memory import ingest_validation_failure
+from orchestrator.memory_store import ingest_run
 from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_run_service import create_autonomous_run
 
 import subprocess
 import os
@@ -84,56 +83,17 @@ def main():
 
     ensure_clean_repo(repo_path)
 
-    run_dir = make_run_dir("feature")
-
-    run = RunRuntime(
-        run_dir,
-        product=product_name,
-        request=feature,
-        run_type="feature",
-    )
-    graph_v2 = run.graph
-
-    start_metrics(run_dir)
-    os.environ["AGENTIC_RUN_DIR"] = str(run_dir)
-    run.status("created")
-    run.event("Autonomous feature run created")
-    update_run_context(
-        run_dir,
-        product=product_name,
+    run_state = create_autonomous_run(
+        product_name=product_name,
+        product=product,
         repo_path=repo_path,
         feature=feature,
         work_item=work_item,
     )
-
-
-    run.status("created")
-    run.event("Autonomous feature run created")
-    update_run_context(run_dir, product=product_name, repo_path=repo_path, feature=feature)
-
-    update_product_memory(product_name, {
-        "name": product.get("name", product_name),
-        "repo_path": repo_path,
-        "type": product.get("type"),
-        "status": product.get("status"),
-        "framework": product.get("framework"),
-        "capabilities": product.get("capabilities", {}),
-        "validators": product.get("validators", []),
-    })
-
-    memory_context_path, memory_context = write_memory_context(
-        run_dir=run_dir,
-        product_name=product_name,
-        feature=feature,
-    )
-
-    run = RunRuntime(
-        run_dir,
-        product=product_name,
-        request=feature,
-        run_type="feature",
-    )
-    graph_v2 = run.graph
+    run_dir = run_state["run_dir"]
+    run = run_state["run"]
+    graph_v2 = run_state["graph_v2"]
+    memory_context = run_state["memory_context"]
     for node_id, name in [
         ("repo_state", "Check clean repository"),
         ("repo_scan", "Scan repository"),
