@@ -4,14 +4,11 @@ from orchestrator.repository_state import ensure_clean_repo
 from orchestrator.execution_graph import ExecutionGraph
 from orchestrator.prompt_builder import build_feature_prompt
 from orchestrator.run_manager import write_run_files
-from orchestrator.claude_executor import run_claude_from_file, run_claude
+from orchestrator.claude_executor import run_claude_from_file
 from orchestrator.claude_response import save_claude_response
-from orchestrator.approved_plan import save_approved_plan, load_approved_plan
-from orchestrator.execution_result import record_execution_result
+from orchestrator.approved_plan import save_approved_plan
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.graph_runtime import GraphRuntime
-from orchestrator.test_generator import generate_tests
-from orchestrator.manual_verification import write_manual_verification
 from orchestrator.run_context import update_run_context
 from orchestrator.llm_metrics import finish_metrics
 from orchestrator.run_artifacts import register_artifacts, register_artifact
@@ -21,6 +18,7 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_implementation_service import run_autonomous_implementation_and_tests
 from orchestrator.services.autonomous_review_service import run_autonomous_review_and_confidence
 from orchestrator.services.autonomous_validation_service import run_validation_with_replan
 from orchestrator.services.autonomous_planning_service import run_autonomous_planning
@@ -238,80 +236,16 @@ def main():
     graph_v2.complete("approved_plan", artifacts=["approved-plan.md"])
     graph_v2.write()
 
-    approved_plan = load_approved_plan(run_dir)
-
-    implementation_prompt = f"""# Implement Approved Plan
-
-You are executing an approved implementation plan.
-
-Do not redesign the solution.
-Follow the approved plan.
-
-You are allowed to modify files.
-
-After implementation:
-- run npx tsc --noEmit if this is a TypeScript project
-- summarize changed files
-- summarize risks
-
-# Approved Plan
-
-{approved_plan}
-"""
-
-    run.status("implementing")
-    run.event("Claude implementation started")
-
-    implementation_response = run_claude(
+    manual_verification_required = run_autonomous_implementation_and_tests(
+        product=product,
         repo_path=repo_path,
-        prompt=implementation_prompt,
-        allow_writes=True,
-        max_turns=15,
-    )
-
-    (run_dir / "claude-implementation-response.md").write_text(
-        "# Claude Implementation Response\n\n" + implementation_response
-    )
-    run.artifact("claude-implementation-response.md", stage="implementation")
-
-    graph.mark_completed("implementation")
-    run.event("Claude implementation response recorded")
-    graph_v2.complete("implementation", artifacts=["claude-implementation-response.md"])
-    graph_v2.write()
-
-    record_execution_result(
         run_dir=run_dir,
-        repo_path=repo_path,
-        summary="Autonomous feature implementation completed.",
-    )
-
-    run.status("generating_tests")
-    run.event("Test generation started")
-
-    test_generation_response = generate_tests(
-        repo_path=repo_path,
+        run=run,
+        graph=graph,
+        graph_v2=graph_v2,
         feature=feature,
-        test_plan=qa_plan,
-        capabilities=product.get("capabilities", {}),
+        qa_plan=qa_plan,
     )
-
-    (run_dir / "test-generation.md").write_text(
-        "# Test Generation Result\n\n" + test_generation_response
-    )
-    run.artifact("test-generation.md", stage="test_generation")
-
-    manual_verification_required = write_manual_verification(
-        run_dir,
-        feature,
-        test_generation_response,
-    )
-    run.artifact("manual-verification.md", stage="test_generation")
-    run.artifact("manual-verification.json", stage="test_generation")
-
-    if manual_verification_required:
-        run.event("Manual verification required")
-    else:
-        run.event("Test generation completed")
 
     validation_ok = run_validation_with_replan(
         product_name=product_name,
