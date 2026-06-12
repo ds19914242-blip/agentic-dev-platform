@@ -28,6 +28,12 @@ def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
     config = product_acceptance_config(product_name)
     command = command or config.get("command") or load_acceptance_command(epic_dir)
     cwd = cwd or config.get("cwd") or "."
+
+    env = None
+    if config.get("base_url"):
+        import os
+        env = os.environ.copy()
+        env["ACCEPTANCE_BASE_URL"] = str(config.get("base_url"))
     result = subprocess.run(command, shell=True, cwd=cwd, text=True, capture_output=True)
     acceptance_result = AcceptanceResult(str(epic_dir), command, result.returncode == 0, result.returncode, result.stdout, result.stderr)
     write_acceptance_result(epic_dir, acceptance_result)
