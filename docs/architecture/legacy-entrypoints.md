@@ -1,6 +1,6 @@
 # Legacy Entrypoints
 
-These files appear to belong to an older latest-run workflow.
+These files appear to belong to older workflows.
 
 Do not delete them until runtime usage is confirmed.
 
@@ -25,12 +25,12 @@ Do not delete them until runtime usage is confirmed.
 - feature_request_runner.py
 - run_epic_task.py
 
-## Rule
+## Deletion rule
 
 Before deleting any legacy entrypoint:
 
 1. Check imports.
 2. Check agentic.py command routing.
-3. Check docs/README references.
-4. Check recent usage in shell history or project notes.
-5. Deprecate first, delete later.
+3. Check docs and README references.
+4. Deprecate first.
+5. Delete only after one stable release.
