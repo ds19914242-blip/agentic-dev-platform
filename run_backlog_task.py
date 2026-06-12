@@ -18,6 +18,7 @@ from orchestrator.task_status import ACTIVE_STATUSES, SKIP_STATUSES
 from orchestrator.product_registry import load_product_config
 from orchestrator.task_classifier import classify_task
 from orchestrator.execution_router import route_task
+from orchestrator.services.task_execution_service import run_task_path
 import subprocess
 import re
 
@@ -140,120 +141,11 @@ def main():
     product_name = args.product
 
     if args.task_path:
-        task_path = Path(args.task_path)
-
-        if not task_path.exists():
-            raise RuntimeError(f"Task not found: {task_path}")
-
-        status = get_status(task_path)
-
-        if status in SKIP_STATUSES:
-            raise RuntimeError(f"Task is not runnable because status is: {status}")
-
-        task_text = task_path.read_text(errors="ignore")
-
-        product = load_product_config(product_name)
-        classifier_repo_path = args.repo_path or product["repo_path"]
-        task_profile = classify_task(classifier_repo_path, task_text)
-        pipeline = route_task(task_profile)
-        set_task_profile(task_path, task_profile)
-
-        print(f"Running task from argv: {task_path}")
-        print(f"Task type: {task_profile.get('task_type')}")
-        print(f"Pipeline: {pipeline}")
-        print(f"Risk: {task_profile.get('risk')}")
-
-        if pipeline == "audit":
-            set_status(task_path, "done_no_pr")
-            print(f"Task marked done_no_pr: audit task should create follow-up work, not direct PR")
-            return
-
-        set_status(task_path, "in_progress")
-
-        try:
-            if pipeline == "fast":
-                cmd = ["python3", "run_fast_task.py", product_name, str(task_path)]
-                if args.repo_path:
-                    cmd.append(str(args.repo_path))
-
-                result = subprocess.run(
-                    cmd,
-                    text=True,
-                    capture_output=True,
-                )
-
-                print(result.stdout)
-
-                if result.returncode != 0:
-                    print(result.stderr)
-                    raise RuntimeError("Fast backlog task run failed")
-
-                stdout = result.stdout
-
-            elif pipeline in {"standard", "standard_bugfix"}:
-                cmd = ["python3", "run_standard_task.py", product_name, str(task_path), pipeline]
-                if args.repo_path:
-                    cmd.append(str(args.repo_path))
-
-                result = subprocess.run(
-                    cmd,
-                    text=True,
-                    capture_output=True,
-                )
-
-                print(result.stdout)
-
-                if result.returncode != 0:
-                    print(result.stderr)
-                    raise RuntimeError(f"{pipeline} backlog task run failed")
-
-                stdout = result.stdout
-
-            else:
-                stdout = run_autonomous(product_name, task_text, repo_path_override=args.repo_path, source_task_path=task_path)
-        except Exception:
-            set_status(task_path, "blocked")
-            raise
-
-        run_dir = parse_run_dir_from_stdout(stdout)
-        if run_dir:
-            set_run_id(task_path, run_dir.name)
-
-        pr_url = read_pr_url(run_dir)
-
-        if pr_url and run_requires_manual_verification(run_dir):
-            set_pr_url(task_path, pr_url)
-            set_status(task_path, "manual_verification_required")
-            print(f"Task marked manual_verification_required: {task_path}")
-            print(f"Run: {run_dir}")
-            print(f"PR: {pr_url}")
-        elif pr_url:
-            set_pr_url(task_path, pr_url)
-            set_status(task_path, "pr_created")
-            print(f"Task marked pr_created: {task_path}")
-            print(f"Run: {run_dir}")
-            print(f"PR: {pr_url}")
-        elif "NEEDS_HUMAN_REVIEW" in stdout and not has_human_approval(task_path):
-            set_status(task_path, "blocked_human_review")
-            print(f"Task marked blocked_human_review: human review required for {task_path}")
-            print(f"Run: {run_dir}")
-        elif "NEEDS_HUMAN_REVIEW" in stdout and has_human_approval(task_path):
-            set_status(task_path, "blocked_human_review")
-            print(f"Task still requires human review despite approval: {task_path}")
-            print(f"Run: {run_dir}")
-        elif "already_satisfied" in stdout.lower():
-            set_status(task_path, "already_satisfied")
-            print(f"Task marked already_satisfied: {task_path}")
-            print(f"Run: {run_dir}")
-        elif run_requires_manual_verification(run_dir):
-            set_status(task_path, "manual_verification_required")
-            print(f"Task marked manual_verification_required: {task_path}")
-            print(f"Run: {run_dir}")
-        else:
-            set_status(task_path, "no_changes_needed")
-            print(f"Task marked no_changes_needed: no PR found for {task_path}")
-            print(f"Run: {run_dir}")
-
+        run_task_path(
+            args.task_path,
+            product_name=product_name,
+            repo_path=args.repo_path,
+        )
         return
 
     product_name = input("Product name: ").strip()
