@@ -12,10 +12,8 @@ from orchestrator.post_run_review import create_post_run_review
 from orchestrator.security_gate import evaluate_security_gate, write_security_report
 from orchestrator.confidence_gate import write_confidence_report
 from orchestrator.graph_runtime import GraphRuntime
-from orchestrator.validation_runner import run_validators, write_validation_report
 from orchestrator.test_generator import generate_tests
 from orchestrator.manual_verification import write_manual_verification
-from orchestrator.replanner_agent import run_replanner
 from orchestrator.reviewer_agent import run_reviewer
 from orchestrator.run_context import update_run_context
 from orchestrator.llm_metrics import finish_metrics
@@ -26,6 +24,7 @@ from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
+from orchestrator.services.autonomous_validation_service import run_validation_with_replan
 from orchestrator.services.autonomous_planning_service import run_autonomous_planning
 from orchestrator.services.autonomous_run_service import (
     create_autonomous_run,
@@ -316,61 +315,16 @@ After implementation:
     else:
         run.event("Test generation completed")
 
-    validation_results = run_validators(repo_path, product.get("validators", []))
-    _, validation_ok = write_validation_report(run_dir, validation_results)
-    register_artifacts(run_dir, ["validation.md", "validation.json"], stage="validation")
-    update_run_context(run_dir, validation_passed=validation_ok)
-
-    if validation_ok:
-        graph.mark_completed("validation")
-        run.status("validated")
-        run.event("Validation passed")
-        graph_v2.complete("validation", artifacts=["validation.md", "validation.json"])
-        graph_v2.skip("replanning")
-        graph_v2.write()
-    else:
-        run.status("validation_failed")
-        run.event("Validation failed")
-        graph_v2.fail("validation", error="Validation failed", artifacts=["validation.md", "validation.json"])
-        graph_v2.write()
-
-        max_replans = 1
-        for replan_attempt in range(max_replans):
-            run.status("replanning")
-            run.event(f"Replanner started, attempt {replan_attempt + 1}")
-            graph_v2.start("replanning")
-            graph_v2.write()
-
-            run_replanner(
-                run_dir=run_dir,
-                repo_path=repo_path,
-                feature=feature,
-            )
-
-            graph_v2.complete("replanning", artifacts=["replan-prompt.md", "replan-response.md"])
-            graph_v2.write()
-
-            validation_results = run_validators(repo_path, product.get("validators", []))
-            _, validation_ok = write_validation_report(run_dir, validation_results)
-            register_artifacts(run_dir, ["validation.md", "validation.json"], stage="validation")
-            update_run_context(run_dir, validation_passed=validation_ok, replan_attempts=replan_attempt + 1)
-
-            if validation_ok:
-                graph.mark_completed("validation")
-                run.status("validated_after_replan")
-                run.event("Validation passed after replanning")
-                graph_v2.complete("validation", artifacts=["validation.md", "validation.json"])
-                graph_v2.write()
-                break
-
-        if not validation_ok:
-            run.status("validation_failed")
-            run.event("Validation still failed after replanning")
-            graph_v2.fail("validation", error="Validation failed after replanning", artifacts=["validation.md", "validation.json"])
-            graph_v2.write()
-            failure = ingest_validation_failure(product_name, run_dir)
-            if failure:
-                run.event(f"Failure memory recorded: {failure.get('failure_type')}")
+    validation_ok = run_validation_with_replan(
+        product_name=product_name,
+        product=product,
+        repo_path=repo_path,
+        run_dir=run_dir,
+        run=run,
+        graph=graph,
+        graph_v2=graph_v2,
+        feature=feature,
+    )
 
     run.status("reviewing")
     run.event("Reviewer started")
