@@ -122,3 +122,25 @@ The shared runtime owns:
 - validation failure bug task creation
 - metrics finalization
 
+## Autonomous workflow layer
+
+Autonomous feature execution is now split into:
+
+- `run_autonomous_feature.py`
+- `orchestrator/workflows/autonomous_workflow.py`
+- `orchestrator/services/autonomous_preflight_service.py`
+- `orchestrator/services/autonomous_run_service.py`
+- `orchestrator/services/autonomous_planning_service.py`
+- `orchestrator/services/autonomous_claude_planning_service.py`
+- `orchestrator/services/autonomous_implementation_service.py`
+- `orchestrator/services/autonomous_validation_service.py`
+- `orchestrator/services/autonomous_review_service.py`
+- `orchestrator/services/autonomous_finalize_service.py`
+- `orchestrator/services/autonomous_artifacts_service.py`
+
+The CLI entrypoint now only collects user input and delegates to the workflow layer.
+
+The workflow layer coordinates the end-to-end feature run.
+
+Service modules own isolated workflow stages.
+
