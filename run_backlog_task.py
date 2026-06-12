@@ -4,117 +4,22 @@ import os
 import json
 from pathlib import Path
 
+from orchestrator.backlog_store import (
+    get_status,
+    list_epics,
+    list_tasks,
+    set_pr_url,
+    set_run_id,
+    set_status,
+    set_task_profile,
+)
+from orchestrator.task_status import ACTIVE_STATUSES, SKIP_STATUSES
+
 from orchestrator.product_registry import load_product_config
 from orchestrator.task_classifier import classify_task
 from orchestrator.execution_router import route_task
 import subprocess
 import re
-
-
-ACTIVE_STATUSES = {"todo", "blocked", "manual_verification_failed"}
-SKIP_STATUSES = {"in_progress", "pr_created", "merged", "manual_verification_passed"}
-
-
-def list_epics():
-    backlog = Path("backlog")
-    epics = sorted(p for p in backlog.iterdir() if p.is_dir())
-
-    if not epics:
-        raise RuntimeError("No backlog epics found.")
-
-    return epics
-
-
-def list_tasks(epic_path):
-    return sorted(epic_path.glob("task-*.md"))
-
-
-def get_status(task_path):
-    text = task_path.read_text(errors="ignore").lower()
-
-    for line in text.splitlines():
-        if line.startswith("status:"):
-            return line.split(":", 1)[1].strip()
-
-    return "todo"
-
-
-def set_status(task_path, status):
-    text = task_path.read_text(errors="ignore")
-    lines = text.splitlines()
-
-    updated = []
-    found = False
-
-    for line in lines:
-        if line.lower().startswith("status:"):
-            updated.append(f"Status: {status}")
-            found = True
-        else:
-            updated.append(line)
-
-    if not found:
-        updated = [f"Status: {status}", ""] + updated
-
-    task_path.write_text("\n".join(updated) + "\n")
-
-
-def set_pr_url(task_path, pr_url):
-    text = task_path.read_text(errors="ignore")
-    lines = text.splitlines()
-
-    updated = []
-    found = False
-
-    for line in lines:
-        if line.lower().startswith("pr:"):
-            updated.append(f"PR: {pr_url}")
-            found = True
-        else:
-            updated.append(line)
-
-    if not found:
-        updated = [f"PR: {pr_url}"] + updated
-
-    task_path.write_text("\n".join(updated) + "\n")
-
-
-def set_run_id(task_path, run_id):
-    text = task_path.read_text(errors="ignore")
-    lines = text.splitlines()
-
-    updated = []
-    found = False
-
-    for line in lines:
-        if line.lower().startswith("run:"):
-            updated.append(f"Run: {run_id}")
-            found = True
-        else:
-            updated.append(line)
-
-    if not found:
-        updated = [f"Run: {run_id}"] + updated
-
-    task_path.write_text("\n".join(updated) + "\n")
-
-
-def set_task_profile(task_path, profile):
-    text = task_path.read_text(errors="ignore")
-
-    header = [
-        f"Type: {profile.get('task_type')}",
-        f"Pipeline: {profile.get('pipeline')}",
-        f"Risk: {profile.get('risk')}",
-    ]
-
-    lines = text.splitlines()
-    cleaned = [
-        line for line in lines
-        if not line.lower().startswith(("type:", "pipeline:", "risk:"))
-    ]
-
-    task_path.write_text("\n".join(header + cleaned) + "\n")
 
 
 def has_human_approval(task_path):
