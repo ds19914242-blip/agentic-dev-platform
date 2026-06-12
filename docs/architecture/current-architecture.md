@@ -78,3 +78,18 @@ agentic.py -> thin CLI
 orchestrator/services/* -> workflow logic
 orchestrator/state/* -> storage access
 orchestrator/execution/* -> execution pipelines
+
+## Service layer
+
+The platform now has an initial application service layer:
+
+- `orchestrator/services/verification_service.py`
+- `orchestrator/services/task_execution_service.py`
+
+Thin CLI entrypoints:
+
+- `mark_manual_verified.py`
+- `run_backlog_task.py`
+
+These scripts now mainly parse CLI arguments and delegate workflow logic to services.
+
