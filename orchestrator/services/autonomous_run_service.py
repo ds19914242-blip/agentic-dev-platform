@@ -1,5 +1,13 @@
 import os
 
+from orchestrator.context_builder import read_context
+from orchestrator.affected_file_detector import detect_affected_files
+from orchestrator.import_analyzer import analyze_imports, format_import_map
+from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
+from orchestrator.repository_intelligence import build_repository_map, format_repository_map
+from orchestrator.repository_intelligence_v2 import rank_affected_files
+from orchestrator.repository_scanner import scan_repo
+
 from orchestrator.context_curator import write_memory_context
 from orchestrator.llm_metrics import start_metrics
 from orchestrator.memory_store import update_product_memory
@@ -79,3 +87,37 @@ def initialize_autonomous_graph(graph_v2):
 
     graph_v2.complete("repo_state")
     graph_v2.write()
+
+
+def prepare_repository_context(repo_path, feature, memory_context):
+    files = scan_repo(repo_path)
+    repo_map = build_repository_map(files)
+    repo_map_text = format_repository_map(repo_map)
+
+    import_map = analyze_imports(repo_path, files)
+    import_map_text = format_import_map(import_map)
+
+    affected = rank_affected_files(feature, files) or detect_affected_files(feature, files)
+    context = read_context(repo_path, affected)
+    context = context + "\n\n" + memory_context
+
+    return {
+        "files": files,
+        "repo_map": repo_map,
+        "repo_map_text": repo_map_text,
+        "import_map": import_map,
+        "import_map_text": import_map_text,
+        "affected": affected,
+        "context": context,
+    }
+
+
+def apply_planner_selected_files(run_dir, plan, files, affected, run):
+    planner_selected_files = extract_files_from_plan(plan, files)
+    if planner_selected_files:
+        affected = planner_selected_files
+
+    write_planner_selected_files(run_dir, planner_selected_files)
+    run.artifact("planner-selected-files.md", stage="planning")
+
+    return affected, planner_selected_files

@@ -1,12 +1,6 @@
 from pathlib import Path
 
 from orchestrator.repository_state import ensure_clean_repo
-from orchestrator.repository_scanner import scan_repo
-from orchestrator.repository_intelligence import build_repository_map, format_repository_map
-from orchestrator.import_analyzer import analyze_imports, format_import_map
-from orchestrator.affected_file_detector import detect_affected_files
-from orchestrator.repository_intelligence_v2 import rank_affected_files
-from orchestrator.context_builder import read_context
 from orchestrator.planner_agent import create_plan
 from orchestrator.llm_planner_agent import create_llm_plan
 from orchestrator.architect_agent import create_architecture_review
@@ -35,10 +29,14 @@ from orchestrator.pr_creator import create_pr, has_changes
 from orchestrator.run_decision import decide_after_planning, decide_after_security, decide_after_confidence, write_decision
 from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.memory_store import ingest_run
-from orchestrator.planner_selected_files import extract_files_from_plan, write_planner_selected_files
 from orchestrator.work_item_analyst import analyze_work_item
 from orchestrator.services.autonomous_preflight_service import prepare_autonomous_run
-from orchestrator.services.autonomous_run_service import create_autonomous_run, initialize_autonomous_graph
+from orchestrator.services.autonomous_run_service import (
+    apply_planner_selected_files,
+    create_autonomous_run,
+    initialize_autonomous_graph,
+    prepare_repository_context,
+)
 
 import subprocess
 import os
@@ -99,23 +97,17 @@ def main():
     print(f"Run: {run_dir}")
     print(f"Repo: {repo_path}")
 
-    files = scan_repo(repo_path)
-    graph_v2.complete('repo_scan')
-    graph_v2.write()
-    repo_map = build_repository_map(files)
-    repo_map_text = format_repository_map(repo_map)
-    graph_v2.complete('repo_intelligence')
-    graph_v2.write()
+    repo_context = prepare_repository_context(repo_path, feature, memory_context)
+    files = repo_context["files"]
+    repo_map_text = repo_context["repo_map_text"]
+    import_map_text = repo_context["import_map_text"]
+    affected = repo_context["affected"]
+    context = repo_context["context"]
 
-    import_map = analyze_imports(repo_path, files)
-    import_map_text = format_import_map(import_map)
-
-    affected = rank_affected_files(feature, files) or detect_affected_files(feature, files)
-    graph_v2.complete('affected_files')
+    graph_v2.complete("repo_scan")
+    graph_v2.complete("repo_intelligence")
+    graph_v2.complete("affected_files")
     graph_v2.write()
-    context = read_context(repo_path, affected)
-
-    context = context + "\n\n" + memory_context
 
     agent_context = AgentContext()
 
@@ -201,12 +193,13 @@ def main():
         "plan.md",
     ], stage="planning")
 
-    planner_selected_files = extract_files_from_plan(plan, files)
-    if planner_selected_files:
-        affected = planner_selected_files
-
-    write_planner_selected_files(run_dir, planner_selected_files)
-    run.artifact("planner-selected-files.md", stage="planning")
+    affected, planner_selected_files = apply_planner_selected_files(
+        run_dir,
+        plan,
+        files,
+        affected,
+        run,
+    )
 
     security = evaluate_security_gate(affected)
 
