@@ -93,3 +93,32 @@ Thin CLI entrypoints:
 
 These scripts now mainly parse CLI arguments and delegate workflow logic to services.
 
+## Execution service layer
+
+Task execution now flows through:
+
+agentic.py / run_backlog_task.py
+  -> orchestrator/services/task_execution_service.py
+  -> run_fast_task.py / run_standard_task.py
+  -> orchestrator/services/pipeline_runner.py
+
+Thin pipeline adapters:
+
+- run_fast_task.py
+- run_standard_task.py
+
+Shared pipeline runtime:
+
+- orchestrator/services/pipeline_runner.py
+
+The shared runtime owns:
+
+- run directory creation
+- run graph setup
+- Claude execution
+- validation
+- lightweight review artifacts
+- PR creation
+- validation failure bug task creation
+- metrics finalization
+
