@@ -8,6 +8,7 @@ from orchestrator.outcome_store import ACCEPTED, FAILED, set_outcome_status
 from orchestrator.product_registry import load_product_config
 from orchestrator.route_verification import verify_routes, write_route_verification
 from orchestrator.verification_evidence import build_verification_evidence, write_verification_evidence
+from orchestrator.outcome_criteria import build_criteria_verification, write_criteria_verification
 
 
 RESULT_BLOCK_RE = re.compile(
@@ -171,6 +172,19 @@ Note: {note}
         )
         evidence_artifacts = write_verification_evidence(path.parent, evidence)
 
+        criteria_result = build_criteria_verification(
+            epic_dir=path.parent,
+            note=note,
+            route_result=route_result,
+        )
+        criteria_artifacts = write_criteria_verification(path.parent, criteria_result)
+
+        if criteria_result.get("result") == "failed" and not failed:
+            status = "manual_verification_failed"
+            failed = True
+            bug_task = create_manual_bug_task(path, original_text, note)
+            task.set_status(status)
+
         set_outcome_status(
             path.parent,
             FAILED if failed else ACCEPTED,
@@ -187,4 +201,5 @@ Note: {note}
         "product_outcome": outcome_artifacts,
         "verification_evidence": evidence_artifacts,
         "route_verification": route_artifacts,
+        "criteria_verification": locals().get("criteria_artifacts"),
     }
