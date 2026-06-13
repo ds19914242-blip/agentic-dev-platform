@@ -6,8 +6,19 @@ def parse_validators(text):
     validators = []
     lines = text.splitlines()
     current = None
+    in_validators = False
 
     for line in lines:
+        if line.strip() == "validators:":
+            in_validators = True
+            continue
+
+        if in_validators and line and not line.startswith(" "):
+            break
+
+        if not in_validators:
+            continue
+
         stripped = line.strip()
 
         if stripped.startswith("- name:"):
