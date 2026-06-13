@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from orchestrator.criteria_evidence import build_criteria_evidence, write_criteria_evidence
+
 from orchestrator.outcome_criteria import (
     build_criteria_verification,
     write_criteria_verification,
@@ -61,6 +63,17 @@ def run_product_verification(task_path, task_text, status, failed, note):
     )
     evidence_artifacts = write_verification_evidence(task_path.parent, evidence)
 
+    criteria_evidence_result = build_criteria_evidence(
+        epic_dir=task_path.parent,
+        note=note,
+        route_result=route_result,
+    )
+    criteria_evidence_artifacts = write_criteria_evidence(
+        task_path.parent,
+        criteria_evidence_result,
+    )
+    criteria_evidence_failed = criteria_evidence_result.get("result") == "failed"
+
     criteria_result = build_criteria_verification(
         epic_dir=task_path.parent,
         note=note,
@@ -69,7 +82,7 @@ def run_product_verification(task_path, task_text, status, failed, note):
     criteria_artifacts = write_criteria_verification(task_path.parent, criteria_result)
     criteria_failed = criteria_result.get("result") == "failed"
 
-    final_failed = failed or route_failed or criteria_failed
+    final_failed = failed or route_failed or criteria_failed or criteria_evidence_failed
 
     set_outcome_status(
         task_path.parent,
@@ -84,4 +97,5 @@ def run_product_verification(task_path, task_text, status, failed, note):
         "verification_evidence": evidence_artifacts,
         "route_verification": route_artifacts,
         "criteria_verification": criteria_artifacts,
+        "criteria_evidence": criteria_evidence_artifacts,
     }

@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.criteria_evidence import build_criteria_evidence, write_criteria_evidence
+
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
@@ -37,6 +39,7 @@ def build_criteria_verification(epic_dir, note, route_result=None):
     product_spec = _read(epic_dir / "product-spec.md")
     feature_spec = _read(epic_dir / "feature-spec.md")
     evidence = _read(epic_dir / "verification-evidence.md")
+    criteria_evidence = _read(epic_dir / "criteria-evidence.md")
 
     success_criteria = _criteria_items(
         _extract_section(product_spec, "Success Criteria")
@@ -50,6 +53,7 @@ def build_criteria_verification(epic_dir, note, route_result=None):
         "has_acceptance_criteria": len(acceptance_criteria) > 0,
         "has_verification_note": bool(note.strip()),
         "has_verification_evidence": bool(evidence.strip()),
+        "has_criteria_evidence": bool(criteria_evidence.strip()),
         "route_verification_passed": (
             True if route_result is None else route_result.get("result") == "passed"
         ),

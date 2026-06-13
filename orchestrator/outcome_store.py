@@ -7,6 +7,7 @@ from pathlib import Path
 PLANNED = "planned"
 IMPLEMENTING = "implementing"
 IMPLEMENTED = "implemented"
+VERIFICATION_PENDING = "verification_pending"
 VERIFIED = "verified"
 ACCEPTED = "accepted"
 FAILED = "failed"
