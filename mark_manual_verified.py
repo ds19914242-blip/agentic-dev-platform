@@ -32,6 +32,13 @@ def main():
         print(f"Product outcome written: {md_path}")
         print(f"Product outcome JSON: {json_path}")
 
+    verification_evidence = result.get("verification_evidence")
+
+    if verification_evidence:
+        md_path, json_path = verification_evidence
+        print(f"Verification evidence written: {md_path}")
+        print(f"Verification evidence JSON: {json_path}")
+
     if bug_task:
         print(f"Bug task created: {bug_task}")
         print("Run it with:")

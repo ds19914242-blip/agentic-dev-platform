@@ -5,6 +5,7 @@ from pathlib import Path
 from orchestrator.backlog_store import load_task, save_task
 from orchestrator.product_outcome import maybe_write_product_outcome_for_task
 from orchestrator.outcome_store import ACCEPTED, FAILED, set_outcome_status
+from orchestrator.verification_evidence import build_verification_evidence, write_verification_evidence
 
 
 RESULT_BLOCK_RE = re.compile(
@@ -119,6 +120,7 @@ Note: {note}
     if bug_task:
         text += f"Manual Bug Task: {bug_task}\n"
 
+    evidence_artifacts = None
     outcome_artifacts = maybe_write_product_outcome_for_task(
         task_path=path,
         task_text=text,
@@ -127,6 +129,14 @@ Note: {note}
     )
 
     if outcome_artifacts:
+        evidence = build_verification_evidence(
+            task_path=path,
+            task_text=text,
+            status=status,
+            note=note,
+        )
+        evidence_artifacts = write_verification_evidence(path.parent, evidence)
+
         set_outcome_status(
             path.parent,
             FAILED if failed else ACCEPTED,
@@ -141,4 +151,5 @@ Note: {note}
         "status": status,
         "bug_task": bug_task,
         "product_outcome": outcome_artifacts,
+        "verification_evidence": evidence_artifacts,
     }
