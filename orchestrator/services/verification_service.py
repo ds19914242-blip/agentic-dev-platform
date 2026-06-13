@@ -3,12 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from orchestrator.backlog_store import load_task, save_task
-from orchestrator.product_outcome import maybe_write_product_outcome_for_task
-from orchestrator.outcome_store import ACCEPTED, FAILED, set_outcome_status
-from orchestrator.product_registry import load_product_config
-from orchestrator.route_verification import verify_routes, write_route_verification
-from orchestrator.verification_evidence import build_verification_evidence, write_verification_evidence
-from orchestrator.outcome_criteria import build_criteria_verification, write_criteria_verification
+from orchestrator.product_verification import run_product_verification
 
 
 RESULT_BLOCK_RE = re.compile(
@@ -88,6 +83,23 @@ Source: manual_verification_failed
     return bug_path
 
 
+def append_result(text, status, timestamp, note, bug_task=None):
+    text = remove_previous_result_blocks(text)
+
+    text += f"""
+## Manual Verification Result
+
+Status: {status}
+Verified At: {timestamp}
+Note: {note}
+"""
+
+    if bug_task:
+        text += f"Manual Bug Task: {bug_task}\n"
+
+    return text
+
+
 def mark_manual_verification(task_path, failed=False, note=""):
     path = Path(task_path)
 
@@ -110,86 +122,22 @@ def mark_manual_verification(task_path, failed=False, note=""):
         bug_task = create_manual_bug_task(path, original_text, note)
 
     task.set_status(status)
-    text = remove_previous_result_blocks(task.text)
+    text = append_result(task.text, status, timestamp, note, bug_task)
 
-    text += f"""
-## Manual Verification Result
-
-Status: {status}
-Verified At: {timestamp}
-Note: {note}
-"""
-
-    if bug_task:
-        text += f"Manual Bug Task: {bug_task}\n"
-
-    evidence_artifacts = None
-    outcome_artifacts = maybe_write_product_outcome_for_task(
+    product_result = run_product_verification(
         task_path=path,
         task_text=text,
-        manual_status=status,
+        status=status,
+        failed=failed,
         note=note,
     )
 
-    route_artifacts = None
-    route_failed = False
-
-    if outcome_artifacts:
-        try:
-            from orchestrator.product_outcome import _extract_section, _read
-            epic_text = _read(path.parent / "epic.md")
-            product_name = _extract_section(epic_text, "Product")
-            product = load_product_config(product_name)
-            route_result = verify_routes(path.parent, product["repo_path"])
-            route_artifacts = write_route_verification(path.parent, route_result)
-            route_failed = route_result.get("result") == "failed"
-        except Exception as exc:
-            route_failed = True
-            route_artifacts = None
-            note = f"{note}\nRoute verification error: {exc}"
-
-        if route_failed and not failed:
-            status = "manual_verification_failed"
-            failed = True
-            bug_task = create_manual_bug_task(path, original_text, note)
-            task.set_status(status)
-            text = remove_previous_result_blocks(task.text)
-            text += f"""
-## Manual Verification Result
-
-Status: {status}
-Verified At: {timestamp}
-Note: {note}
-"""
-            if bug_task:
-                text += f"Manual Bug Task: {bug_task}\n"
-
-        evidence = build_verification_evidence(
-            task_path=path,
-            task_text=text,
-            status=status,
-            note=note,
-        )
-        evidence_artifacts = write_verification_evidence(path.parent, evidence)
-
-        criteria_result = build_criteria_verification(
-            epic_dir=path.parent,
-            note=note,
-            route_result=route_result,
-        )
-        criteria_artifacts = write_criteria_verification(path.parent, criteria_result)
-
-        if criteria_result.get("result") == "failed" and not failed:
-            status = "manual_verification_failed"
-            failed = True
-            bug_task = create_manual_bug_task(path, original_text, note)
-            task.set_status(status)
-
-        set_outcome_status(
-            path.parent,
-            FAILED if failed else ACCEPTED,
-            note,
-        )
+    if product_result["failed"] and not failed:
+        status = "manual_verification_failed"
+        note = product_result["note"]
+        bug_task = create_manual_bug_task(path, original_text, note)
+        task.set_status(status)
+        text = append_result(task.text, status, timestamp, note, bug_task)
 
     task.text = text
     save_task(task)
@@ -198,8 +146,8 @@ Note: {note}
         "task_path": path,
         "status": status,
         "bug_task": bug_task,
-        "product_outcome": outcome_artifacts,
-        "verification_evidence": evidence_artifacts,
-        "route_verification": route_artifacts,
-        "criteria_verification": locals().get("criteria_artifacts"),
+        "product_outcome": product_result.get("product_outcome"),
+        "verification_evidence": product_result.get("verification_evidence"),
+        "route_verification": product_result.get("route_verification"),
+        "criteria_verification": product_result.get("criteria_verification"),
     }
