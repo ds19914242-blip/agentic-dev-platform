@@ -3,6 +3,7 @@ from datetime import datetime
 from pathlib import Path
 
 from orchestrator.backlog_store import load_task, save_task
+from orchestrator.product_outcome import maybe_write_product_outcome_for_task
 
 
 RESULT_BLOCK_RE = re.compile(
@@ -117,6 +118,13 @@ Note: {note}
     if bug_task:
         text += f"Manual Bug Task: {bug_task}\n"
 
+    outcome_artifacts = maybe_write_product_outcome_for_task(
+        task_path=path,
+        task_text=text,
+        manual_status=status,
+        note=note,
+    )
+
     task.text = text
     save_task(task)
 
@@ -124,4 +132,5 @@ Note: {note}
         "task_path": path,
         "status": status,
         "bug_task": bug_task,
+        "product_outcome": outcome_artifacts,
     }

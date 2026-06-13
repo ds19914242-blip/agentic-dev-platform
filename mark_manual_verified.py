@@ -25,6 +25,13 @@ def main():
 
     print(f"{task_path} marked {status}")
 
+    product_outcome = result.get("product_outcome")
+
+    if product_outcome:
+        md_path, json_path = product_outcome
+        print(f"Product outcome written: {md_path}")
+        print(f"Product outcome JSON: {json_path}")
+
     if bug_task:
         print(f"Bug task created: {bug_task}")
         print("Run it with:")

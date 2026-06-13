@@ -4,6 +4,7 @@ import re
 
 from orchestrator.product_registry import load_product_config
 from orchestrator.claude_executor import run_claude
+from orchestrator.product_memory_context import format_product_memory
 
 
 def slugify(text):
@@ -19,7 +20,7 @@ def make_epic_dir(title):
     return path
 
 
-def build_product_spec(product_name, repo_path, request):
+def build_product_spec(product_name, repo_path, request, product_memory):
     prompt = f"""# Product Manager Agent
 
 You are the Product Agent for an autonomous development platform.
@@ -38,6 +39,10 @@ Do not skip unclear product assumptions; make them explicit.
 ## User Request
 
 {request}
+
+## Product Memory
+
+{product_memory}
 
 ## Context Boundary
 
@@ -121,11 +126,14 @@ def main():
     print(f"Analyzing product: {product_name}")
     print(f"Repo: {repo_path}")
 
+    product_memory = format_product_memory(product_name)
+
     print("Running Product Agent...")
     product_spec = build_product_spec(
         product_name=product_name,
         repo_path=repo_path,
         request=request,
+        product_memory=product_memory,
     )
 
     epic_dir = make_epic_dir(request)
