@@ -92,6 +92,27 @@ def parse_run_dir_from_stdout(stdout):
     return Path(match.group(1)) if match else None
 
 
+def attach_validation_artifacts(task_path, run_dir):
+    if not run_dir:
+        return []
+
+    task_path = Path(task_path)
+    run_dir = Path(run_dir)
+    epic_dir = task_path.parent
+
+    attached = []
+
+    for name in ["validation.json", "validation.md"]:
+        source = run_dir / name
+        target = epic_dir / name
+
+        if source.exists():
+            target.write_text(source.read_text(errors="ignore"))
+            attached.append(str(target))
+
+    return attached
+
+
 def run_autonomous(product_name, task_text, repo_path_override=None, source_task_path=None):
     feature_request = build_feature_request(task_text)
     input_text = product_name + "\n" + feature_request + "\n"
@@ -197,6 +218,9 @@ def run_task_path(task_path, product_name="rss-agent-lab_2", repo_path=None):
     run_dir = parse_run_dir_from_stdout(stdout)
     if run_dir:
         set_run_id(task_path, run_dir.name)
+        attached_validation = attach_validation_artifacts(task_path, run_dir)
+        for artifact in attached_validation:
+            print(f"Attached validation artifact: {artifact}")
 
     pr_url = read_pr_url(run_dir)
 
@@ -289,6 +313,9 @@ def run_interactive_task():
     run_dir = parse_run_dir_from_stdout(stdout)
     if run_dir:
         set_run_id(task_path, run_dir.name)
+        attached_validation = attach_validation_artifacts(task_path, run_dir)
+        for artifact in attached_validation:
+            print(f"Attached validation artifact: {artifact}")
 
     pr_url = read_pr_url(run_dir)
 
