@@ -5,6 +5,7 @@ import re
 from orchestrator.product_registry import load_product_config
 from orchestrator.claude_executor import run_claude
 from orchestrator.product_memory_context import format_product_memory
+from orchestrator.outcome_store import ensure_outcome
 
 
 def slugify(text):
@@ -155,6 +156,7 @@ def main():
 
     (epic_dir / "product-spec.md").write_text(product_spec)
     (epic_dir / "product-status.txt").write_text("product_pending_review\n")
+    ensure_outcome(epic_dir)
 
     print(f"Product spec created: {epic_dir / 'product-spec.md'}")
     print(f"Epic created: {epic_dir}")

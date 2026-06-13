@@ -3,6 +3,7 @@ import sys
 
 from orchestrator.backlog_store import get_pr, get_status, list_epics, task_title
 from orchestrator.task_status import COMPLETED_STATUSES, ORDERED_STATUSES
+from orchestrator.outcome_store import infer_epic_state, load_outcome
 
 
 def epic_progress(epic_path: Path):
@@ -36,8 +37,14 @@ def print_epic_summary(epic_path: Path):
     completed = sum(len(grouped[status]) for status in COMPLETED_STATUSES)
     percent = round((completed / total) * 100) if total else 0
 
+    outcome = load_outcome(epic_path)
+    epic_state = infer_epic_state(epic_path, total, completed)
+
     print(f"Epic: {epic_path.name}")
     print(f"Progress: {completed}/{total} completed ({percent}%)")
+    print(f"Outcome: {outcome.get('status', 'planned')}")
+    print(f"Epic State: {epic_state}")
+    print(f"Outcome Goal: {outcome.get('goal', '')[:140]}")
 
     for status in ORDERED_STATUSES:
         print(f"{status}: {len(grouped[status])}")

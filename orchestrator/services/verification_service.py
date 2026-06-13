@@ -4,6 +4,7 @@ from pathlib import Path
 
 from orchestrator.backlog_store import load_task, save_task
 from orchestrator.product_outcome import maybe_write_product_outcome_for_task
+from orchestrator.outcome_store import ACCEPTED, FAILED, set_outcome_status
 
 
 RESULT_BLOCK_RE = re.compile(
@@ -124,6 +125,13 @@ Note: {note}
         manual_status=status,
         note=note,
     )
+
+    if outcome_artifacts:
+        set_outcome_status(
+            path.parent,
+            FAILED if failed else ACCEPTED,
+            note,
+        )
 
     task.text = text
     save_task(task)
