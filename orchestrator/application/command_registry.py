@@ -64,6 +64,11 @@ COMMANDS = {
         "description": "Approve feature spec and generate backlog tasks",
         "legacy": False,
     },
+    "approve-product-spec": {
+        "script": "approve_product_spec.py",
+        "description": "Approve product spec and generate feature spec",
+        "legacy": False,
+    },
     "verify": {
         "script": "mark_manual_verified.py",
         "description": "Mark manual verification passed/failed",
