@@ -3,6 +3,9 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.criteria_classifier import classify_criterion, evidence_sources_for_type
+from orchestrator.evidence_evaluator import evaluate_criterion_evidence
+
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
@@ -45,6 +48,7 @@ def load_criteria(epic_dir):
         criteria.append({
             "id": f"success-{index:03d}",
             "type": "success",
+            "verification_type": classify_criterion(item),
             "description": item,
         })
 
@@ -52,6 +56,7 @@ def load_criteria(epic_dir):
         criteria.append({
             "id": f"acceptance-{index:03d}",
             "type": "acceptance",
+            "verification_type": classify_criterion(item),
             "description": item,
         })
 
@@ -68,20 +73,22 @@ def build_criteria_evidence(epic_dir, note, route_result=None):
     items = []
 
     for criterion in criteria:
-        evidence_refs = []
+        verification_type = criterion.get("verification_type", "manual")
+        expected_sources = evidence_sources_for_type(verification_type)
+        evaluation = evaluate_criterion_evidence(
+            epic_dir=epic_dir,
+            verification_type=verification_type,
+            note=note,
+        )
 
-        if verification_evidence_exists:
-            evidence_refs.append("verification-evidence.md")
-
-        if route_result is not None:
-            evidence_refs.append("route-verification.md")
-
-        passed = bool(note.strip()) and verification_evidence_exists and route_passed
+        passed = evaluation["passed"]
 
         items.append({
             **criterion,
             "result": "passed" if passed else "failed",
-            "evidence": evidence_refs,
+            "expected_evidence": expected_sources,
+            "evidence": evaluation.get("evidence", []),
+            "reason": evaluation.get("reason", ""),
             "note": note,
         })
 
@@ -128,6 +135,8 @@ def write_criteria_evidence(epic_dir, result):
                 lines.append(f"- {ref}")
             if not item["evidence"]:
                 lines.append("- _No evidence_")
+            lines.append("")
+            lines.append(f"Reason: {item.get('reason') or '_No reason_'}")
             lines.append("")
 
     lines.extend(["## Verified At", "", result["verified_at"], ""])
