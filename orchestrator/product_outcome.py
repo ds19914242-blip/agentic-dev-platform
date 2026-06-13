@@ -16,7 +16,16 @@ def _extract_section(text, heading):
 
 
 def _checkbox_count(text):
-    return len(re.findall(r"^\s*-\s*\[[ xX]\]\s+", text, flags=re.MULTILINE))
+    checkbox_count = len(
+        re.findall(r"^\s*-\s*\[[ xX]\]\s+", text, flags=re.MULTILINE)
+    )
+
+    if checkbox_count:
+        return checkbox_count
+
+    return len(
+        re.findall(r"^\s*-\s+.+", text, flags=re.MULTILINE)
+    )
 
 
 def _verification_task(text):
