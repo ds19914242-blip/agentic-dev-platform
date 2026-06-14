@@ -24,3 +24,7 @@ __pycache__/
 *.pyc
 
 memory/
+# Python / macOS generated files
+**/__pycache__/
+*.py[cod]
+.DS_Store
