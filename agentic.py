@@ -1,3 +1,4 @@
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -8,6 +9,9 @@ from orchestrator.application.command_registry import (
     legacy_commands,
     resolve_command,
 )
+
+
+ROOT_DIR = Path(__file__).resolve().parent
 
 
 def print_help():
@@ -35,9 +39,9 @@ def print_help():
 def command_script_path(command):
     script = command["script"]
     candidates = [
-        Path(script),
-        Path("cli/commands") / script,
-        Path("cli/legacy") / script,
+        ROOT_DIR / script,
+        ROOT_DIR / "cli/commands" / script,
+        ROOT_DIR / "cli/legacy" / script,
     ]
 
     for candidate in candidates:
@@ -45,6 +49,19 @@ def command_script_path(command):
             return str(candidate)
 
     return script
+
+
+def command_env():
+    env = os.environ.copy()
+    current = env.get("PYTHONPATH", "")
+    root = str(ROOT_DIR)
+
+    if current:
+        env["PYTHONPATH"] = root + os.pathsep + current
+    else:
+        env["PYTHONPATH"] = root
+
+    return env
 
 
 def main():
@@ -70,7 +87,9 @@ def main():
         print(f"[LEGACY] Executing {command_name}")
 
     result = subprocess.run(
-        ["python3", command_script_path(command)] + sys.argv[2:]
+        ["python3", command_script_path(command)] + sys.argv[2:],
+        cwd=str(ROOT_DIR),
+        env=command_env(),
     )
 
     raise SystemExit(result.returncode)
