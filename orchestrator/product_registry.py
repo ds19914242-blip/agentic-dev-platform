@@ -1,117 +1,40 @@
 from pathlib import Path
-import re
 
 
-def _load_yaml_text(text):
+def _load_yaml_file(path):
     try:
         import yaml  # type: ignore
+    except Exception as exc:
+        raise RuntimeError(
+            "PyYAML is required to load product config files"
+        ) from exc
 
-        data = yaml.safe_load(text) or {}
-        if isinstance(data, dict):
-            return data
-    except Exception:
-        pass
+    data = yaml.safe_load(path.read_text()) or {}
 
-    return {}
+    if not isinstance(data, dict):
+        raise ValueError(f"Product config must be a YAML object: {path}")
 
-
-def parse_validators(text):
-    data = _load_yaml_text(text)
-
-    if isinstance(data.get("validators"), list):
-        return data.get("validators") or []
-
-    validation = data.get("validation") or {}
-    if isinstance(validation, dict) and isinstance(validation.get("validators"), list):
-        return validation.get("validators") or []
-
-    validators = []
-    lines = text.splitlines()
-    current = None
-    in_validators = False
-
-    for line in lines:
-        if line.strip() == "validators:":
-            in_validators = True
-            continue
-
-        if in_validators and line and not line.startswith(" "):
-            break
-
-        if not in_validators:
-            continue
-
-        stripped = line.strip()
-
-        if stripped.startswith("- name:"):
-            if current:
-                validators.append(current)
-
-            current = {
-                "name": stripped.split(":", 1)[1].strip(),
-                "command": "",
-                "required": True,
-            }
-
-        elif stripped.startswith("command:") and current is not None:
-            current["command"] = stripped.split(":", 1)[1].strip()
-
-        elif stripped.startswith("required:") and current is not None:
-            value = stripped.split(":", 1)[1].strip().lower()
-            current["required"] = value == "true"
-
-    if current:
-        validators.append(current)
-
-    return validators
+    return data
 
 
-def parse_capabilities(text):
-    data = _load_yaml_text(text)
-
-    capabilities = data.get("capabilities")
-    if isinstance(capabilities, dict):
-        return capabilities
-
-    parsed = {}
-    in_capabilities = False
-
-    for line in text.splitlines():
-        if line.strip() == "capabilities:":
-            in_capabilities = True
-            continue
-
-        if in_capabilities:
-            if line and not line.startswith(" "):
-                break
-
-            stripped = line.strip()
-            if ":" in stripped:
-                key, value = stripped.split(":", 1)
-                parsed[key.strip()] = value.strip().lower() == "true"
-
-    return parsed
+def _dict(value):
+    return value if isinstance(value, dict) else {}
 
 
-def read_scalar(text, key, default=""):
-    data = _load_yaml_text(text)
-
-    value = data.get(key)
-    if value is not None and not isinstance(value, (dict, list)):
-        return str(value)
-
-    match = re.search(rf"^{key}:\s*(.+)$", text, re.MULTILINE)
-    return match.group(1).strip() if match else default
+def _list(value):
+    return value if isinstance(value, list) else []
 
 
-def read_section(text, key):
-    data = _load_yaml_text(text)
+def _scalar(data, key, default=""):
+    value = data.get(key, default)
 
-    value = data.get(key)
-    if isinstance(value, dict):
-        return value
+    if value is None:
+        return default
 
-    return {}
+    if isinstance(value, (dict, list)):
+        return default
+
+    return str(value)
 
 
 def load_product_config(product_name):
@@ -120,21 +43,25 @@ def load_product_config(product_name):
     if not config_path.exists():
         raise FileNotFoundError(f"Product config not found: {config_path}")
 
-    text = config_path.read_text()
-    repo_path = read_scalar(text, "repo_path")
+    data = _load_yaml_file(config_path)
+
+    repo_path = _scalar(data, "repo_path")
 
     if not repo_path:
         raise ValueError("repo_path not found in product config")
 
+    validation = _dict(data.get("validation"))
+    validators = _list(data.get("validators")) or _list(validation.get("validators"))
+
     return {
-        "name": read_scalar(text, "name", product_name),
+        "name": _scalar(data, "name", product_name),
         "repo_path": repo_path,
-        "type": read_scalar(text, "type"),
-        "status": read_scalar(text, "status"),
-        "framework": read_scalar(text, "framework"),
-        "capabilities": parse_capabilities(text),
-        "validators": parse_validators(text),
-        "acceptance": read_section(text, "acceptance"),
-        "deployment": read_section(text, "deployment"),
-        "validation": read_section(text, "validation"),
+        "type": _scalar(data, "type"),
+        "status": _scalar(data, "status"),
+        "framework": _scalar(data, "framework"),
+        "capabilities": _dict(data.get("capabilities")),
+        "validators": validators,
+        "acceptance": _dict(data.get("acceptance")),
+        "deployment": _dict(data.get("deployment")),
+        "validation": validation,
     }
