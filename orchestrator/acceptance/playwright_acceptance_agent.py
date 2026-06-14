@@ -100,7 +100,7 @@ The test must:
         "npx playwright install chromium >/dev/null 2>&1; "
         f"cd {q_repo}; "
         f"APP_USERNAME={shlex.quote(username)} APP_PASSWORD={shlex.quote(password)} SESSION_SECRET=dev-secret "
-        "npm run dev -- --hostname 127.0.0.1 --port 3100 > " + q_artifacts + "/dev.log 2>&1 & "
+        "rm -rf .next; npm run build; APP_USERNAME=admin APP_PASSWORD=password123 SESSION_SECRET=dev-secret PORT=3100 npm run start > " + q_artifacts + "/dev.log 2>&1 & "
         "SERVER_PID=$!; "
         "for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3100 >/dev/null 2>&1 && break; sleep 1; done; "
         "curl -fsS http://127.0.0.1:3100 >/dev/null; "
