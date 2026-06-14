@@ -130,35 +130,20 @@ def _safe_yaml(path):
         return {}
 
 
-def analysis_path(product_name):
-    """Path to the Repository Analyst output (step 0) for a product."""
-    return MEMORY_DIR / f"{product_name}-analysis.md"
-
-
-def has_analysis(product_name):
-    """True if step 0 has produced a non-empty analysis for this product."""
-    p = analysis_path(product_name)
-    try:
-        return p.is_file() and p.stat().st_size > 0
-    except Exception:
-        return False
-
-
 def list_products():
     out = []
     if not PRODUCTS_DIR.exists():
         return out
     for cfg in sorted(PRODUCTS_DIR.glob("*/config.yaml")):
         data = _safe_yaml(cfg)
-        name = str(data.get("name") or cfg.parent.name)
         out.append({
-            "name": name,
+            "name": str(data.get("name") or cfg.parent.name),
             "framework": data.get("framework", ""),
             "type": data.get("type", ""),
             "status": data.get("status", ""),
             "repo_path": data.get("repo_path", ""),
             "validators": [v.get("name") for v in (data.get("validators") or []) if isinstance(v, dict)],
-            "has_analysis": has_analysis(name),
+            "has_analysis": (MEMORY_DIR / f"{data.get('name') or cfg.parent.name}-analysis.md").exists(),
         })
     return out
 
@@ -301,12 +286,32 @@ def epic_detail(epic_id):
                     break
             tasks.append({"file": name, "title": title, **fields})
 
+    def _txt(name):
+        p = epic_dir / name
+        return p.read_text(errors="ignore").strip() if p.exists() else ""
+
+    have = set(files)
+    has_task = any(f.startswith("task-") and f.endswith(".md") for f in have)
+    if "product-spec.md" not in have:
+        next_action = {"id": "decompose", "label": "Run Product Agent", "agent": "Product Agent"}
+    elif "feature-spec.md" not in have:
+        next_action = {"id": "approve_product", "label": "Approve → Feature spec", "agent": "Product Analyst Agent"}
+    elif not has_task:
+        next_action = {"id": "approve_spec", "label": "Approve → Backlog tasks", "agent": "Backlog Decomposer"}
+    else:
+        next_action = {"id": "execute", "label": "Ready for execution", "agent": "Runtime agents"}
+
     return {
         "summary": summary,
         "stations": stations,
         "artifacts": artifacts,
         "tasks": tasks,
         "outcome": _read_json(epic_dir / "outcome.json"),
+        "statuses": {
+            "product": _txt("product-status.txt"),
+            "spec": _txt("spec-status.txt"),
+        },
+        "next_action": next_action,
     }
 
 
@@ -340,6 +345,232 @@ def resolve_artifact(rel):
         except ValueError:
             continue
     return None
+
+
+# --- default validators per framework (used by Connect repo) ------------------
+FRAMEWORK_VALIDATORS = {
+    "nextjs": [
+        {"name": "typecheck", "command": "npx tsc --noEmit", "required": True},
+        {"name": "build", "command": "npm run build", "required": True},
+    ],
+    "node": [
+        {"name": "build", "command": "npm run build", "required": True},
+    ],
+    "python": [
+        {"name": "compile", "command": "python -m compileall -q .", "required": True},
+    ],
+    "other": [],
+}
+
+
+def _run_cli(args, log, label):
+    """Run a platform CLI command from ROOT, stream stdout/stderr into log."""
+    import subprocess
+    log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": f"{label}: started"})
+    try:
+        proc = subprocess.run(
+            ["python3"] + args, cwd=str(ROOT), text=True,
+            capture_output=True, timeout=900,
+        )
+    except FileNotFoundError:
+        log.append({"ts": "", "msg": f"{label}: python3 not found", "level": "err"})
+        return False
+    except subprocess.TimeoutExpired:
+        log.append({"ts": "", "msg": f"{label}: timed out", "level": "err"})
+        return False
+    tail = (proc.stdout or "").strip().splitlines()[-8:]
+    for line in tail:
+        log.append({"ts": "", "msg": line})
+    if proc.returncode != 0:
+        err = (proc.stderr or "").strip().splitlines()[-4:]
+        for line in err:
+            log.append({"ts": "", "msg": line, "level": "err"})
+        log.append({"ts": "", "msg": f"{label}: exit {proc.returncode}", "level": "err"})
+        return False
+    log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": f"{label}: completed", "level": "ok"})
+    return True
+
+
+def git_status(repo_path=None):
+    """Status of a git repo (platform root by default)."""
+    import subprocess
+    repo = str(repo_path or ROOT)
+
+    def g(*a):
+        try:
+            return subprocess.run(["git", "-C", repo, *a], text=True,
+                                  capture_output=True, timeout=15).stdout.strip()
+        except Exception:
+            return ""
+
+    inside = g("rev-parse", "--is-inside-work-tree")
+    if inside != "true":
+        return {"git": False}
+    branch = g("rev-parse", "--abbrev-ref", "HEAD")
+    porcelain = g("status", "--porcelain")
+    dirty = [l for l in porcelain.splitlines() if l.strip()]
+    ahead = behind = 0
+    counts = g("rev-list", "--left-right", "--count", "@{upstream}...HEAD")
+    if counts and "\t" in counts:
+        try:
+            behind, ahead = (int(x) for x in counts.split("\t"))
+        except Exception:
+            pass
+    remote = g("remote", "get-url", "origin")
+    return {
+        "git": True, "branch": branch, "dirty_count": len(dirty),
+        "ahead": ahead, "behind": behind, "remote": remote,
+    }
+
+
+def connect_repo(path, name, framework, force=False):
+    """Create products/<name>/config.yaml pointing at a local repo."""
+    log = []
+
+    def step(msg, level=""):
+        log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": msg, "level": level})
+
+    repo = Path(path).expanduser()
+    if not repo.exists() or not repo.is_dir():
+        return {"ok": False, "error": f"Path is not a folder: {repo}", "log": log}
+
+    is_git = (repo / ".git").exists()
+    step(f"Repo path OK: {repo}" + ("" if is_git else "  (warning: no .git found)"),
+         "" if is_git else "err")
+
+    framework = framework if framework in FRAMEWORK_VALIDATORS else "other"
+    name = name.strip() or repo.name
+    cfg_dir = PRODUCTS_DIR / name
+    cfg_path = cfg_dir / "config.yaml"
+    if cfg_path.exists() and not force:
+        return {"ok": False, "error": f"Product '{name}' already exists. Use a different name.",
+                "log": log, "exists": True}
+
+    validators = FRAMEWORK_VALIDATORS[framework]
+    caps = {
+        "typecheck": any(v["name"] == "typecheck" for v in validators),
+        "build": any(v["name"] == "build" for v in validators),
+        "lint": False, "unit_tests": False, "e2e_tests": False, "auto_pr": True,
+    }
+
+    lines = [
+        f"name: {name}",
+        f"repo_path: {repo}",
+        "type: existing_product",
+        "status: local",
+        f"framework: {framework}",
+        "",
+        "capabilities:",
+    ]
+    for k, v in caps.items():
+        lines.append(f"  {k}: {str(v).lower()}")
+    lines.append("")
+    lines.append("validators:")
+    if validators:
+        for v in validators:
+            lines += [f"  - name: {v['name']}",
+                      f"    command: {v['command']}",
+                      f"    required: {str(v['required']).lower()}", ""]
+    else:
+        lines.append("  []")
+        lines.append("")
+
+    cfg_dir.mkdir(parents=True, exist_ok=True)
+    cfg_path.write_text("\n".join(lines).rstrip() + "\n")
+    step(f"Wrote products/{name}/config.yaml ({framework}, {len(validators)} validators)", "ok")
+
+    gs = git_status(repo)
+    if gs.get("git"):
+        step(f"Git: branch {gs.get('branch')}" + (f", remote {gs.get('remote')}" if gs.get("remote") else ""))
+
+    return {"ok": True, "name": name, "framework": framework, "git": gs, "log": log}
+
+
+# --- stage 2 & 3: approve product spec / feature spec (real CLI) ---------------
+def approve_product_spec(epic_id):
+    epic_dir = BACKLOG_DIR / epic_id
+    if not (epic_dir / "product-spec.md").exists():
+        return {"ok": False, "error": "product-spec.md missing — run Product Agent first."}
+    log = []
+    ok = _run_cli(["agentic.py", "approve-product-spec", str(epic_dir)], log, "Product Analyst Agent")
+    return {"ok": ok, "epic_id": epic_id, "produced": "feature-spec.md", "log": log}
+
+
+def approve_feature_spec(epic_id):
+    epic_dir = BACKLOG_DIR / epic_id
+    if not (epic_dir / "feature-spec.md").exists():
+        return {"ok": False, "error": "feature-spec.md missing — approve the product spec first."}
+    log = []
+    ok = _run_cli(["agentic.py", "approve-spec", str(epic_dir)], log, "Backlog Decomposer")
+    return {"ok": ok, "epic_id": epic_id, "produced": "task-*.md + acceptance-scenarios.md", "log": log}
+
+
+def commit_epic(epic_id, message=None):
+    """Commit an epic's artifacts to the platform git history."""
+    import subprocess
+    epic_dir = BACKLOG_DIR / epic_id
+    if not epic_dir.is_dir():
+        return {"ok": False, "error": "epic not found"}
+    rel = f"backlog/{epic_id}"
+    msg = message or f"epic: {epic_id}"
+    try:
+        subprocess.run(["git", "-C", str(ROOT), "add", rel], check=True, capture_output=True, text=True)
+        # also stage product config changes if any
+        subprocess.run(["git", "-C", str(ROOT), "add", "products"], capture_output=True, text=True)
+        proc = subprocess.run(["git", "-C", str(ROOT), "commit", "-m", msg],
+                              capture_output=True, text=True)
+        if proc.returncode != 0:
+            out = (proc.stdout + proc.stderr).strip()
+            if "nothing to commit" in out:
+                return {"ok": True, "nothing": True, "message": "Nothing to commit."}
+            return {"ok": False, "error": out[-300:]}
+        return {"ok": True, "message": proc.stdout.strip().splitlines()[0] if proc.stdout else "Committed."}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc)}
+
+
+# --- step 0: Repository Analyst ------------------------------------------------
+def analyze_product(product_name):
+    log = []
+
+    def step(msg, level=""):
+        log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": msg, "level": level})
+
+    try:
+        from orchestrator.repository_analyst import analyze_repository
+    except Exception as exc:
+        return {"ok": False, "error": f"Platform import failed: {exc}", "log": log}
+
+    step(f"Repository Analyst: started for {product_name}")
+    try:
+        result = analyze_repository(product_name, write=True)
+    except FileNotFoundError as exc:
+        return {"ok": False, "error": f"Product not found: {exc}", "log": log}
+    except Exception as exc:
+        return {"ok": False, "error": str(exc), "log": log}
+
+    step(f"Scanned {result['file_count']} files")
+    if result["agent_ran"]:
+        step("LLM analysis completed", "ok")
+    else:
+        step("LLM step skipped (no `claude` CLI) — wrote deterministic map only", "skip")
+    step("Stored: memory analysis.md + architecture-memory + product-memory", "ok")
+
+    return {
+        "ok": True,
+        "agent_ran": result["agent_ran"],
+        "product": product_name,
+        "file_count": result["file_count"],
+        "summary": result["summary"],
+        "log": log,
+    }
+
+
+def get_analysis(product_name):
+    path = MEMORY_DIR / f"{product_name}-analysis.md"
+    if not path.exists():
+        return {"exists": False}
+    return {"exists": True, "product": product_name, "content": path.read_text(errors="ignore")}
 
 
 # --- the one write action in stage 1: run the Product Agent (decompose) -------
@@ -469,23 +700,6 @@ class Handler(BaseHTTPRequestHandler):
                     "agents": AGENTS,
                     "pipeline": PIPELINE,
                 })
-            if path == "/api/analysis":
-                product = (q.get("product", [""])[0] or "").strip()
-                if not product:
-                    return self._send(400, {"error": "product is required"})
-                # guard against path traversal in the product name
-                if "/" in product or "\\" in product or ".." in product:
-                    return self._send(400, {"error": "invalid product name"})
-                p = analysis_path(product)
-                if not p.is_file():
-                    return self._send(404, {"error": "no analysis for product",
-                                            "product": product, "has_analysis": False})
-                return self._send(200, {
-                    "product": product,
-                    "has_analysis": True,
-                    "path": f"memory/{product}-analysis.md",
-                    "content": p.read_text(errors="ignore"),
-                })
             if path == "/api/epics":
                 return self._send(200, {"epics": list_epics()})
             if path == "/api/epic":
@@ -493,6 +707,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, d) if d else self._send(404, {"error": "epic not found"})
             if path == "/api/runs":
                 return self._send(200, {"runs": list_runs()})
+            if path == "/api/git":
+                return self._send(200, git_status())
+            if path == "/api/analysis":
+                return self._send(200, get_analysis(q.get("product", [""])[0]))
             if path == "/api/file":
                 rel = q.get("path", [""])[0]
                 target = resolve_artifact(rel)
@@ -520,6 +738,22 @@ class Handler(BaseHTTPRequestHandler):
                 if not product or not request:
                     return self._send(400, {"error": "product and request are required"})
                 return self._send(200, run_decompose(product, request))
+            if u.path == "/api/connect-repo":
+                return self._send(200, connect_repo(
+                    payload.get("path", ""), payload.get("name", ""),
+                    payload.get("framework", "other"), bool(payload.get("force"))))
+            if u.path == "/api/analyze":
+                product = (payload.get("product") or "").strip()
+                if not product:
+                    return self._send(400, {"error": "product is required"})
+                return self._send(200, analyze_product(product))
+            if u.path == "/api/approve-product":
+                return self._send(200, approve_product_spec((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/approve-spec":
+                return self._send(200, approve_feature_spec((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/commit-epic":
+                return self._send(200, commit_epic((payload.get("epic_id") or "").strip(),
+                                                   payload.get("message")))
             return self._send(404, {"error": "unknown endpoint"})
         except Exception as exc:
             traceback.print_exc()
