@@ -20,7 +20,13 @@ validators:
   - name: build
     command: npm run build
     required: true
+
 acceptance:
   cwd: /Users/danilsmetanev/Projects/rss-agent-lab_2
-  base_url: http://localhost:3000
-
+  mode: production
+  production_url: https://whale-app-har5u.ondigitalocean.app
+  base_url: https://whale-app-har5u.ondigitalocean.app
+  login_url: /login
+  username: admin
+  password: password123
+  timeout_seconds: 300
