@@ -7,6 +7,7 @@ from orchestrator.agent_runtime.dynamic_graph_factory import create_dynamic_agen
 from orchestrator.agent_runtime.executor import AgentGraphExecutor
 from orchestrator.agent_runtime.result_store import write_agent_report, write_agent_results
 from orchestrator.agent_runtime.observability.report import write_runtime_timeline
+from orchestrator.agent_runtime.observability.events import write_runtime_event
 
 
 def _resolve_repo_path(product, repo_path):
@@ -46,7 +47,17 @@ def run_runtime_orchestrator(
 
     payload["dry_run"] = dry_run
     payload["graph_plan"] = plan
+
+    write_runtime_event(output_dir, {"agent": "analysis", "status": "started"})
     payload["analysis_context"] = build_runtime_analysis_context(task, repo_path=repo_path)
+    write_runtime_event(
+        output_dir,
+        {
+            "agent": "analysis",
+            "status": "completed",
+            "message": f"affected_files={len(payload['analysis_context'].get('affected_files', []))}",
+        },
+    )
 
     context = AgentContext(
         task=task,
