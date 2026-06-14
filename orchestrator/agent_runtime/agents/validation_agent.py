@@ -43,12 +43,12 @@ class ValidationAgent(Agent):
             artifacts = ["validation.md", "validation.json"]
         else:
             ok = all(
-                (not item.get("required", True)) or item.get("ok")
+                (not item.get("required", True)) or item.get("passed", item.get("ok", False))
                 for item in results
             )
 
         findings = [
-            f"{item.get('name')}: {'passed' if item.get('ok') else 'failed'}"
+            f"{item.get('name')}: {'passed' if item.get('passed', item.get('ok', False)) else 'failed'}"
             for item in results
         ]
 
