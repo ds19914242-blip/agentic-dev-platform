@@ -119,6 +119,11 @@ COMMANDS = {
         "description": "Run a dynamically planned agent graph",
         "legacy": False,
     },
+    "runtime-orchestrator": {
+        "script": "run_runtime_orchestrator.py",
+        "description": "Run the Agent Runtime orchestrator",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
