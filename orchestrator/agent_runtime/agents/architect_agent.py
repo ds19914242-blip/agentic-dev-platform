@@ -1,6 +1,7 @@
 from orchestrator.agent_runtime.agent import Agent
 from orchestrator.agent_runtime.context import AgentContext
 from orchestrator.agent_runtime.result import AgentResult
+from orchestrator.agent_runtime.platform_systems import write_runtime_json, write_runtime_markdown
 
 
 class ArchitectAgent(Agent):
@@ -47,27 +48,30 @@ class ArchitectAgent(Agent):
 
         if context.run_dir:
             from pathlib import Path
-            import json
 
             run_dir = Path(context.run_dir)
             run_dir.mkdir(parents=True, exist_ok=True)
 
-            plan_path = run_dir / "architect-plan.md"
-            json_path = run_dir / "architect-handoff.json"
-
-            plan_path.write_text(
+            plan_md = (
                 "# Architect Plan\n\n"
                 f"Task: {task}\n\n"
+                "## Analysis Summary\n\n"
+                + "\n".join(f"- {item}" for item in analysis_context.get("summary", []))
+                + "\n\n"
                 "## Lanes\n\n"
                 "- backend\n"
                 "- frontend\n"
                 "- qa\n\n"
                 "## Risks\n\n"
                 + "\n".join(f"- {risk}" for risk in handoff["risks"])
+                + "\n\n"
+                "## Repository Map\n\n"
+                + analysis_context.get("repository_map_text", "_No repository map._")
                 + "\n"
             )
 
-            json_path.write_text(json.dumps(handoff, indent=2, ensure_ascii=False) + "\n")
+            plan_path = write_runtime_markdown(run_dir, "architect-plan.md", plan_md, stage="architect")
+            json_path = write_runtime_json(run_dir, "architect-handoff.json", handoff, stage="architect")
 
             artifacts = [str(plan_path), str(json_path)]
 

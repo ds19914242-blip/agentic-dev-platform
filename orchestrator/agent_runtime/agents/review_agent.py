@@ -3,7 +3,9 @@ from pathlib import Path
 
 from orchestrator.agent_runtime.agent import Agent
 from orchestrator.agent_runtime.context import AgentContext
+from orchestrator.agent_runtime.platform_systems import write_runtime_json, write_runtime_markdown
 from orchestrator.agent_runtime.result import AgentResult
+from orchestrator.verification_evidence import build_verification_evidence, write_verification_evidence
 
 
 class ReviewAgent(Agent):
@@ -13,6 +15,7 @@ class ReviewAgent(Agent):
         agent_results = context.inputs.get("agent_results", {})
         validation_result = agent_results.get("validation")
         acceptance_result = agent_results.get("acceptance")
+        task_path = context.inputs.get("task_path")
 
         risks = []
 
@@ -30,7 +33,7 @@ class ReviewAgent(Agent):
 
         review = {
             "status": review_status,
-            "summary": "Runtime review completed with evidence check.",
+            "summary": "Runtime review completed with existing evidence layer.",
             "risks": risks,
             "task": context.task,
             "has_validation_evidence": validation_result is not None,
@@ -40,13 +43,7 @@ class ReviewAgent(Agent):
         artifacts = []
 
         if context.run_dir:
-            run_dir = Path(context.run_dir)
-            run_dir.mkdir(parents=True, exist_ok=True)
-
-            md_path = run_dir / "runtime-review.md"
-            json_path = run_dir / "runtime-review.json"
-
-            md_path.write_text(
+            md = (
                 "# Runtime Review\n\n"
                 f"Task: {context.task}\n\n"
                 f"Status: {review_status}\n\n"
@@ -58,13 +55,27 @@ class ReviewAgent(Agent):
                 + "\n"
             )
 
-            json_path.write_text(json.dumps(review, indent=2, ensure_ascii=False) + "\n")
-            artifacts = [str(md_path), str(json_path)]
+            md_path = write_runtime_markdown(context.run_dir, "runtime-review.md", md, stage="review")
+            json_path = write_runtime_json(context.run_dir, "runtime-review.json", review, stage="review")
+            artifacts.extend([str(md_path), str(json_path)])
+
+        if task_path:
+            try:
+                evidence = build_verification_evidence(
+                    task_path=task_path,
+                    task_text=context.task,
+                    status="manual_verification_passed" if review_status == "passed" else "manual_verification_failed",
+                    note=review["summary"],
+                )
+                md_path, json_path = write_verification_evidence(Path(task_path).parent, evidence)
+                artifacts.extend([str(md_path), str(json_path)])
+            except Exception as exc:
+                risks.append(f"Verification evidence write failed: {exc}")
 
         return AgentResult(
             status="passed" if review_status == "passed" else "needs_evidence",
-            confidence=0.8 if review_status == "passed" else 0.4,
+            confidence=0.85 if review_status == "passed" else 0.45,
             artifacts=artifacts,
-            findings=["Runtime review completed with evidence check"],
+            findings=["Runtime review completed with existing verification evidence layer"],
             handoff={"review": review},
         )
