@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-from orchestrator.agents.context import AgentRunContext
-from orchestrator.agents.runtime import run_agent
+from orchestrator.agent_runtime.compatibility.legacy_runtime import LegacyAgentRunContext
+from orchestrator.agent_runtime.compatibility.legacy_runtime import run_runtime_agent
 
 
 def epic_dir_from_source_task():
@@ -42,9 +42,9 @@ def run_acceptance_gate(product_name, run, graph_v2):
     graph_v2.write()
 
     try:
-        acceptance_result = run_agent(
+        acceptance_result = run_runtime_agent(
             "acceptance",
-            AgentRunContext(
+            LegacyAgentRunContext(
                 agent="acceptance",
                 run_dir=str(run.run_dir),
                 product_name=product_name,

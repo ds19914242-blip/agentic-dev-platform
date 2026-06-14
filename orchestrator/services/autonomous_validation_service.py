@@ -1,7 +1,7 @@
 from orchestrator.failure_memory import ingest_validation_failure
 from orchestrator.replanner_agent import run_replanner
-from orchestrator.agents.context import AgentRunContext
-from orchestrator.agents.runtime import run_agent
+from orchestrator.agent_runtime.compatibility.legacy_runtime import LegacyAgentRunContext
+from orchestrator.agent_runtime.compatibility.legacy_runtime import run_runtime_agent
 
 
 def run_validation_with_replan(
@@ -14,9 +14,9 @@ def run_validation_with_replan(
     graph_v2,
     feature,
 ):
-    validator_result = run_agent(
+    validator_result = run_runtime_agent(
         "validator",
-        AgentRunContext(
+        LegacyAgentRunContext(
             agent="validator",
             run_dir=str(run_dir),
             product_name=product_name,
