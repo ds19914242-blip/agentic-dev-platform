@@ -5,6 +5,8 @@ from orchestrator.acceptance.auto_command import infer_acceptance_command
 from orchestrator.acceptance.auto_command import infer_acceptance_command
 from orchestrator.product_registry import load_product_config
 from orchestrator.acceptance.bug_recovery import create_acceptance_bug_task
+from orchestrator.acceptance.playwright_acceptance_agent import generate_playwright_acceptance
+from orchestrator.acceptance.static_sources_acceptance import can_use_static_sources_acceptance, write_static_sources_acceptance
 
 def load_acceptance_command(epic_dir):
     epic_dir = Path(epic_dir)
@@ -28,8 +30,35 @@ def product_acceptance_config(product_name):
 def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
     epic_dir = Path(epic_dir)
     config = product_acceptance_config(product_name)
-    command = command or config.get("command") or infer_acceptance_command(epic_dir) or load_acceptance_command(epic_dir)
     cwd = cwd or config.get("cwd") or "."
+
+    command = command or config.get("command") or infer_acceptance_command(epic_dir)
+
+    if not command:
+        repo_path = cwd
+        if product_name:
+            try:
+                product = load_product_config(product_name)
+                repo_path = product.get("repo_path") or cwd
+                cwd = config.get("cwd") or repo_path
+            except Exception:
+                repo_path = cwd
+
+        try:
+            if can_use_static_sources_acceptance(epic_dir):
+                command = write_static_sources_acceptance(repo_path, epic_dir)
+            else:
+                command = generate_playwright_acceptance(
+                    epic_dir=epic_dir,
+                    product_name=product_name or "",
+                    repo_path=repo_path,
+                )
+        except Exception as exc:
+            command = f"echo Acceptance command generation failed: {str(exc)!r} && exit 1"
+            (epic_dir / "acceptance-command.txt").write_text(command + "\n")
+
+    if not command:
+        command = load_acceptance_command(epic_dir)
 
     env = None
     if config.get("base_url"):

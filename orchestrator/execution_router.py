@@ -2,7 +2,7 @@
 def route_task(task_profile):
     pipeline = task_profile.get("pipeline") or "standard"
 
-    if pipeline not in {"fast", "standard_bugfix", "standard", "full", "audit"}:
+    if pipeline not in {"fast", "standard_bugfix", "standard", "full", "audit", "acceptance_verification"}:
         return "standard"
 
     return pipeline
@@ -15,4 +15,5 @@ def pipeline_description(pipeline):
         "standard": "light plan -> implement -> validate -> review -> PR",
         "full": "plan -> architecture -> QA -> implement -> validate -> review -> confidence -> PR",
         "audit": "scan -> findings -> follow-up tasks",
+        "acceptance_verification": "run acceptance scenarios -> evidence -> bug task on fail",
     }.get(pipeline, "standard")

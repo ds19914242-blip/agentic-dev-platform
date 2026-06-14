@@ -4,6 +4,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from orchestrator.acceptance.runner import run_acceptance
 from orchestrator.backlog_store import (
     get_status,
     list_epics,
@@ -172,6 +173,20 @@ def run_task_path(task_path, product_name="rss-agent-lab_2", repo_path=None):
     print(f"Task type: {task_profile.get('task_type')}")
     print(f"Pipeline: {pipeline}")
     print(f"Risk: {task_profile.get('risk')}")
+
+    if pipeline == "acceptance_verification":
+        result = run_acceptance(task_path.parent, product_name=product_name)
+        if result.passed:
+            set_status(task_path, "manual_verification_passed")
+            print(f"Acceptance verification passed: {task_path}")
+            print(f"Result: {task_path.parent / 'acceptance-result.md'}")
+        else:
+            set_status(task_path, "manual_verification_failed")
+            print(f"Acceptance verification failed: {task_path}")
+            print(f"Result: {task_path.parent / 'acceptance-result.md'}")
+            if getattr(result, "bug_task", None):
+                print(f"Bug task: {result.bug_task}")
+        return
 
     if pipeline == "audit":
         set_status(task_path, "done_no_pr")

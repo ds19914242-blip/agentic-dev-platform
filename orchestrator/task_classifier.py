@@ -8,6 +8,7 @@ ALLOWED_TASK_TYPES = {
     "implementation_task",
     "feature_task",
     "audit_task",
+    "verification_task",
 }
 
 ALLOWED_PIPELINES = {
@@ -16,6 +17,7 @@ ALLOWED_PIPELINES = {
     "standard",
     "full",
     "audit",
+    "acceptance_verification",
 }
 
 
@@ -31,18 +33,33 @@ def parse_json(text):
 
 
 def classify_task(repo_path, task_text):
+
+    lowered_task = task_text.lower()
+    if (
+        "end-to-end acceptance verification" in lowered_task
+        or "manual verification scenarios" in lowered_task
+        or "acceptance scenarios pass" in lowered_task
+    ):
+        return {
+            "task_type": "verification_task",
+            "pipeline": "acceptance_verification",
+            "risk": "medium",
+            "reason": "End-to-end acceptance verification task",
+        }
+
     prompt = f"""Classify this executable task.
 
 Return ONLY valid JSON:
 
 {{
-  "task_type": "micro_change | bug_fix | implementation_task | feature_task | audit_task",
-  "pipeline": "fast | standard_bugfix | standard | full | audit",
+  "task_type": "micro_change | bug_fix | implementation_task | feature_task | audit_task | verification_task",
+  "pipeline": "fast | standard_bugfix | standard | full | audit | acceptance_verification",
   "risk": "low | medium | high",
   "reason": ""
 }}
 
 Definitions:
+- verification_task: end-to-end acceptance/product verification task, especially tasks titled "End-to-end acceptance verification" or containing "Manual Verification Scenarios"
 - micro_change: tiny text/copy/label/typo/UI wording change
 - bug_fix: known broken behavior or exception that should be fixed
 - implementation_task: bounded change to existing page/component/module
@@ -50,6 +67,7 @@ Definitions:
 - audit_task: scan/sweep/check for remaining issues and create follow-up tasks
 
 Pipeline mapping:
+- verification_task -> acceptance_verification
 - micro_change -> fast
 - bug_fix -> standard_bugfix
 - implementation_task -> standard
