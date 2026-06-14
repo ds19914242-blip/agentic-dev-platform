@@ -24,6 +24,9 @@ def create_builtin_registry() -> AgentRegistry:
     registry = AgentRegistry()
 
     for name, description in [
+        ("planner", "Creates implementation plan"),
+        ("qa", "Creates QA plan"),
+        ("reviewer", "Reviews implementation output"),
         ("implementation", "Implements product changes"),
         ("review", "Reviews implementation and risks"),
         ("acceptance", "Runs acceptance scenarios"),

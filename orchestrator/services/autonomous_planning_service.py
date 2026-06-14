@@ -1,6 +1,6 @@
 from orchestrator.agent_context import AgentContext
-from orchestrator.agents.context import AgentRunContext
-from orchestrator.agents.runtime import run_agent
+from orchestrator.agent_runtime.compatibility.legacy_runtime import LegacyAgentRunContext
+from orchestrator.agent_runtime.compatibility.legacy_runtime import run_runtime_agent
 
 
 def run_autonomous_planning(
@@ -15,9 +15,9 @@ def run_autonomous_planning(
 ):
     agent_context = AgentContext()
 
-    planner_result = run_agent(
+    planner_result = run_runtime_agent(
         "planner",
-        AgentRunContext(
+        LegacyAgentRunContext(
             agent="planner",
             run_dir=str(run_dir),
             repo_path=repo_path,
@@ -37,9 +37,9 @@ def run_autonomous_planning(
     graph_v2.complete("planning", artifacts=["plan.md", "planner-selected-files.md"])
     graph_v2.write()
 
-    architect_result = run_agent(
+    architect_result = run_runtime_agent(
         "architect",
-        AgentRunContext(
+        LegacyAgentRunContext(
             agent="architect",
             run_dir=str(run_dir),
             repo_path=repo_path,
@@ -56,9 +56,9 @@ def run_autonomous_planning(
     graph_v2.complete("architecture", artifacts=["architecture-review.md"])
     graph_v2.write()
 
-    qa_result = run_agent(
+    qa_result = run_runtime_agent(
         "qa",
-        AgentRunContext(
+        LegacyAgentRunContext(
             agent="qa",
             run_dir=str(run_dir),
             repo_path=repo_path,
