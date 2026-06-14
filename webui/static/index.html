@@ -19,148 +19,176 @@
   button{font-family:inherit}
   ::selection{background:rgba(245,165,36,.25)}
 
-  /* ---- top bar ---- */
-  .topbar{display:flex;align-items:center;gap:18px;padding:0 20px;height:56px;
-    border-bottom:1px solid var(--line);background:linear-gradient(180deg,#131a2b,#0e1320);position:sticky;top:0;z-index:20}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.04em}
-  .brand .mark{width:14px;height:14px;transform:rotate(45deg);
-    background:conic-gradient(from 45deg,var(--live),var(--done),var(--spec),var(--live));border-radius:3px}
-  .brand small{color:var(--muted);font-weight:500;font-family:var(--mono);font-size:11px;letter-spacing:0}
-  .nav{display:flex;gap:4px;margin-left:8px}
-  .nav button{background:transparent;border:0;color:var(--muted);padding:8px 12px;border-radius:7px;cursor:pointer;font-size:13px}
-  .nav button:hover{color:var(--text);background:var(--panel)}
-  .nav button.on{color:var(--text);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
-  .spacer{flex:1}
-  .product-pick{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:12px}
-  select{background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-family:var(--mono);font-size:12px}
+  .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
 
-  /* ---- layout ---- */
-  .wrap{max-width:1180px;margin:0 auto;padding:22px 20px 60px}
+  /* ---- sidebar ---- */
+  .side{border-right:1px solid var(--line);background:linear-gradient(180deg,#121a2b,#0e1320);
+    display:flex;flex-direction:column;position:sticky;top:0;height:100vh}
+  .side .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:.04em;padding:18px 18px 14px}
+  .side .brand .mark{width:14px;height:14px;transform:rotate(45deg);
+    background:conic-gradient(from 45deg,var(--live),var(--done),var(--spec),var(--live));border-radius:3px}
+  .side .brand small{color:var(--muted);font-weight:500;font-family:var(--mono);font-size:11px;letter-spacing:0;margin-left:auto}
+  .side .pick{padding:0 14px 12px}
+  .side .pick label{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);display:block;margin:0 4px 6px}
+  select{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);border-radius:8px;
+    padding:8px 9px;font-family:var(--mono);font-size:12px}
+  select:focus,textarea:focus,input:focus{outline:none;border-color:var(--spec)}
+  .navsec{padding:8px 10px}
+  .navsec .h{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:8px 8px 4px}
+  .navsec button{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:transparent;border:0;
+    color:var(--muted);padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px}
+  .navsec button:hover{color:var(--text);background:var(--panel)}
+  .navsec button.on{color:var(--text);background:var(--panel-2);box-shadow:inset 0 0 0 1px var(--line)}
+  .navsec button .ic{width:7px;height:7px;border-radius:2px;background:var(--pending);transform:rotate(45deg)}
+  .navsec button.on .ic{background:var(--live)}
+  .side .git{margin-top:auto;border-top:1px solid var(--line);padding:12px 16px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+  .side .git .b{color:var(--text)} .side .git .d{color:var(--live)} .side .git .c{color:var(--done)}
+
+  /* ---- main ---- */
+  .main{min-width:0}
+  .wrap{max-width:1080px;margin:0 auto;padding:26px 28px 70px}
   .view{display:none} .view.on{display:block}
   .eyebrow{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint)}
-  h1{font-size:20px;margin:4px 0 18px;font-weight:650;letter-spacing:.01em}
-  .grid{display:grid;gap:18px}
-
+  h1{font-size:20px;margin:5px 0 20px;font-weight:650;letter-spacing:.01em}
   .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:18px}
   .card h2{font-size:13px;margin:0 0 14px;font-weight:600;color:var(--muted);letter-spacing:.02em}
+  .grid{display:grid;gap:16px}
 
-  textarea{width:100%;min-height:120px;resize:vertical;background:var(--panel-2);color:var(--text);
-    border:1px solid var(--line);border-radius:9px;padding:12px;font-family:var(--ui);font-size:14px;line-height:1.55}
-  textarea:focus,select:focus{outline:none;border-color:var(--spec)}
+  textarea,input[type=text]{width:100%;background:var(--panel-2);color:var(--text);border:1px solid var(--line);
+    border-radius:9px;padding:11px 12px;font-family:var(--ui);font-size:14px;line-height:1.55}
+  textarea{min-height:120px;resize:vertical}
+  .field{margin-bottom:12px} .field label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}
+  .field .mono-in{font-family:var(--mono);font-size:13px}
   .btn{background:var(--live);color:#1a1205;border:0;border-radius:9px;padding:11px 18px;font-weight:650;
     cursor:pointer;font-size:14px;display:inline-flex;align-items:center;gap:8px}
-  .btn:hover{filter:brightness(1.08)} .btn:disabled{opacity:.55;cursor:not-allowed;filter:none}
+  .btn:hover{filter:brightness(1.08)} .btn:disabled{opacity:.5;cursor:not-allowed;filter:none}
   .btn.ghost{background:var(--panel-2);color:var(--text);box-shadow:inset 0 0 0 1px var(--line)}
-  .hint{color:var(--muted);font-size:12px;margin-top:10px}
+  .btn.sm{padding:8px 13px;font-size:13px}
+  .hint{color:var(--muted);font-size:12px}
+  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
 
-  /* ---- pipeline rail (signature element) ---- */
-  .rail{display:flex;align-items:stretch;gap:0;margin:6px 0 8px;overflow-x:auto;padding-bottom:4px}
-  .station{position:relative;flex:1;min-width:128px;padding:14px 12px 14px 16px;
-    background:var(--panel-2);border:1px solid var(--line);border-right:0}
+  /* ---- pipeline rail ---- */
+  .rail{display:flex;margin:6px 0;overflow-x:auto;padding-bottom:4px}
+  .station{position:relative;flex:1;min-width:120px;padding:13px 12px 13px 15px;background:var(--panel-2);
+    border:1px solid var(--line);border-right:0}
   .station:first-child{border-radius:11px 0 0 11px}
   .station:last-child{border-radius:0 11px 11px 0;border-right:1px solid var(--line)}
   .station .num{font-family:var(--mono);font-size:11px;color:var(--faint)}
-  .station .lbl{font-weight:600;margin:3px 0 2px}
-  .station .agent{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .station .dot{position:absolute;top:14px;right:12px;width:9px;height:9px;border-radius:50%;background:var(--pending)}
-  .station.done .dot{background:var(--done)}
-  .station.done .lbl{color:var(--text)}
+  .station .lbl{font-weight:600;margin:3px 0 2px;font-size:13px}
+  .station .agent{font-family:var(--mono);font-size:10.5px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .station .dot{position:absolute;top:13px;right:11px;width:8px;height:8px;border-radius:50%;background:var(--pending)}
+  .station.done .dot{background:var(--done)} .station.done .lbl{color:var(--text)}
   .station.active{background:linear-gradient(180deg,#26200f,#1b2335);border-color:var(--live)}
-  .station.active .dot{background:var(--live);box-shadow:0 0 0 0 rgba(245,165,36,.55);animation:pulse 1.6s infinite}
+  .station.active .dot{background:var(--live);animation:pulse 1.6s infinite}
   .station.active .agent{color:var(--live)}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,165,36,.5)}70%{box-shadow:0 0 0 9px rgba(245,165,36,0)}100%{box-shadow:0 0 0 0 rgba(245,165,36,0)}}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(245,165,36,.5)}70%{box-shadow:0 0 0 8px rgba(245,165,36,0)}100%{box-shadow:0 0 0 0 rgba(245,165,36,0)}}
   @media (prefers-reduced-motion:reduce){.station.active .dot{animation:none}}
 
+  .action{display:flex;align-items:center;gap:14px;margin-top:14px;padding:14px;border:1px dashed var(--line);border-radius:10px;background:var(--panel-2)}
+  .action .who{font-family:var(--mono);font-size:12px;color:var(--live)}
+  .action.done-stage{border-style:solid;border-color:rgba(45,212,191,.35)} .action.done-stage .who{color:var(--done)}
+
   /* ---- artifacts + viewer ---- */
-  .split{display:grid;grid-template-columns:300px 1fr;gap:16px;align-items:start}
+  .split{display:grid;grid-template-columns:290px 1fr;gap:16px;align-items:start}
   .stage-group{margin-bottom:14px}
-  .stage-group .gh{font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 6px}
+  .stage-group .gh{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);margin:0 0 6px;display:flex;gap:6px;align-items:center}
+  .stage-group .gh .by{color:var(--spec)}
   .afile{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:8px;cursor:pointer;border:1px solid transparent}
   .afile:hover{background:var(--panel-2)} .afile.sel{background:var(--panel-2);border-color:var(--line)}
-  .afile .k{font-family:var(--mono);font-size:10px;color:var(--bg);background:var(--muted);border-radius:4px;padding:1px 5px}
+  .afile .k{font-family:var(--mono);font-size:10px;color:var(--bg);background:var(--muted);border-radius:4px;padding:1px 5px;flex:none}
   .afile .k.json{background:var(--spec)} .afile .k.text{background:var(--done)}
   .afile .nm{font-family:var(--mono);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .afile .sz{margin-left:auto;color:var(--faint);font-size:11px;font-family:var(--mono)}
-  .viewer{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;min-height:340px;max-height:70vh;overflow:auto}
+  .viewer{background:var(--panel-2);border:1px solid var(--line);border-radius:10px;min-height:320px;max-height:68vh;overflow:auto}
   .viewer .vh{position:sticky;top:0;display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line);
-    background:var(--panel-2);font-family:var(--mono);font-size:12px;color:var(--muted)}
+    background:var(--panel-2);font-family:var(--mono);font-size:12px;color:var(--muted);z-index:1}
   .viewer .vb{padding:16px 18px}
-  .empty{color:var(--faint);padding:40px;text-align:center;font-size:13px}
+  .empty{color:var(--faint);padding:38px;text-align:center;font-size:13px}
 
-  /* rendered markdown */
-  .md h1,.md h2,.md h3{line-height:1.3;margin:18px 0 8px}
-  .md h1{font-size:18px}.md h2{font-size:15px;color:var(--text)}.md h3{font-size:13px;color:var(--muted)}
+  .md h1,.md h2,.md h3{line-height:1.3;margin:16px 0 8px}
+  .md h1{font-size:18px}.md h2{font-size:15px}.md h3{font-size:13px;color:var(--muted)}
   .md p{margin:8px 0}.md ul{margin:8px 0;padding-left:20px}.md li{margin:3px 0}
   .md code{font-family:var(--mono);font-size:12px;background:var(--panel);padding:1px 5px;border-radius:4px}
   .md pre{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:12px;overflow:auto}
-  .md pre code{background:none;padding:0}
-  .md strong{color:#fff}
+  .md pre code{background:none;padding:0}.md strong{color:#fff}
   pre.json{margin:0;font-family:var(--mono);font-size:12px;white-space:pre;color:#cfe3ff}
 
-  /* ---- tables / lists ---- */
   table{width:100%;border-collapse:collapse}
   th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:13px}
   th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
   tr.click{cursor:pointer} tr.click:hover td{background:var(--panel-2)}
   .mono{font-family:var(--mono);font-size:12px}
-  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-family:var(--mono);
-    border:1px solid var(--line);color:var(--muted)}
-  .pill.accepted,.pill.verified,.pill.passed,.pill.pr_created,.pill.completed{color:var(--done);border-color:rgba(45,212,191,.4)}
-  .pill.planned,.pill.todo,.pill.in_progress,.pill.implementing{color:var(--live);border-color:rgba(245,165,36,.4)}
+  .pill{display:inline-block;padding:2px 9px;border-radius:20px;font-size:11px;font-family:var(--mono);border:1px solid var(--line);color:var(--muted)}
+  .pill.accepted,.pill.verified,.pill.passed,.pill.pr_created,.pill.completed,.pill.spec_approved,.pill.product_approved{color:var(--done);border-color:rgba(45,212,191,.4)}
+  .pill.planned,.pill.todo,.pill.in_progress,.pill.implementing,.pill.product_pending_review,.pill.spec_pending_review{color:var(--live);border-color:rgba(245,165,36,.4)}
   .pill.failed,.pill.validation_failed{color:var(--danger);border-color:rgba(248,113,113,.4)}
 
+  .repo-card{display:flex;gap:14px;align-items:flex-start;padding:15px;border:1px solid var(--line);border-radius:11px;background:var(--panel)}
+  .repo-card .badge{flex:none;width:40px;height:40px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;background:var(--panel-2);color:var(--spec)}
+  .repo-card .rn{font-weight:650;font-family:var(--mono);font-size:13px}
+  .repo-card .rp{color:var(--muted);font-size:12px;font-family:var(--mono);margin-top:3px;word-break:break-all}
+  .repo-card .meta{margin-top:7px;display:flex;gap:7px;flex-wrap:wrap}
+  .tag{font-family:var(--mono);font-size:10px;color:var(--muted);border:1px solid var(--line);border-radius:5px;padding:1px 6px}
+
   .agent-card{display:flex;gap:14px;padding:14px;border:1px solid var(--line);border-radius:10px;background:var(--panel)}
-  .agent-card .badge{flex:none;width:42px;height:42px;border-radius:9px;display:grid;place-items:center;
-    font-family:var(--mono);font-weight:700;font-size:15px;background:var(--panel-2)}
+  .agent-card .badge{flex:none;width:42px;height:42px;border-radius:9px;display:grid;place-items:center;font-family:var(--mono);font-weight:700;font-size:15px;background:var(--panel-2)}
   .agent-card.spec .badge{color:var(--spec)} .agent-card.runtime .badge{color:var(--live)}
   .agent-card .an{font-weight:600;font-family:var(--mono);font-size:13px}
-  .agent-card .ar{color:var(--muted);font-size:13px;margin-top:3px}
-  .agent-card .stg{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint);align-self:flex-start}
+  .agent-card .ar{color:var(--muted);font-size:13px;margin-top:3px} .agent-card .stg{margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--faint)}
 
-  /* run log */
-  .log{font-family:var(--mono);font-size:12px;background:#0a0e18;border:1px solid var(--line);border-radius:9px;
-    padding:12px;max-height:220px;overflow:auto}
+  .log{font-family:var(--mono);font-size:12px;background:#0a0e18;border:1px solid var(--line);border-radius:9px;padding:12px;max-height:240px;overflow:auto}
   .log .ln{display:flex;gap:10px;padding:2px 0}
-  .log .t{color:var(--faint)} .log .m{color:var(--text)}
-  .log .m.skip{color:var(--live)} .log .m.ok{color:var(--done)} .log .m.err{color:var(--danger)}
-  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel-2);
-    border:1px solid var(--line);border-radius:10px;padding:12px 18px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none}
-  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
-  @media(max-width:780px){.split{grid-template-columns:1fr}}
+  .log .t{color:var(--faint);flex:none} .log .m{color:var(--text);white-space:pre-wrap;word-break:break-word}
+  .log .m.skip,.log .m.warn{color:var(--live)} .log .m.ok{color:var(--done)} .log .m.err{color:var(--danger)}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--panel-2);border:1px solid var(--line);
+    border-radius:10px;padding:12px 18px;font-size:13px;box-shadow:0 8px 30px rgba(0,0,0,.5);display:none;max-width:80vw}
+  @media(max-width:820px){.app{grid-template-columns:1fr}.side{position:static;height:auto}.split{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
-  <div class="topbar">
-    <div class="brand"><span class="mark"></span>AGENTIC CONSOLE <small id="ver">·</small></div>
-    <nav class="nav" id="nav">
-      <button data-v="compose" class="on">Compose</button>
-      <button data-v="epics">Epics</button>
-      <button data-v="runs">Runs</button>
-      <button data-v="agents">Agents</button>
-    </nav>
-    <span class="spacer"></span>
-    <span class="product-pick">product <select id="product"></select></span>
-  </div>
+<div class="app">
+  <!-- SIDEBAR -->
+  <aside class="side">
+    <div class="brand"><span class="mark"></span>AGENTIC <small id="ver">·</small></div>
+    <div class="pick">
+      <label>Active product</label>
+      <select id="product"></select>
+    </div>
+    <div class="navsec">
+      <div class="h">Workspace</div>
+      <button data-v="compose" class="on"><span class="ic"></span>Compose</button>
+      <button data-v="epics"><span class="ic"></span>Epics</button>
+      <button data-v="runs"><span class="ic"></span>Runs</button>
+    </div>
+    <div class="navsec">
+      <div class="h">Platform</div>
+      <button data-v="repos"><span class="ic"></span>Repositories</button>
+      <button data-v="agents"><span class="ic"></span>Agents</button>
+      <button data-v="pipeline"><span class="ic"></span>Pipeline</button>
+    </div>
+    <div class="git" id="git">git · …</div>
+  </aside>
 
-  <div class="wrap">
+  <!-- MAIN -->
+  <main class="main"><div class="wrap">
     <!-- COMPOSE -->
     <section class="view on" id="view-compose">
       <div class="eyebrow">Stage 1 · Request → Product spec</div>
       <h1>Start a new epic</h1>
-      <div class="grid" style="grid-template-columns:minmax(0,1fr);max-width:760px">
+      <div class="grid" style="max-width:740px">
         <div class="card">
           <h2>Human request</h2>
-          <textarea id="req" placeholder="Опишите, что нужно сделать в продукте — обычным языком.&#10;Напр.: «Добавить на страницу настроек переключатель тёмной темы, сохраняемый между сессиями.»"></textarea>
+          <textarea id="req" placeholder="Опишите задачу обычным языком.&#10;Напр.: «Добавить на страницу настроек переключатель тёмной темы, сохраняемый между сессиями.»"></textarea>
           <div class="row" style="margin-top:14px">
             <button class="btn" id="run">Decompose →</button>
-            <span class="hint" id="runhint">Runs the Product Agent. Writes epic.md + product-spec.md, no code is touched.</span>
+            <span class="hint">Runs the Product Agent. Writes epic.md + product-spec.md, no code is touched.</span>
           </div>
         </div>
         <div class="card" id="logcard" style="display:none">
           <h2>Run log</h2>
           <div class="log" id="log"></div>
           <div class="row" style="margin-top:12px">
-            <button class="btn ghost" id="openepic" style="display:none">Open epic →</button>
+            <button class="btn ghost sm" id="openepic" style="display:none">Open epic →</button>
           </div>
         </div>
       </div>
@@ -173,16 +201,12 @@
       <div class="card" style="margin-bottom:18px">
         <h2>Pipeline</h2>
         <div class="rail" id="rail"></div>
+        <div id="action-slot"></div>
       </div>
       <div class="split">
-        <div class="card">
-          <h2>Artifacts</h2>
-          <div id="artifacts"></div>
-        </div>
+        <div class="card"><h2>Artifacts by agent</h2><div id="artifacts"></div></div>
         <div>
-          <div class="viewer" id="viewer">
-            <div class="empty">Select an artifact to inspect it.</div>
-          </div>
+          <div class="viewer" id="viewer"><div class="empty">Select an artifact to inspect it.</div></div>
           <div class="card" id="taskscard" style="margin-top:16px;display:none">
             <h2>Backlog tasks</h2>
             <table><thead><tr><th>#</th><th>Task</th><th>Pipeline</th><th>Status</th><th>PR</th></tr></thead>
@@ -192,7 +216,7 @@
       </div>
     </section>
 
-    <!-- EPICS LIST -->
+    <!-- EPICS -->
     <section class="view" id="view-epics">
       <div class="eyebrow">Backlog</div><h1>Epics</h1>
       <div class="card" style="padding:4px 0">
@@ -210,6 +234,29 @@
       </div>
     </section>
 
+    <!-- REPOSITORIES -->
+    <section class="view" id="view-repos">
+      <div class="eyebrow">Platform</div><h1>Repositories</h1>
+      <div class="grid" id="repos" style="margin-bottom:22px"></div>
+      <div class="card" style="max-width:640px">
+        <h2>Connect a repository</h2>
+        <div class="field"><label>Local repo path</label>
+          <input type="text" id="c-path" class="mono-in" placeholder="/Users/you/Projects/my-app"></div>
+        <div class="field"><label>Product name (used as the id)</label>
+          <input type="text" id="c-name" class="mono-in" placeholder="my-app"></div>
+        <div class="field"><label>Framework</label>
+          <select id="c-fw"><option value="nextjs">nextjs</option><option value="node">node</option>
+          <option value="python">python</option><option value="other">other</option></select></div>
+        <div class="row"><button class="btn" id="connect">Connect repository</button>
+          <span class="hint">Writes products/&lt;name&gt;/config.yaml with default validators.</span></div>
+        <div class="log" id="connect-log" style="display:none;margin-top:14px"></div>
+      </div>
+      <div class="viewer" id="analysis-view" style="display:none;margin-top:18px">
+        <div class="vh">▸ <span id="analysis-name">analysis.md</span></div>
+        <div class="vb"><div class="md" id="analysis-body"></div></div>
+      </div>
+    </section>
+
     <!-- AGENTS -->
     <section class="view" id="view-agents">
       <div class="eyebrow">Roster</div><h1>Agents</h1>
@@ -218,142 +265,190 @@
       <div class="eyebrow" style="margin:6px 0 10px">Runtime agents · agent graph</div>
       <div class="grid" id="agents-runtime" style="grid-template-columns:1fr 1fr"></div>
     </section>
-  </div>
-  <div class="toast" id="toast"></div>
+
+    <!-- PIPELINE -->
+    <section class="view" id="view-pipeline">
+      <div class="eyebrow">Reference</div><h1>Pipeline</h1>
+      <div class="grid" id="pipeline-ref"></div>
+    </section>
+  </div></main>
+</div>
+<div class="toast" id="toast"></div>
 
 <script>
-const $ = s => document.querySelector(s);
-const api = (p,opt) => fetch(p,opt).then(r=>r.json());
-let STATE=null, CUR_ART=null;
+const $=s=>document.querySelector(s);
+const api=(p,opt)=>fetch(p,opt).then(r=>r.json());
+let STATE=null;
+function toast(m){const t=$('#toast');t.textContent=m;t.style.display='block';clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',2800)}
+function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-function toast(msg){const t=$('#toast');t.textContent=msg;t.style.display='block';clearTimeout(t._);t._=setTimeout(()=>t.style.display='none',2600)}
-
-// ---- tiny markdown renderer (headings/lists/bold/code) ----
-function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 function mdToHtml(src){
-  const lines=src.replace(/\r/g,'').split('\n'); let out=[],i=0,inList=false,inCode=false;
-  const closeList=()=>{if(inList){out.push('</ul>');inList=false}};
-  for(let line of lines){
-    if(line.trim().startsWith('```')){ if(inCode){out.push('</code></pre>');inCode=false}else{closeList();out.push('<pre><code>');inCode=true} continue;}
-    if(inCode){out.push(esc(line)+'\n');continue;}
+  const L=src.replace(/\r/g,'').split('\n');let o=[],inList=false,inCode=false;
+  const cl=()=>{if(inList){o.push('</ul>');inList=false}};
+  for(let ln of L){
+    if(ln.trim().startsWith('```')){if(inCode){o.push('</code></pre>');inCode=false}else{cl();o.push('<pre><code>');inCode=true}continue}
+    if(inCode){o.push(esc(ln)+'\n');continue}
     let m;
-    if(m=line.match(/^(#{1,3})\s+(.*)/)){closeList();out.push(`<h${m[1].length}>${inline(m[2])}</h${m[1].length}>`);continue;}
-    if(m=line.match(/^\s*[-*]\s+(.*)/)){if(!inList){out.push('<ul>');inList=true}out.push(`<li>${inline(m[1])}</li>`);continue;}
-    if(line.trim()===''){closeList();continue;}
-    closeList();out.push(`<p>${inline(line)}</p>`);
+    if(m=ln.match(/^(#{1,3})\s+(.*)/)){cl();o.push(`<h${m[1].length}>${il(m[2])}</h${m[1].length}>`);continue}
+    if(m=ln.match(/^\s*[-*]\s+(.*)/)){if(!inList){o.push('<ul>');inList=true}o.push(`<li>${il(m[1])}</li>`);continue}
+    if(ln.trim()===''){cl();continue}
+    cl();o.push(`<p>${il(ln)}</p>`)
   }
-  if(inList)out.push('</ul>'); if(inCode)out.push('</code></pre>');
-  return out.join('');
-  function inline(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>')}
+  if(inList)o.push('</ul>');if(inCode)o.push('</code></pre>');return o.join('');
+  function il(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/`([^`]+)`/g,'<code>$1</code>')}
 }
 
-// ---- views ----
 function show(v){
   document.querySelectorAll('.view').forEach(e=>e.classList.remove('on'));
   $('#view-'+v).classList.add('on');
-  document.querySelectorAll('#nav button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  document.querySelectorAll('.navsec button').forEach(b=>b.classList.toggle('on',b.dataset.v===v));
+  if(v==='epics')loadEpics();if(v==='runs')loadRuns();if(v==='repos')loadRepos();
 }
-$('#nav').addEventListener('click',e=>{const b=e.target.closest('button');if(b){show(b.dataset.v);if(b.dataset.v==='epics')loadEpics();if(b.dataset.v==='runs')loadRuns();}});
+document.querySelector('.side').addEventListener('click',e=>{const b=e.target.closest('.navsec button');if(b)show(b.dataset.v)});
+$('#product').addEventListener('change',()=>{ if($('#view-epics').classList.contains('on'))loadEpics(); });
 
 async function boot(){
   STATE=await api('/api/state');
-  $('#ver').textContent='· '+STATE.version;
+  $('#ver').textContent=STATE.version;
   $('#product').innerHTML=STATE.products.map(p=>`<option value="${p.name}">${p.name}</option>`).join('')||'<option>—</option>';
-  renderAgents();
+  renderAgents();renderPipeline();loadGit();
+}
+async function loadGit(){
+  const g=await api('/api/git');
+  if(!g.git){$('#git').textContent='git · not a repo';return}
+  let s=`git · <span class="b">${g.branch}</span>`;
+  if(g.dirty_count)s+=` · <span class="d">${g.dirty_count} changed</span>`; else s+=` · <span class="c">clean</span>`;
+  if(g.ahead)s+=` · ↑${g.ahead}`;
+  $('#git').innerHTML=s;
 }
 function renderAgents(){
-  const card=a=>`<div class="agent-card ${a.tier}"><div class="badge">${a.name[0].toUpperCase()}</div>
+  const c=a=>`<div class="agent-card ${a.tier}"><div class="badge">${a.name[0].toUpperCase()}</div>
     <div><div class="an">${a.name}</div><div class="ar">${a.role}</div></div><div class="stg">${a.stage}</div></div>`;
-  $('#agents-spec').innerHTML=STATE.agents.filter(a=>a.tier==='spec').map(card).join('');
-  $('#agents-runtime').innerHTML=STATE.agents.filter(a=>a.tier==='runtime').map(card).join('');
+  $('#agents-spec').innerHTML=STATE.agents.filter(a=>a.tier==='spec').map(c).join('');
+  $('#agents-runtime').innerHTML=STATE.agents.filter(a=>a.tier==='runtime').map(c).join('');
+}
+function renderPipeline(){
+  $('#pipeline-ref').innerHTML=STATE.pipeline.map((s,i)=>`<div class="card">
+    <div class="row" style="justify-content:space-between"><div class="mono" style="color:var(--faint)">${String(i+1).padStart(2,'0')}</div>
+    <div class="tag">${s.kind}</div></div>
+    <div style="font-weight:650;margin:6px 0 2px">${s.label}</div>
+    <div class="mono" style="font-size:12px;color:var(--live)">${s.agent||'—'}</div>
+    ${s.command?`<div class="mono" style="font-size:11px;color:var(--muted);margin-top:6px">$ ${s.command}</div>`:''}
+    ${s.outputs.length?`<div class="meta" style="margin-top:8px">${s.outputs.map(o=>`<span class="tag">${o}</span>`).join('')}</div>`:''}
+  </div>`).join('');
 }
 
-// ---- compose / decompose ----
+// ---- compose ----
 $('#run').addEventListener('click',async()=>{
-  const product=$('#product').value, request=$('#req').value.trim();
-  if(!request){toast('Enter a request first');return;}
-  const btn=$('#run');btn.disabled=true;btn.textContent='Running…';
+  const product=$('#product').value,request=$('#req').value.trim();
+  if(!request){toast('Enter a request first');return}
+  const b=$('#run');b.disabled=true;b.textContent='Running…';
   $('#logcard').style.display='';$('#log').innerHTML='';$('#openepic').style.display='none';
   try{
-    const r=await api('/api/decompose',{method:'POST',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({product,request})});
-    if(r.error){addLog('00:00:00',r.error,'err');toast('Failed');}
+    const r=await api('/api/decompose',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product,request})});
+    if(r.error){addLog('#log','',r.error,'err');toast('Failed')}
     else{
-      (r.log||[]).forEach(l=>{
-        const cls=/SKIPPED/.test(l.msg)?'skip':/FAILED/.test(l.msg)?'err':/completed|Initialized/.test(l.msg)?'ok':'';
-        addLog(l.ts,l.msg,cls);
-      });
-      if(!r.agent_ran)addLog('','Product Agent did not run here (no `claude` CLI). On your machine it writes product-spec.md.','skip');
+      (r.log||[]).forEach(l=>addLog('#log',l.ts,l.msg,logCls(l.msg)));
+      if(!r.agent_ran)addLog('#log','','Product Agent did not run (no `claude` CLI here).','skip');
       $('#openepic').style.display='';$('#openepic').onclick=()=>openEpic(r.epic_id);
-      toast('Epic created: '+r.epic_id);
+      toast('Epic created: '+r.epic_id);loadGit();
     }
-  }catch(e){addLog('','Network error: '+e,'err')}
-  btn.disabled=false;btn.textContent='Decompose →';
+  }catch(e){addLog('#log','','Network error: '+e,'err')}
+  b.disabled=false;b.textContent='Decompose →';
 });
-function addLog(t,m,cls=''){$('#log').insertAdjacentHTML('beforeend',`<div class="ln"><span class="t">${t}</span><span class="m ${cls}">${esc(m)}</span></div>`)}
+function logCls(m){return /SKIPPED|skipped|warning/.test(m)?'skip':/FAILED|exit [1-9]|error/i.test(m)?'err':/completed|Initialized|Wrote|OK/.test(m)?'ok':''}
+function addLog(sel,t,m,cls=''){$(sel).insertAdjacentHTML('beforeend',`<div class="ln"><span class="t">${t}</span><span class="m ${cls}">${esc(m)}</span></div>`);$(sel).scrollTop=$(sel).scrollHeight}
 
 // ---- epic detail ----
+const STAGE_AGENT={decompose:'Product Agent',approve_product:'Product Analyst Agent',approve_spec:'Backlog Decomposer',execute:'Runtime agents'};
+const STAGE_NAME={decompose:'Product spec',approve_product:'Feature spec',approve_spec:'Backlog tasks',execute:'Execution'};
+let CUR_EPIC=null;
 async function openEpic(id){
+  CUR_EPIC=id;
   const d=await api('/api/epic?id='+encodeURIComponent(id));
-  if(d.error){toast(d.error);return;}
-  show('epic');
+  if(d.error){toast(d.error);return}
+  show('epic');document.querySelectorAll('.navsec button').forEach(b=>b.classList.remove('on'));
   $('#epic-eye').textContent=`${d.summary.product||'—'} · ${id}`;
   $('#epic-title').textContent=d.summary.request||d.summary.goal||id;
-  // rail
-  $('#rail').innerHTML=d.stations.map((s,i)=>`
-    <div class="station ${s.status}">
-      <div class="dot"></div>
-      <div class="num">${String(i+1).padStart(2,'0')}</div>
-      <div class="lbl">${s.label}</div>
-      <div class="agent">${s.agent||'—'}</div>
-    </div>`).join('');
-  // artifacts grouped by stage
+  $('#rail').innerHTML=d.stations.map((s,i)=>`<div class="station ${s.status}"><div class="dot"></div>
+    <div class="num">${String(i+1).padStart(2,'0')}</div><div class="lbl">${s.label}</div>
+    <div class="agent">${s.agent||'—'}</div></div>`).join('');
+  renderAction(d);
+  // artifacts grouped by agent/stage
   const order=['decompose','approve_product','approve_spec','execute',null];
-  const names={decompose:'Product spec',approve_product:'Feature spec',approve_spec:'Backlog tasks',execute:'Execution',null:'Other'};
   let html='';
   for(const st of order){
-    const items=d.artifacts.filter(a=>a.stage===st);
-    if(!items.length)continue;
-    html+=`<div class="stage-group"><div class="gh">${names[st]}</div>`+
-      items.map(a=>`<div class="afile" data-name="${a.name}" onclick="viewArtifact('${id}','${a.name}',this)">
-        <span class="k ${a.kind}">${a.kind==='json'?'{}':a.kind==='text'?'¶':'·'}</span>
-        <span class="nm">${a.name}</span><span class="sz">${(a.size/1024).toFixed(1)}k</span></div>`).join('')+`</div>`;
+    const items=d.artifacts.filter(a=>a.stage===st);if(!items.length)continue;
+    const by=STAGE_AGENT[st]?`<span class="by">${STAGE_AGENT[st]}</span>`:'';
+    html+=`<div class="stage-group"><div class="gh">${STAGE_NAME[st]||'Other'} ${by}</div>`+
+      items.map(a=>`<div class="afile" onclick="viewArtifact('${id}','${a.name}',this)">
+      <span class="k ${a.kind}">${a.kind==='json'?'{}':a.kind==='text'?'¶':'·'}</span>
+      <span class="nm">${a.name}</span><span class="sz">${(a.size/1024).toFixed(1)}k</span></div>`).join('')+`</div>`;
   }
-  $('#artifacts').innerHTML=html||'<div class="empty" style="padding:20px">No artifacts yet.</div>';
+  $('#artifacts').innerHTML=html||'<div class="empty" style="padding:18px">No artifacts yet.</div>';
   $('#viewer').innerHTML='<div class="empty">Select an artifact to inspect it.</div>';
-  // tasks
   if(d.tasks.length){
     $('#taskscard').style.display='';
     $('#tasks').innerHTML=d.tasks.map(t=>{
       const n=(t.file.match(/(\d+)/)||['',''])[1];
-      const pr=t.pr?`<a href="${t.pr}" target="_blank">PR</a>`:'—';
-      const stt=(t.status||'—');
+      const pr=t.pr?`<a href="${t.pr}" target="_blank">PR</a>`:'—';const st=(t.status||'—');
       return `<tr><td class="mono">${n}</td><td>${esc((t.title||t.file).replace(/^Task\s*\d+\s*[—-]\s*/,''))}</td>
-        <td class="mono">${t.pipeline||'—'}</td><td><span class="pill ${stt}">${stt}</span></td><td>${pr}</td></tr>`;
-    }).join('');
+      <td class="mono">${t.pipeline||'—'}</td><td><span class="pill ${st}">${st}</span></td><td>${pr}</td></tr>`}).join('');
   }else $('#taskscard').style.display='none';
 }
+function renderAction(d){
+  const na=d.next_action;const slot=$('#action-slot');
+  if(na.id==='execute'){
+    slot.innerHTML=`<div class="action done-stage"><span class="who">✓ ${na.agent}</span>
+      <span class="hint">Spec pipeline complete. Execution is the next iteration.</span>
+      <button class="btn ghost sm" style="margin-left:auto" onclick="commitEpic()">Commit to git</button></div>`;
+    return;
+  }
+  const endpoint=na.id==='decompose'?null:na.id==='approve_product'?'/api/approve-product':'/api/approve-spec';
+  slot.innerHTML=`<div class="action"><span class="who">▸ ${na.agent}</span>
+    <span class="hint">Next: ${na.label}.</span>
+    <button class="btn sm" id="act-btn" style="margin-left:auto">${na.label}</button>
+    <button class="btn ghost sm" onclick="commitEpic()">Commit to git</button></div>
+    <div class="log" id="act-log" style="display:none;margin-top:12px"></div>`;
+  if(endpoint)$('#act-btn').onclick=()=>runStage(endpoint,na.agent);
+  else $('#act-btn').disabled=true;
+}
+async function runStage(endpoint,agent){
+  const btn=$('#act-btn');btn.disabled=true;btn.textContent='Running…';
+  $('#act-log').style.display='';$('#act-log').innerHTML='';
+  addLog('#act-log',new Date().toTimeString().slice(0,8),agent+': dispatched');
+  try{
+    const r=await api(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({epic_id:CUR_EPIC})});
+    if(r.error){addLog('#act-log','',r.error,'err');toast(r.error)}
+    else{(r.log||[]).forEach(l=>addLog('#act-log',l.ts||'',l.msg,l.level||logCls(l.msg)));
+      toast(r.ok?'Done':'Finished with errors');loadGit();
+      if(r.ok)setTimeout(()=>openEpic(CUR_EPIC),600);}
+  }catch(e){addLog('#act-log','','Network error: '+e,'err')}
+  btn.disabled=false;
+}
+async function commitEpic(){
+  const r=await api('/api/commit-epic',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({epic_id:CUR_EPIC})});
+  toast(r.ok?(r.nothing?'Nothing to commit':'Committed to git'):('Commit failed: '+(r.error||'')));loadGit();
+}
 async function viewArtifact(id,name,el){
-  document.querySelectorAll('.afile').forEach(e=>e.classList.remove('sel'));
-  if(el)el.classList.add('sel');
+  document.querySelectorAll('.afile').forEach(e=>e.classList.remove('sel'));if(el)el.classList.add('sel');
   const r=await api('/api/file?path='+encodeURIComponent('backlog/'+id+'/'+name));
   let body;
   if(r.error)body=`<div class="empty">${r.error}</div>`;
-  else if(name.endsWith('.json')){
-    let pretty;try{pretty=JSON.stringify(JSON.parse(r.content),null,2)}catch{pretty=r.content}
-    body=`<pre class="json">${esc(pretty)}</pre>`;
-  }else body=`<div class="md">${mdToHtml(r.content)}</div>`;
+  else if(name.endsWith('.json')){let p;try{p=JSON.stringify(JSON.parse(r.content),null,2)}catch{p=r.content}body=`<pre class="json">${esc(p)}</pre>`}
+  else body=`<div class="md">${mdToHtml(r.content)}</div>`;
   $('#viewer').innerHTML=`<div class="vh">▸ ${name}</div><div class="vb">${body}</div>`;
 }
 
 // ---- lists ----
 async function loadEpics(){
-  const {epics}=await api('/api/epics');
-  $('#epics').innerHTML=epics.map(e=>`<tr class="click" onclick="openEpic('${e.id}')">
-    <td class="mono" style="max-width:230px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.id}</td>
-    <td style="max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.request||e.goal||'')}</td>
+  const {epics}=await api('/api/epics');const prod=$('#product').value;
+  const rows=epics.filter(e=>!prod||!e.product||e.product===prod);
+  $('#epics').innerHTML=rows.map(e=>`<tr class="click" onclick="openEpic('${e.id}')">
+    <td class="mono" style="max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${e.id}</td>
+    <td style="max-width:340px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.request||e.goal||'')}</td>
     <td class="mono">${e.task_count}</td><td><span class="pill ${e.status}">${e.status}</span></td></tr>`).join('')
-    || '<tr><td colspan="4" class="empty">No epics yet — start one in Compose.</td></tr>';
+    ||'<tr><td colspan="4" class="empty">No epics for this product yet — start one in Compose.</td></tr>';
 }
 async function loadRuns(){
   const {runs}=await api('/api/runs');
@@ -362,9 +457,63 @@ async function loadRuns(){
     <td class="mono">${r.type||'—'}</td><td class="mono">${r.stage||'—'}</td>
     <td>${r.status?`<span class="pill ${r.status}">${r.status}</span>`:'—'}</td>
     <td class="mono" style="color:var(--faint)">${(r.updated_at||'').replace('T',' ')}</td></tr>`).join('')
-    || '<tr><td colspan="5" class="empty">No runs yet.</td></tr>';
+    ||'<tr><td colspan="5" class="empty">No runs yet.</td></tr>';
 }
-window.openEpic=openEpic; window.viewArtifact=viewArtifact;
+function loadRepos(){
+  $('#repos').innerHTML=STATE.products.map(p=>`<div class="repo-card">
+    <div class="badge">${(p.name[0]||'?').toUpperCase()}</div>
+    <div style="min-width:0;flex:1"><div class="rn">${p.name}</div><div class="rp">${p.repo_path||'—'}</div>
+    <div class="meta"><span class="tag">${p.framework||'—'}</span><span class="tag">${p.status||''}</span>
+    ${(p.validators||[]).map(v=>`<span class="tag">✓ ${v}</span>`).join('')}</div>
+    <div class="row" style="margin-top:11px">
+      <span class="pill ${p.has_analysis?'spec_approved':''}" style="${p.has_analysis?'':'color:var(--faint)'}">${p.has_analysis?'analyzed':'not analyzed'}</span>
+      <button class="btn sm ${p.has_analysis?'ghost':''}" onclick="analyzeProduct('${p.name}',this)">${p.has_analysis?'Re-analyze':'Analyze repository →'}</button>
+      ${p.has_analysis?`<button class="btn ghost sm" onclick="viewAnalysis('${p.name}')">View analysis</button>`:''}
+    </div>
+    <div class="log" id="alog-${p.name}" style="display:none;margin-top:10px;flex-basis:100%"></div>
+    </div></div>`).join('')
+    ||'<div class="empty">No repositories connected yet.</div>';
+}
+async function analyzeProduct(name,btn){
+  const logId='#alog-'+name;$(logId).style.display='';$(logId).innerHTML='';
+  if(btn){btn.disabled=true;btn.textContent='Analyzing…';}
+  addLog(logId,new Date().toTimeString().slice(0,8),'Repository Analyst: dispatched');
+  try{
+    const r=await api('/api/analyze',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({product:name})});
+    if(r.error){addLog(logId,'',r.error,'err');toast(r.error)}
+    else{(r.log||[]).forEach(l=>addLog(logId,l.ts||'',l.msg,l.level||logCls(l.msg)));
+      if(!r.agent_ran)addLog(logId,'','LLM step needs `claude` CLI; only the file map was stored.','skip');
+      toast('Analysis stored for '+name);loadGit();
+      STATE=await api('/api/state');loadRepos();
+      if(r.agent_ran)viewAnalysis(name);}
+  }catch(e){addLog(logId,'','Network error: '+e,'err')}
+}
+async function viewAnalysis(name){
+  const r=await api('/api/analysis?product='+encodeURIComponent(name));
+  if(!r.exists){toast('No analysis yet');return}
+  $('#analysis-name').textContent=name+'-analysis.md';
+  $('#analysis-body').innerHTML=mdToHtml(r.content);
+  $('#analysis-view').style.display='';
+  $('#analysis-view').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+window.analyzeProduct=analyzeProduct;window.viewAnalysis=viewAnalysis;
+$('#c-path').addEventListener('blur',()=>{const v=$('#c-path').value.trim();if(v&&!$('#c-name').value)$('#c-name').value=v.replace(/\/+$/,'').split('/').pop()});
+$('#connect').addEventListener('click',async()=>{
+  const path=$('#c-path').value.trim(),name=$('#c-name').value.trim(),framework=$('#c-fw').value;
+  if(!path){toast('Enter a repo path');return}
+  const b=$('#connect');b.disabled=true;b.textContent='Connecting…';
+  $('#connect-log').style.display='';$('#connect-log').innerHTML='';
+  try{
+    const r=await api('/api/connect-repo',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path,name,framework})});
+    (r.log||[]).forEach(l=>addLog('#connect-log',l.ts||'',l.msg,l.level||logCls(l.msg)));
+    if(r.error)addLog('#connect-log','',r.error,'err');
+    if(r.ok){toast('Connected: '+r.name);STATE=await api('/api/state');
+      $('#product').innerHTML=STATE.products.map(p=>`<option value="${p.name}" ${p.name===r.name?'selected':''}>${p.name}</option>`).join('');
+      loadRepos();}
+  }catch(e){addLog('#connect-log','','Network error: '+e,'err')}
+  b.disabled=false;b.textContent='Connect repository';
+});
+window.openEpic=openEpic;window.viewArtifact=viewArtifact;window.commitEpic=commitEpic;window.runStage=runStage;
 boot();
 </script>
 </body>
