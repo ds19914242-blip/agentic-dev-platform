@@ -11,11 +11,13 @@ def main():
     parser.add_argument("--repo-path", default="")
     parser.add_argument("--output-dir", default="")
     parser.add_argument("--execute", action="store_true")
+    parser.add_argument("--execute-writes", action="store_true")
+    parser.add_argument("--llm-planner", action="store_true")
+    parser.add_argument("--recovery", action="store_true")
     args = parser.parse_args()
 
     task_path = Path(args.task_path)
     task = task_path.read_text(errors="ignore")
-
     output_dir = args.output_dir or f"runs/runtime-task-{task_path.stem}"
 
     result = run_runtime_orchestrator(
@@ -27,6 +29,9 @@ def main():
         inputs={
             "task_path": str(task_path),
             "epic_dir": str(task_path.parent),
+            "execute_writes": args.execute_writes,
+            "use_llm_planner": args.llm_planner,
+            "recovery_enabled": args.recovery,
         },
     )
 

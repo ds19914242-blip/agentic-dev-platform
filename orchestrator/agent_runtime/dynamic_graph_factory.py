@@ -8,9 +8,14 @@ from orchestrator.agent_runtime.agents.lane_agents import (
 )
 
 
-def create_dynamic_agent_graph(task: str):
+def create_dynamic_agent_graph(task: str, repo_path="", product="", use_llm_planner=False):
     registry = create_builtin_registry()
-    plan = plan_graph_for_task(task)
+    plan = plan_graph_for_task(
+        task,
+        repo_path=repo_path,
+        product=product,
+        use_llm=use_llm_planner,
+    )
     graph = AgentGraph()
 
     graph.add("architect", registry.get("architect").factory())
@@ -29,14 +34,22 @@ def create_dynamic_agent_graph(task: str):
         graph.add("qa_plan", QAPlanAgent(), depends_on=["architect"])
         lane_nodes.append("qa_plan")
 
-    graph.add("validation", registry.get("validation").factory(), depends_on=lane_nodes or ["architect"])
-    graph.add("review", registry.get("review").factory(), depends_on=["validation"])
+    graph.add(
+        "implementation",
+        registry.get("implementation").factory(),
+        depends_on=lane_nodes or ["architect"],
+    )
 
-    previous = "review"
+    graph.add("validation", registry.get("validation").factory(), depends_on=["implementation"])
+
+    previous = "validation"
 
     if plan.requires_acceptance:
         graph.add("acceptance", registry.get("acceptance").factory(), depends_on=[previous])
         previous = "acceptance"
+
+    graph.add("review", registry.get("review").factory(), depends_on=[previous])
+    previous = "review"
 
     if plan.requires_release:
         graph.add("release", registry.get("release").factory(), depends_on=[previous])
