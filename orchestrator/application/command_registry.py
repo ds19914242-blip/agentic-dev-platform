@@ -114,6 +114,11 @@ COMMANDS = {
         "description": "Run the fan-out/fan-in multi-agent graph",
         "legacy": False,
     },
+    "dynamic-agent-graph": {
+        "script": "run_dynamic_agent_graph.py",
+        "description": "Run a dynamically planned agent graph",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
