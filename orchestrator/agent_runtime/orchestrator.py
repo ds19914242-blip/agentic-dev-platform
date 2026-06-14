@@ -6,6 +6,7 @@ from orchestrator.agent_runtime.context import AgentContext
 from orchestrator.agent_runtime.dynamic_graph_factory import create_dynamic_agent_graph
 from orchestrator.agent_runtime.executor import AgentGraphExecutor
 from orchestrator.agent_runtime.result_store import write_agent_report, write_agent_results
+from orchestrator.agent_runtime.observability.report import write_runtime_timeline
 
 
 def _resolve_repo_path(product, repo_path):
@@ -63,11 +64,13 @@ def run_runtime_orchestrator(
     output = Path(output_dir)
     results_path = write_agent_results(output, results)
     report_path = write_agent_report(output, results)
+    timeline_path = write_runtime_timeline(output)
 
     return {
         "plan": plan,
         "results": results,
         "results_path": str(results_path),
         "report_path": str(report_path),
+        "timeline_path": str(timeline_path),
         "output_dir": str(output),
     }

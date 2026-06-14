@@ -134,6 +134,11 @@ COMMANDS = {
         "description": "Run a backlog task through Agent Runtime",
         "legacy": False,
     },
+    "runtime-monitor": {
+        "script": "run_runtime_monitor.py",
+        "description": "Show Agent Runtime events for a run",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",

@@ -47,6 +47,7 @@ def main():
     print(f"Output: {result['output_dir']}")
     print(f"Results: {result['results_path']}")
     print(f"Report: {result['report_path']}")
+    print(f"Timeline: {result.get('timeline_path', '')}")
     print(f"Lanes: {', '.join(result['plan'].lanes)}")
     print(f"Requires acceptance: {result['plan'].requires_acceptance}")
     print(f"Requires release: {result['plan'].requires_release}")

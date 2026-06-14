@@ -39,6 +39,7 @@ def main():
     print(f"Task: {task_path}")
     print(f"Output: {result['output_dir']}")
     print(f"Report: {result['report_path']}")
+    print(f"Timeline: {result.get('timeline_path', '')}")
 
 
 if __name__ == "__main__":
