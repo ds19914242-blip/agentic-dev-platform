@@ -124,6 +124,11 @@ COMMANDS = {
         "description": "Run the Agent Runtime orchestrator",
         "legacy": False,
     },
+    "runtime-task": {
+        "script": "run_runtime_task.py",
+        "description": "Run a backlog task through Agent Runtime",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
