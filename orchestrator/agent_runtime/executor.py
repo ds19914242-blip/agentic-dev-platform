@@ -21,5 +21,6 @@ class AgentGraphExecutor:
                 for future in as_completed(future_to_node):
                     node = future_to_node[future]
                     graph.results[node.node_id] = future.result()
+                    context.inputs.setdefault("agent_results", graph.results)
 
         return graph.results
