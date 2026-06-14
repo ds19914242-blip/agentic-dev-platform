@@ -3,6 +3,7 @@ from orchestrator.agent_runtime.context import AgentContext
 from orchestrator.agent_runtime.registry import AgentRegistry
 from orchestrator.agent_runtime.result import AgentResult
 from orchestrator.agent_runtime.agents.release_agent import ReleaseAgent
+from orchestrator.agent_runtime.agents.architect_agent import ArchitectAgent
 from orchestrator.agent_runtime.agents.validation_agent import ValidationAgent
 
 
@@ -23,7 +24,6 @@ def create_builtin_registry() -> AgentRegistry:
     registry = AgentRegistry()
 
     for name, description in [
-        ("architect", "Understands request and decomposes work"),
         ("implementation", "Implements product changes"),
         ("review", "Reviews implementation and risks"),
         ("acceptance", "Runs acceptance scenarios"),
@@ -33,6 +33,12 @@ def create_builtin_registry() -> AgentRegistry:
             description=description,
             factory=lambda agent_name=name: PlaceholderAgent(agent_name),
         )
+
+    registry.register(
+        name="architect",
+        description="Creates architecture plan and lane handoffs",
+        factory=ArchitectAgent,
+    )
 
     registry.register(
         name="validation",
