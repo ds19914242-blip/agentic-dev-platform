@@ -38,6 +38,16 @@ RUNS_DIR = ROOT / "runs"
 PRODUCTS_DIR = ROOT / "products"
 MEMORY_DIR = ROOT / "memory"
 
+# Bumped whenever the API surface changes, so the frontend can detect a
+# stale server (we hit "new frontend / old backend" desyncs before).
+API_VERSION = "workspace-4"
+
+# Directories never shown in the repository file tree.
+REPO_IGNORE_DIRS = {
+    ".git", "node_modules", ".next", "dist", "build", "out",
+    "coverage", ".venv", "venv", "__pycache__", ".turbo", ".cache",
+}
+
 # Roots that artifact reads are allowed to touch (prevents path traversal).
 ALLOWED_ROOTS = [BACKLOG_DIR, RUNS_DIR, PRODUCTS_DIR]
 
@@ -198,6 +208,20 @@ def _stage_status_for_epic(epic_dir, files):
     return stations
 
 
+def _epic_product(epic_dir):
+    """Which product an epic belongs to (product.txt, else parsed from epic.md)."""
+    marker = epic_dir / "product.txt"
+    if marker.exists():
+        return marker.read_text(errors="ignore").strip()
+    epic_md = epic_dir / "epic.md"
+    if epic_md.exists():
+        import re as _re
+        m = _re.search(r"##\s*Product\s*\n+\s*([^\n]+)", epic_md.read_text(errors="ignore"))
+        if m:
+            return m.group(1).strip()
+    return ""
+
+
 def epic_summary(epic_dir):
     epic_md = epic_dir / "epic.md"
     text = epic_md.read_text(errors="ignore") if epic_md.exists() else ""
@@ -205,8 +229,8 @@ def epic_summary(epic_dir):
     files = sorted(p.name for p in epic_dir.iterdir() if p.is_file())
     tasks = sorted(f for f in files if f.startswith("task-") and f.endswith(".md"))
     return {
+        "product": _epic_product(epic_dir),
         "id": epic_dir.name,
-        "product": _section(text, "Product") or "",
         "request": _section(text, "Request") or "",
         "status": outcome.get("status", "—"),
         "goal": outcome.get("goal", ""),
@@ -217,16 +241,19 @@ def epic_summary(epic_dir):
     }
 
 
-def list_epics():
+def list_epics(product=""):
     if not BACKLOG_DIR.exists():
         return []
     epics = []
     for d in sorted(BACKLOG_DIR.iterdir(), reverse=True):
         if d.is_dir() and (d / "epic.md").exists():
             try:
-                epics.append(epic_summary(d))
+                summary = epic_summary(d)
             except Exception:
                 continue
+            if product and summary.get("product") and summary["product"] != product:
+                continue
+            epics.append(summary)
     return epics
 
 
@@ -603,6 +630,8 @@ def run_decompose(product_name, request):
     epic_dir = df.make_epic_dir(request)
     step(f"Created epic folder: backlog/{epic_dir.name}")
 
+    (epic_dir / "product.txt").write_text(product_name + "\n")
+    created.append("product.txt")
     (epic_dir / "epic.md").write_text(
         f"# Epic Request\n\n## Product\n\n{product_name}\n\n"
         f"## Repository\n\n{repo_path}\n\n## Request\n\n{request}\n"
@@ -655,6 +684,319 @@ def run_decompose(product_name, request):
     }
 
 
+# --- repository workspace (read-only access to the product's repo) ------------
+def _product_repo_path(product_name):
+    try:
+        from orchestrator.product_registry import load_product_config
+        return load_product_config(product_name).get("repo_path", "")
+    except Exception:
+        return ""
+
+
+def _safe_repo_target(repo_root, rel):
+    """Resolve rel inside repo_root; None if outside or root missing."""
+    root = Path(repo_root)
+    if not root.exists():
+        return None
+    target = (root / (rel or "")).resolve()
+    try:
+        target.relative_to(root.resolve())
+    except ValueError:
+        return None
+    return target
+
+
+def repo_tree(product_name, rel=""):
+    repo = _product_repo_path(product_name)
+    if not repo:
+        return {"error": "product has no repo_path"}
+    target = _safe_repo_target(repo, rel)
+    if target is None or not target.exists():
+        return {"error": f"path not found: {rel}"}
+    if not target.is_dir():
+        return {"error": "not a directory"}
+
+    entries = []
+    for child in sorted(target.iterdir(), key=lambda p: (p.is_file(), p.name.lower())):
+        if child.is_dir() and child.name in REPO_IGNORE_DIRS:
+            continue
+        rel_child = str(child.relative_to(Path(repo)))
+        entries.append({
+            "name": child.name,
+            "path": rel_child,
+            "type": "dir" if child.is_dir() else "file",
+            "size": child.stat().st_size if child.is_file() else 0,
+        })
+    return {"repo": repo, "path": rel, "entries": entries}
+
+
+def repo_file(product_name, rel, max_bytes=300_000):
+    repo = _product_repo_path(product_name)
+    if not repo:
+        return {"error": "product has no repo_path"}
+    target = _safe_repo_target(repo, rel)
+    if target is None or not target.is_file():
+        return {"error": f"file not found: {rel}"}
+    data = target.read_bytes()
+    if b"\x00" in data[:4096]:
+        return {"path": rel, "binary": True, "size": len(data)}
+    truncated = len(data) > max_bytes
+    text = data[:max_bytes].decode("utf-8", errors="replace")
+    return {"path": rel, "content": text, "truncated": truncated, "size": len(data)}
+
+
+def repo_structure(product_name):
+    repo = _product_repo_path(product_name)
+    if not repo:
+        return {"error": "product has no repo_path"}
+
+    result = {
+        "repo": repo,
+        "exists": Path(repo).exists(),
+        "file_count": 0,
+        "is_empty": True,
+        "categories": {},
+        "imports": {},
+        "hot_modules": [],
+        "analysis_exists": (MEMORY_DIR / f"{product_name}-analysis.md").exists(),
+    }
+    if not result["exists"]:
+        return result
+
+    try:
+        from orchestrator.repository_scanner import scan_repo
+        from orchestrator.repository_intelligence import build_repository_map
+        files = scan_repo(repo)
+        result["file_count"] = len(files)
+        result["is_empty"] = len(files) == 0
+        result["categories"] = {k: v for k, v in build_repository_map(files).items() if v}
+    except Exception as exc:
+        result["categories_error"] = str(exc)
+        files = []
+
+    try:
+        from orchestrator.import_analyzer import analyze_imports
+        imports = analyze_imports(repo, files)
+        result["imports"] = dict(list(imports.items())[:200])
+        result["hot_modules"] = _hot_modules(imports)
+    except Exception as exc:
+        result["imports_error"] = str(exc)
+
+    return result
+
+
+def _hot_modules(imports):
+    """Most-imported internal modules — a cheap 'where is the core' signal."""
+    from collections import Counter
+    counter = Counter()
+    internal_prefixes = (".", "@/", "~/", "~", "src/", "lib/", "components/", "app/")
+    for _file, deps in imports.items():
+        for dep in deps:
+            if dep.startswith(internal_prefixes):
+                counter[dep] += 1
+    return [{"module": m, "count": n} for m, n in counter.most_common(15)]
+
+
+# Strip anything secret-looking before sending config to the browser.
+_SECRET_HINTS = ("password", "secret", "token", "apikey", "api_key", "passwd")
+
+
+def _strip_secrets(value):
+    if isinstance(value, dict):
+        return {
+            k: ("•••" if any(h in str(k).lower() for h in _SECRET_HINTS) else _strip_secrets(v))
+            for k, v in value.items()
+        }
+    if isinstance(value, list):
+        return [_strip_secrets(v) for v in value]
+    return value
+
+
+def product_operational(product_name):
+    """Operational inventory from the product config (secrets stripped)."""
+    try:
+        from orchestrator.product_registry import load_product_config
+        cfg = load_product_config(product_name)
+    except Exception as exc:
+        return {"error": str(exc)}
+    return {
+        "framework": cfg.get("framework", ""),
+        "status": cfg.get("status", ""),
+        "capabilities": cfg.get("capabilities", {}),
+        "validators": [
+            {"name": v.get("name"), "command": v.get("command"), "required": v.get("required", True)}
+            for v in cfg.get("validators", []) if isinstance(v, dict)
+        ],
+        "acceptance": _strip_secrets(cfg.get("acceptance", {})),
+        "deployment": cfg.get("deployment", {}),
+    }
+
+
+def repo_history(product_name):
+    """Prior runs / failures / architecture notes for this product."""
+    try:
+        from orchestrator.memory_store import load_run_memory, load_architecture_memory
+    except Exception as exc:
+        return {"error": str(exc)}
+    runs = load_run_memory(product_name)[-15:]
+    try:
+        from orchestrator.failure_memory import load_failure_memory
+        failures = load_failure_memory(product_name)[-10:]
+    except Exception:
+        failures = []
+    try:
+        arch = load_architecture_memory(product_name)
+    except Exception:
+        arch = []
+    return {
+        "runs": [
+            {"run_id": r.get("run_id"), "request": r.get("request"),
+             "status": r.get("status"), "validation": r.get("validation_result")}
+            for r in reversed(runs)
+        ],
+        "failures": [
+            {"run_id": f.get("run_id"), "type": f.get("failure_type"), "request": f.get("request")}
+            for f in reversed(failures)
+        ],
+        "architecture_count": len(arch),
+    }
+
+
+def read_baseline(product_name):
+    path = MEMORY_DIR / f"{product_name}-baseline.json"
+    if not path.exists():
+        return {"exists": False}
+    data = _read_json(path) or {}
+    return {"exists": True, **data}
+
+
+def run_baseline(product_name):
+    """Run the product's configured validators once to capture starting health."""
+    log = []
+
+    def step(msg, level=""):
+        log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": msg, "level": level})
+
+    try:
+        from orchestrator.product_registry import load_product_config
+        from orchestrator.validation_runner import run_validators
+    except Exception as exc:
+        return {"ok": False, "error": str(exc), "log": log}
+    try:
+        cfg = load_product_config(product_name)
+    except Exception as exc:
+        return {"ok": False, "error": f"product config: {exc}", "log": log}
+
+    repo = cfg["repo_path"]
+    validators = cfg.get("validators", [])
+    if not Path(repo).exists():
+        return {"ok": False, "error": "repo path does not exist on this machine", "log": log}
+    if not validators:
+        step("No validators configured for this product", "skip")
+        return {"ok": True, "overall": "none", "validators": [], "log": log}
+
+    step(f"Running {len(validators)} validator(s) in {repo}")
+    results = run_validators(repo, validators)
+    out = []
+    for r in results:
+        passed = r.get("passed", False)
+        step(f"{r.get('name')}: {'passed' if passed else 'failed'}"
+             + (" (timed out)" if r.get("timed_out") else ""),
+             "ok" if passed else "err")
+        out.append({"name": r.get("name"), "passed": passed,
+                    "required": r.get("required", True),
+                    "exit_code": r.get("exit_code"), "timed_out": r.get("timed_out", False)})
+
+    required = [r for r in out if r["required"]]
+    overall = "passed" if required and all(r["passed"] for r in required) else "failed"
+    data = {"overall": overall, "validators": out,
+            "checked_at": datetime.now().isoformat(timespec="seconds")}
+    try:
+        MEMORY_DIR.mkdir(exist_ok=True)
+        (MEMORY_DIR / f"{product_name}-baseline.json").write_text(
+            json.dumps(data, indent=2, ensure_ascii=False))
+    except Exception:
+        pass
+    step(f"Baseline: {overall}", "ok" if overall == "passed" else "err")
+    return {"ok": True, **data, "log": log}
+
+
+# --- Changes: git state of the product repo (read-only) -----------------------
+def _git(repo, args, timeout=20):
+    import subprocess
+    try:
+        r = subprocess.run(["git", "-C", str(repo)] + args,
+                            capture_output=True, text=True, timeout=timeout)
+        return r.returncode, r.stdout, r.stderr
+    except Exception as exc:
+        return 1, "", str(exc)
+
+
+def _porcelain_status(xy):
+    s = xy.strip()
+    if "?" in s:
+        return "untracked"
+    if "R" in s:
+        return "renamed"
+    if "A" in s:
+        return "added"
+    if "D" in s:
+        return "deleted"
+    if "M" in s:
+        return "modified"
+    return "changed"
+
+
+def repo_changes(product_name):
+    repo = _product_repo_path(product_name)
+    if not repo:
+        return {"error": "product has no repo_path"}
+    if not Path(repo).exists():
+        return {"exists": False, "error": "repo path not found on this machine"}
+
+    code, out, _ = _git(repo, ["rev-parse", "--is-inside-work-tree"])
+    if code != 0 or out.strip() != "true":
+        return {"exists": True, "is_git": False, "files": [], "count": 0}
+
+    _, branch, _ = _git(repo, ["rev-parse", "--abbrev-ref", "HEAD"])
+    _, out, _ = _git(repo, ["status", "--porcelain=v1", "-uall"])
+    files = []
+    for line in out.splitlines():
+        if not line.strip():
+            continue
+        xy, path = line[:2], line[3:]
+        if " -> " in path:
+            path = path.split(" -> ", 1)[1]
+        files.append({"path": path, "xy": xy.strip(), "status": _porcelain_status(xy)})
+
+    files.sort(key=lambda f: f["path"])
+    return {"exists": True, "is_git": True, "branch": branch.strip(),
+            "files": files, "count": len(files)}
+
+
+def repo_diff(product_name, rel):
+    repo = _product_repo_path(product_name)
+    if not repo or not Path(repo).exists():
+        return {"error": "repo not found"}
+    if _safe_repo_target(repo, rel) is None:
+        return {"error": "invalid path"}
+
+    _, status_out, _ = _git(repo, ["status", "--porcelain=v1", "--", rel])
+    if status_out.startswith("??"):
+        target = Path(repo) / rel
+        if target.is_file():
+            data = target.read_bytes()
+            if b"\x00" in data[:4096]:
+                return {"path": rel, "untracked": True, "binary": True}
+            text = data[:300_000].decode("utf-8", errors="replace")
+            return {"path": rel, "untracked": True, "content": text,
+                    "truncated": len(data) > 300_000}
+        return {"path": rel, "untracked": True}
+
+    _, out, _ = _git(repo, ["diff", "HEAD", "--", rel])
+    return {"path": rel, "diff": out, "empty": not out.strip()}
+
+
 # --- HTTP layer ---------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
@@ -696,17 +1038,36 @@ class Handler(BaseHTTPRequestHandler):
             if path == "/api/state":
                 return self._send(200, {
                     "version": platform_version(),
+                    "api_version": API_VERSION,
                     "products": list_products(),
                     "agents": AGENTS,
                     "pipeline": PIPELINE,
                 })
             if path == "/api/epics":
-                return self._send(200, {"epics": list_epics()})
+                return self._send(200, {"epics": list_epics(q.get("product", [""])[0])})
             if path == "/api/epic":
                 d = epic_detail(q.get("id", [""])[0])
                 return self._send(200, d) if d else self._send(404, {"error": "epic not found"})
             if path == "/api/runs":
                 return self._send(200, {"runs": list_runs()})
+            if path == "/api/version":
+                return self._send(200, {"api_version": API_VERSION})
+            if path == "/api/repo/tree":
+                return self._send(200, repo_tree(q.get("product", [""])[0], q.get("path", [""])[0]))
+            if path == "/api/repo/file":
+                return self._send(200, repo_file(q.get("product", [""])[0], q.get("path", [""])[0]))
+            if path == "/api/repo/structure":
+                return self._send(200, repo_structure(q.get("product", [""])[0]))
+            if path == "/api/repo/operational":
+                return self._send(200, product_operational(q.get("product", [""])[0]))
+            if path == "/api/repo/history":
+                return self._send(200, repo_history(q.get("product", [""])[0]))
+            if path == "/api/repo/baseline":
+                return self._send(200, read_baseline(q.get("product", [""])[0]))
+            if path == "/api/repo/changes":
+                return self._send(200, repo_changes(q.get("product", [""])[0]))
+            if path == "/api/repo/diff":
+                return self._send(200, repo_diff(q.get("product", [""])[0], q.get("path", [""])[0]))
             if path == "/api/git":
                 return self._send(200, git_status())
             if path == "/api/analysis":
@@ -747,6 +1108,11 @@ class Handler(BaseHTTPRequestHandler):
                 if not product:
                     return self._send(400, {"error": "product is required"})
                 return self._send(200, analyze_product(product))
+            if u.path == "/api/baseline":
+                product = (payload.get("product") or "").strip()
+                if not product:
+                    return self._send(400, {"error": "product is required"})
+                return self._send(200, run_baseline(product))
             if u.path == "/api/approve-product":
                 return self._send(200, approve_product_spec((payload.get("epic_id") or "").strip()))
             if u.path == "/api/approve-spec":
