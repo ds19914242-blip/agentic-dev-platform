@@ -4,6 +4,7 @@ from orchestrator.agent_runtime.context import AgentContext
 from orchestrator.agent_runtime.dynamic_graph_factory import create_dynamic_agent_graph
 from orchestrator.agent_runtime.executor import AgentGraphExecutor
 from orchestrator.agent_runtime.result_store import write_agent_report, write_agent_results
+from orchestrator.agent_runtime.analysis_context import build_runtime_analysis_context
 
 
 def run_runtime_orchestrator(
@@ -20,6 +21,7 @@ def run_runtime_orchestrator(
     payload = dict(inputs or {})
     payload["dry_run"] = dry_run
     payload["graph_plan"] = plan
+    payload["analysis_context"] = build_runtime_analysis_context(task, repo_path=repo_path)
 
     context = AgentContext(
         task=task,

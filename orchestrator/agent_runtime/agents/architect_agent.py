@@ -9,10 +9,15 @@ class ArchitectAgent(Agent):
     def run(self, context: AgentContext) -> AgentResult:
         task = context.task.strip()
 
+        analysis_context = context.inputs.get("analysis_context", {})
+
         findings = [
             "Architecture plan created",
             "Split work into backend, frontend, and QA planning lanes",
         ]
+
+        if analysis_context.get("summary"):
+            findings.extend(analysis_context.get("summary", []))
 
         handoff = {
             "task": task,
@@ -30,6 +35,7 @@ class ArchitectAgent(Agent):
                     "scope": "manual checks, Playwright scenarios, regression risks",
                 },
             },
+            "analysis_context": analysis_context,
             "risks": [
                 "implementation may touch product-specific assumptions",
                 "acceptance evidence must verify visible user outcome",
