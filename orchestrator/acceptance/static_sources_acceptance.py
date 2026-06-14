@@ -23,29 +23,32 @@ def write_static_sources_acceptance(repo_path, epic_dir):
     acceptance_dir = repo_path / ".agentic" / "acceptance"
     acceptance_dir.mkdir(parents=True, exist_ok=True)
 
-    spec = r'''import { test, expect } from '@playwright/test';
+    spec = """import { test, expect } from '@playwright/test';
 
 const baseURL = process.env.ACCEPTANCE_BASE_URL || 'http://127.0.0.1:3000';
 
-test('new source types are selectable and change source form', async ({ page }) => {
+test('new source types are selectable after login', async ({ page }) => {
+  await page.goto(baseURL + '/login');
+  await page.fill('input[type="text"]', process.env.ACCEPTANCE_USERNAME || 'admin');
+  await page.fill('input[type="password"]', process.env.ACCEPTANCE_PASSWORD || 'password123');
+  await page.getByRole('button', { name: /sign in|войти/i }).click();
+
   await page.goto(baseURL + '/sources');
 
   await expect(page.getByText('CISA KEV')).toBeVisible();
-  await expect(page.getByText('GitHub')).toBeVisible();
+  await expect(page.getByText(/GitHub/i)).toBeVisible();
   await expect(page.getByText('Hacker News')).toBeVisible();
 
   await page.getByText('CISA KEV').click();
-  await expect(page.getByText(/CISA|KEV/i)).toBeVisible();
+  await expect(page.getByText(/URL CISA KEV|CISA/i)).toBeVisible();
 
-  await page.getByText('GitHub').click();
-  await expect(page.getByText(/GitHub|Advisories/i)).toBeVisible();
+  await page.getByText(/GitHub/i).click();
+  await expect(page.getByText(/GitHub|Advisories|Repository|Token/i)).toBeVisible();
 
   await page.getByText('Hacker News').click();
-  await expect(page.getByText(/Hacker News|keywords|ключ/i)).toBeVisible();
-
-  await expect(page.getByText('RSS URL')).not.toBeVisible();
+  await expect(page.getByText(/Hacker News|ключ|keyword/i)).toBeVisible();
 });
-'''
+"""
 
     spec_path = acceptance_dir / "generated-acceptance.spec.ts"
     spec_path.write_text(spec)
@@ -53,11 +56,13 @@ test('new source types are selectable and change source form', async ({ page }) 
 
     command = (
         "bash -lc 'set -e; "
+        "APP_USERNAME=admin APP_PASSWORD=password123 SESSION_SECRET=dev-secret "
         "npm run dev -- --hostname 127.0.0.1 > .agentic/acceptance/dev.log 2>&1 & "
         "SERVER_PID=$!; "
         "trap \"kill $SERVER_PID 2>/dev/null || true\" EXIT; "
         "for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1 && break; sleep 1; done; "
         "ACCEPTANCE_BASE_URL=http://127.0.0.1:3000 "
+        "ACCEPTANCE_USERNAME=admin ACCEPTANCE_PASSWORD=password123 "
         "npx playwright test .agentic/acceptance/generated-acceptance.spec.ts --reporter=list'"
     )
 

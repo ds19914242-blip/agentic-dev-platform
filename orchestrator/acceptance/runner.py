@@ -65,7 +65,22 @@ def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
         import os
         env = os.environ.copy()
         env["ACCEPTANCE_BASE_URL"] = str(config.get("base_url"))
-    result = subprocess.run(command, shell=True, cwd=cwd, text=True, capture_output=True)
+    try:
+        result = subprocess.run(
+            command,
+            shell=True,
+            cwd=cwd,
+            text=True,
+            capture_output=True,
+            timeout=int(config.get("timeout_seconds", 300) or 300),
+        )
+    except subprocess.TimeoutExpired as exc:
+        result = subprocess.CompletedProcess(
+            args=command,
+            returncode=124,
+            stdout=exc.stdout or "",
+            stderr=(exc.stderr or "") + "\nAcceptance verification timed out.",
+        )
     acceptance_result = AcceptanceResult(str(epic_dir), command, result.returncode == 0, result.returncode, result.stdout, result.stderr)
     write_acceptance_result(epic_dir, acceptance_result)
 

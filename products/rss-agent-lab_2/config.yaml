@@ -21,7 +21,6 @@ validators:
     command: npm run build
     required: true
 acceptance:
-  command: npm run test:e2e
   cwd: /Users/danilsmetanev/Projects/rss-agent-lab_2
   base_url: http://localhost:3000
 
