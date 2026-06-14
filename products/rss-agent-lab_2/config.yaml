@@ -30,3 +30,11 @@ acceptance:
   username: admin
   password: password123
   timeout_seconds: 300
+
+
+deployment:
+  provider: digitalocean
+  production_url: https://whale-app-har5u.ondigitalocean.app
+  health_paths:
+    - /
+    - /sources
