@@ -22,3 +22,5 @@ runs/claude-code-feature-prompt.md
 /.pytest_cache/
 __pycache__/
 *.pyc
+
+memory/
