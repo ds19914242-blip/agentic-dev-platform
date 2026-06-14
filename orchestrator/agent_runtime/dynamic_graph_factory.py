@@ -18,7 +18,8 @@ def create_dynamic_agent_graph(task: str, repo_path="", product="", use_llm_plan
     )
     graph = AgentGraph()
 
-    graph.add("architect", registry.get("architect").factory())
+    graph.add("product_owner", registry.get("product_owner").factory())
+    graph.add("architect", registry.get("architect").factory(), depends_on=["product_owner"])
 
     lane_nodes = []
 

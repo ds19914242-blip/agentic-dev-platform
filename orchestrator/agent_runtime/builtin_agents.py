@@ -5,6 +5,7 @@ from orchestrator.agent_runtime.result import AgentResult
 from orchestrator.agent_runtime.agents.acceptance_agent import AcceptanceAgent
 from orchestrator.agent_runtime.agents.architect_agent import ArchitectAgent
 from orchestrator.agent_runtime.agents.implementation_agent import ImplementationPlanningAgent
+from orchestrator.agent_runtime.agents.product_owner_agent import ProductOwnerAgent
 from orchestrator.agent_runtime.agents.release_agent import ReleaseAgent
 from orchestrator.agent_runtime.agents.review_agent import ReviewAgent
 from orchestrator.agent_runtime.agents.validation_agent import ValidationAgent
@@ -28,6 +29,12 @@ def create_builtin_registry() -> AgentRegistry:
 
     registry.register("planner", "Creates implementation plan", lambda: PlaceholderAgent("planner"))
     registry.register("qa", "Creates QA plan", lambda: PlaceholderAgent("qa"))
+
+    registry.register(
+        name="product_owner",
+        description="Defines product scope and acceptance criteria",
+        factory=ProductOwnerAgent,
+    )
 
     registry.register(
         name="architect",
