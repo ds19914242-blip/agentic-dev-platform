@@ -45,14 +45,12 @@ def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
                 repo_path = cwd
 
         try:
-            if can_use_static_sources_acceptance(epic_dir):
-                command = write_static_sources_acceptance(repo_path, epic_dir)
-            else:
-                command = generate_playwright_acceptance(
-                    epic_dir=epic_dir,
-                    product_name=product_name or "",
-                    repo_path=repo_path,
-                )
+            command = generate_playwright_acceptance(
+                epic_dir=epic_dir,
+                product_name=product_name or "",
+                repo_path=repo_path,
+                config=config,
+            )
         except Exception as exc:
             command = f"echo Acceptance command generation failed: {str(exc)!r} && exit 1"
             (epic_dir / "acceptance-command.txt").write_text(command + "\n")

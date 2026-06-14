@@ -1,3 +1,4 @@
+import shlex
 import re
 from pathlib import Path
 
@@ -13,25 +14,31 @@ def _extract_code(text):
     match = re.search(r"```(?:ts|typescript|javascript|js)?\n(.*?)```", text, re.DOTALL)
     if match:
         return match.group(1).strip()
-
     if "import { test, expect }" in text:
         return text.strip()
-
     raise RuntimeError("Claude did not return a Playwright test file")
 
 
-def generate_playwright_acceptance(epic_dir, product_name, repo_path):
-    epic_dir = Path(epic_dir)
-    repo_path = Path(repo_path)
+def generate_playwright_acceptance(epic_dir, product_name, repo_path, config=None):
+    epic_dir = Path(epic_dir).resolve()
+    repo_path = Path(repo_path).resolve()
+    config = config or {}
+
+    base_url = str(config.get("base_url") or "http://127.0.0.1:3100")
+    login_url = str(config.get("login_url") or "/login")
+    username = str(config.get("username") or "admin")
+    password = str(config.get("password") or "password123")
 
     scenarios = _read(epic_dir / "acceptance-scenarios.md")
     feature_spec = _read(epic_dir / "feature-spec.md")
 
     prompt = f"""# Playwright Acceptance Agent
 
-Generate a Playwright test file that verifies the user's acceptance scenarios.
+Generate ONE TypeScript Playwright test file for this feature.
 
 Product: {product_name}
+Base URL: {base_url}
+Login URL: {login_url}
 
 ## Feature Spec
 
@@ -41,52 +48,68 @@ Product: {product_name}
 
 {scenarios}
 
-## Requirements
+## Required Test Structure
 
-Return ONLY one TypeScript Playwright test file in a code block.
+Return ONLY a TypeScript code block.
 
-Rules:
-- Use `import {{ test, expect }} from '@playwright/test';`
-- Use `const baseURL = process.env.ACCEPTANCE_BASE_URL || 'http://127.0.0.1:3000';`
-- Navigate with `page.goto(baseURL + '/...')`.
-- Verify real user behavior, not just that the page loads.
-- For source-management UI, click each source type button/tab and assert the form visibly changes.
-- Do not require external credentials.
-- Prefer assertions on visible text, labels, placeholders, aria-labels, buttons, and form state.
-- Make failures descriptive.
+The test must:
+- import {{ test, expect }} from '@playwright/test'
+- define baseURL from process.env.ACCEPTANCE_BASE_URL
+- login first if the scenario targets a protected page
+- use username/password from process.env.ACCEPTANCE_USERNAME / ACCEPTANCE_PASSWORD
+- verify real user-visible behavior from the acceptance scenarios
+- use precise locators: role, label, placeholder, exact visible text
+- avoid broad regex locators that match multiple elements
+- fail when the feature is not actually usable
+- avoid external credentials and destructive actions
 """
 
     response = run_claude(
         repo_path=str(repo_path),
         prompt=prompt,
         allow_writes=False,
-        max_turns=6,
+        max_turns=8,
         retries=0,
     )
 
     spec = _extract_code(response)
 
     acceptance_dir = repo_path / ".agentic" / "acceptance"
+    artifacts_dir = epic_dir / "acceptance-artifacts"
     acceptance_dir.mkdir(parents=True, exist_ok=True)
+    artifacts_dir.mkdir(parents=True, exist_ok=True)
 
     spec_path = acceptance_dir / "generated-acceptance.spec.ts"
     spec_path.write_text(spec)
+    (epic_dir / "generated-acceptance.spec.ts").write_text(spec)
+
+    q_repo = shlex.quote(str(repo_path))
+    q_spec = shlex.quote(str(spec_path))
+    q_artifacts = shlex.quote(str(artifacts_dir))
 
     command = (
-        "bash -lc 'set -e; "
-        "mkdir -p .agentic/acceptance; "
-        "npm run dev -- --hostname 127.0.0.1 > .agentic/acceptance/dev.log 2>&1 & "
+        "bash -lc 'set -euo pipefail; "
+        f"cd {q_repo}; "
+        "if [ ! -x node_modules/.bin/next ]; then npm install; fi; "
+        "TMP_DIR=$(mktemp -d); "
+        "trap \"kill ${SERVER_PID:-} 2>/dev/null || true; rm -rf $TMP_DIR\" EXIT; "
+        "cp " + q_spec + " \"$TMP_DIR/generated-acceptance.spec.ts\"; "
+        "cd \"$TMP_DIR\"; "
+        "npm init -y >/dev/null 2>&1; "
+        "npm install -D @playwright/test >/dev/null 2>&1; "
+        "npx playwright install chromium >/dev/null 2>&1; "
+        f"cd {q_repo}; "
+        f"APP_USERNAME={shlex.quote(username)} APP_PASSWORD={shlex.quote(password)} SESSION_SECRET=dev-secret "
+        "npm run dev -- --hostname 127.0.0.1 --port 3100 > " + q_artifacts + "/dev.log 2>&1 & "
         "SERVER_PID=$!; "
-        "trap \"kill $SERVER_PID 2>/dev/null || true\" EXIT; "
-        "for i in $(seq 1 60); do "
-        "  curl -fsS http://127.0.0.1:3000 >/dev/null 2>&1 && break; "
-        "  sleep 1; "
-        "done; "
-        "ACCEPTANCE_BASE_URL=http://127.0.0.1:3000 "
-        "npx playwright test .agentic/acceptance/generated-acceptance.spec.ts --reporter=list'"
+        "for i in $(seq 1 60); do curl -fsS http://127.0.0.1:3100 >/dev/null 2>&1 && break; sleep 1; done; "
+        "curl -fsS http://127.0.0.1:3100 >/dev/null; "
+        "cd \"$TMP_DIR\"; "
+        "ACCEPTANCE_BASE_URL=http://127.0.0.1:3100 "
+        f"ACCEPTANCE_USERNAME={shlex.quote(username)} ACCEPTANCE_PASSWORD={shlex.quote(password)} "
+        "npx playwright test generated-acceptance.spec.ts --reporter=list "
+        "--output=" + q_artifacts + "'"
     )
 
     (epic_dir / "acceptance-command.txt").write_text(command + "\n")
-    (epic_dir / "generated-acceptance.spec.ts").write_text(spec)
-
     return command
