@@ -55,7 +55,10 @@ def run_acceptance(epic_dir, command=None, cwd=None, product_name=None):
     config = product_acceptance_config(product_name)
 
     cwd = cwd or config.get("cwd") or "."
-    command = command or config.get("command") or infer_acceptance_command(epic_dir)
+    command = command or config.get("command") or load_acceptance_command(epic_dir)
+
+    if command and command.startswith("echo No acceptance-scenarios.md"):
+        command = infer_acceptance_command(epic_dir)
 
     if not command:
         repo_path = cwd
