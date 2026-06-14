@@ -8,6 +8,14 @@ class ReleaseAgent(Agent):
     name = "release"
 
     def run(self, context: AgentContext) -> AgentResult:
+        if context.inputs.get("dry_run"):
+            return AgentResult(
+                status="skipped",
+                confidence=0.0,
+                findings=["ReleaseAgent skipped by dry_run"],
+                handoff={"dry_run": True},
+            )
+
         task_path = context.inputs.get("task_path")
 
         if not context.product:

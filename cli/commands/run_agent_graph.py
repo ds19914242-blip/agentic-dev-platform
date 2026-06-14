@@ -12,6 +12,7 @@ def main():
     parser.add_argument("--product", default="")
     parser.add_argument("--repo-path", default="")
     parser.add_argument("--output-dir", default="runs/agent-graph-smoke")
+    parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
     context = AgentContext(
@@ -19,6 +20,7 @@ def main():
         product=args.product,
         repo_path=args.repo_path,
         run_dir=args.output_dir,
+        inputs={"dry_run": args.dry_run},
     )
 
     graph = create_default_agent_graph()

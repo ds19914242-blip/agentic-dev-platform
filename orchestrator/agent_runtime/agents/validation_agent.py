@@ -9,6 +9,14 @@ class ValidationAgent(Agent):
     name = "validation"
 
     def run(self, context: AgentContext) -> AgentResult:
+        if context.inputs.get("dry_run"):
+            return AgentResult(
+                status="skipped",
+                confidence=0.0,
+                findings=["ValidationAgent skipped by dry_run"],
+                handoff={"dry_run": True},
+            )
+
         if not context.product:
             return AgentResult(
                 status="failed",
