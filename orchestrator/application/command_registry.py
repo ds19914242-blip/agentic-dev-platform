@@ -104,6 +104,11 @@ COMMANDS = {
         "description": "List registered agents and definitions",
         "legacy": False,
     },
+    "agent-graph": {
+        "script": "run_agent_graph.py",
+        "description": "Run the default agent graph",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
