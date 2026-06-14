@@ -127,6 +127,17 @@ def main():
     files = scan_repo(repo_path)
     repo_map = format_repository_map(build_repository_map(files))
 
+    # Step-0 reuse: prepend the stored Repository Analyst output if present,
+    # so the Analyst builds on the existing codebase analysis instead of only
+    # the raw file map.
+    try:
+        from orchestrator.product_memory_context import format_codebase_analysis
+        analysis = format_codebase_analysis(product)
+        if analysis:
+            repo_map = analysis + "\n\n---\n\n" + repo_map
+    except Exception:
+        pass
+
     feature_spec = build_feature_spec(
         product_name=product,
         repo_path=repo_path,

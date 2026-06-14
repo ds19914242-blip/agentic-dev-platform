@@ -1,6 +1,20 @@
 import json
 
-from orchestrator.memory_store import load_product_memory, load_run_memory
+from orchestrator.memory_store import load_product_memory, load_run_memory, MEMORY_DIR
+
+
+def format_codebase_analysis(product_name, max_chars=8000):
+    """Return the stored Repository Analyst output for reuse by later agents.
+    Empty string if no analysis has been produced yet."""
+    path = MEMORY_DIR / f"{product_name}-analysis.md"
+    if not path.exists():
+        return ""
+    text = path.read_text(errors="ignore").strip()
+    if not text:
+        return ""
+    if len(text) > max_chars:
+        text = text[:max_chars] + "\n\n[truncated]\n"
+    return text
 
 
 def _safe_list(value):

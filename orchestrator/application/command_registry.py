@@ -1,4 +1,9 @@
 COMMANDS = {
+    "analyze": {
+        "script": "analyze_repository.py",
+        "description": "Analyze a connected repository into product memory (step 0)",
+        "legacy": False,
+    },
     "feature": {
         "script": "run_runtime_orchestrator.py",
         "description": "Run one feature through Agent Runtime orchestrator",
