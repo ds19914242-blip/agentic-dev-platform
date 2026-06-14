@@ -1,5 +1,6 @@
 import subprocess
 import sys
+from pathlib import Path
 
 from orchestrator.application.command_registry import (
     ALIASES,
@@ -18,17 +19,32 @@ def print_help():
 
     print("Commands:")
     for name, meta in sorted(active_commands().items()):
-        print(f"  {name:<12} {meta['description']}")
+        print(f"  {name:<18} {meta['description']}")
 
     print()
     print("Legacy Commands:")
     for name, meta in sorted(legacy_commands().items()):
-        print(f"  {name:<12} {meta['description']}")
+        print(f"  {name:<18} {meta['description']}")
 
     print()
     print("Aliases:")
     for alias, target in sorted(ALIASES.items()):
-        print(f"  {alias:<12} {target}")
+        print(f"  {alias:<18} {target}")
+
+
+def command_script_path(command):
+    script = command["script"]
+    candidates = [
+        Path(script),
+        Path("cli/commands") / script,
+        Path("cli/legacy") / script,
+    ]
+
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+
+    return script
 
 
 def main():
@@ -54,7 +70,7 @@ def main():
         print(f"[LEGACY] Executing {command_name}")
 
     result = subprocess.run(
-        ["python3", command["script"]] + sys.argv[2:]
+        ["python3", command_script_path(command)] + sys.argv[2:]
     )
 
     raise SystemExit(result.returncode)
