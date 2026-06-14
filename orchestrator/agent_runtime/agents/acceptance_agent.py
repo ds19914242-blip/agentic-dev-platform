@@ -30,17 +30,27 @@ class AcceptanceAgent(Agent):
             product_name=context.product,
         )
 
+        artifacts = [
+            str(epic_dir) + "/acceptance-result.md",
+            str(epic_dir) + "/acceptance-result.json",
+        ]
+
         return AgentResult(
             status="passed" if result.passed else "failed",
             confidence=1.0 if result.passed else 0.2,
-            artifacts=["acceptance-result.md", "acceptance-result.json"],
+            artifacts=artifacts,
             findings=[
                 "Acceptance passed" if result.passed else "Acceptance failed",
                 f"Command: {result.command}",
+                f"Return code: {result.returncode}",
             ],
             handoff={
                 "passed": result.passed,
                 "returncode": result.returncode,
                 "command": result.command,
+                "epic_dir": str(epic_dir),
+                "artifacts": artifacts,
+                "stdout_tail": (result.stdout or "")[-1000:],
+                "stderr_tail": (result.stderr or "")[-1000:],
             },
         )
