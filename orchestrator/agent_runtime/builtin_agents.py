@@ -2,8 +2,11 @@ from orchestrator.agent_runtime.agent import Agent
 from orchestrator.agent_runtime.context import AgentContext
 from orchestrator.agent_runtime.registry import AgentRegistry
 from orchestrator.agent_runtime.result import AgentResult
-from orchestrator.agent_runtime.agents.release_agent import ReleaseAgent
+from orchestrator.agent_runtime.agents.acceptance_agent import AcceptanceAgent
 from orchestrator.agent_runtime.agents.architect_agent import ArchitectAgent
+from orchestrator.agent_runtime.agents.implementation_agent import ImplementationPlanningAgent
+from orchestrator.agent_runtime.agents.release_agent import ReleaseAgent
+from orchestrator.agent_runtime.agents.review_agent import ReviewAgent
 from orchestrator.agent_runtime.agents.validation_agent import ValidationAgent
 
 
@@ -23,19 +26,8 @@ class PlaceholderAgent(Agent):
 def create_builtin_registry() -> AgentRegistry:
     registry = AgentRegistry()
 
-    for name, description in [
-        ("planner", "Creates implementation plan"),
-        ("qa", "Creates QA plan"),
-        ("reviewer", "Reviews implementation output"),
-        ("implementation", "Implements product changes"),
-        ("review", "Reviews implementation and risks"),
-        ("acceptance", "Runs acceptance scenarios"),
-    ]:
-        registry.register(
-            name=name,
-            description=description,
-            factory=lambda agent_name=name: PlaceholderAgent(agent_name),
-        )
+    registry.register("planner", "Creates implementation plan", lambda: PlaceholderAgent("planner"))
+    registry.register("qa", "Creates QA plan", lambda: PlaceholderAgent("qa"))
 
     registry.register(
         name="architect",
@@ -44,9 +36,33 @@ def create_builtin_registry() -> AgentRegistry:
     )
 
     registry.register(
+        name="implementation",
+        description="Prepares runtime implementation handoff",
+        factory=ImplementationPlanningAgent,
+    )
+
+    registry.register(
         name="validation",
         description="Runs product validators and reports evidence",
         factory=ValidationAgent,
+    )
+
+    registry.register(
+        name="review",
+        description="Reviews runtime outputs and risks",
+        factory=ReviewAgent,
+    )
+
+    registry.register(
+        name="reviewer",
+        description="Compatibility reviewer alias",
+        factory=ReviewAgent,
+    )
+
+    registry.register(
+        name="acceptance",
+        description="Runs acceptance scenarios",
+        factory=AcceptanceAgent,
     )
 
     registry.register(
