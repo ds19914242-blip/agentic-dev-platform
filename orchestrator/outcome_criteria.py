@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.outcome_store import attach_evidence
+
 from orchestrator.criteria_evidence import build_criteria_evidence, write_criteria_evidence
 
 
@@ -81,6 +83,7 @@ def write_criteria_verification(epic_dir, result):
     md_path = epic_dir / "product-criteria-verification.md"
 
     json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+    attach_evidence(epic_dir, "criteria_verification", "product-criteria-verification.json")
 
     lines = [
         "# Product Criteria Verification",
@@ -133,4 +136,5 @@ def write_criteria_verification(epic_dir, result):
     ])
 
     md_path.write_text("\n".join(lines))
+    attach_evidence(epic_dir, "criteria_verification_report", "product-criteria-verification.md")
     return md_path, json_path

@@ -14,6 +14,7 @@ from orchestrator.backlog_store import (
     set_task_profile,
 )
 from orchestrator.execution_router import route_task
+from orchestrator.outcome_store import attach_evidence
 from orchestrator.product_registry import load_product_config
 from orchestrator.task_classifier import classify_task
 from orchestrator.task_status import SKIP_STATUSES
@@ -109,6 +110,10 @@ def attach_validation_artifacts(task_path, run_dir):
         if source.exists():
             target.write_text(source.read_text(errors="ignore"))
             attached.append(str(target))
+            if name == "validation.json":
+                attach_evidence(epic_dir, "validation", name)
+            elif name == "validation.md":
+                attach_evidence(epic_dir, "validation_report", name)
 
     return attached
 

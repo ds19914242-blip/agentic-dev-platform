@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.outcome_store import attach_evidence
+
 from orchestrator.criteria_classifier import classify_criterion, evidence_sources_for_type
 from orchestrator.evidence_evaluator import evaluate_criterion_evidence
 
@@ -110,6 +112,7 @@ def write_criteria_evidence(epic_dir, result):
     md_path = epic_dir / "criteria-evidence.md"
 
     json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+    attach_evidence(epic_dir, "criteria_evidence", "criteria-evidence.json")
 
     lines = [
         "# Criteria Evidence",
@@ -142,4 +145,5 @@ def write_criteria_evidence(epic_dir, result):
     lines.extend(["## Verified At", "", result["verified_at"], ""])
 
     md_path.write_text("\n".join(lines))
+    attach_evidence(epic_dir, "criteria_evidence_report", "criteria-evidence.md")
     return md_path, json_path

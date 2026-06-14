@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.outcome_store import attach_evidence
+
 
 ROUTE_RE = re.compile(r'["`](/(?!api/)[a-zA-Z0-9_./-]*)["`]')
 API_ROUTE_RE = re.compile(r'["`](/api/[a-zA-Z0-9_./-]*)["`]')
@@ -150,6 +152,7 @@ def write_route_verification(epic_dir, result):
     md_path = epic_dir / "route-verification.md"
 
     json_path.write_text(json.dumps(result, indent=2, ensure_ascii=False))
+    attach_evidence(epic_dir, "route_verification", "route-verification.json")
 
     lines = [
         "# Route Verification",
@@ -189,4 +192,5 @@ def write_route_verification(epic_dir, result):
     lines.extend(["", "## Verified At", "", result["verified_at"], ""])
 
     md_path.write_text("\n".join(lines))
+    attach_evidence(epic_dir, "route_verification_report", "route-verification.md")
     return md_path, json_path

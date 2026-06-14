@@ -59,6 +59,7 @@ def default_outcome(epic_dir):
         "accepted_at": None,
         "failed_at": None,
         "note": "",
+        "evidence": {},
     }
 
 
@@ -82,6 +83,7 @@ def load_outcome(epic_dir):
     data.setdefault("accepted_at", None)
     data.setdefault("failed_at", None)
     data.setdefault("note", "")
+    data.setdefault("evidence", {})
     return data
 
 
@@ -130,3 +132,11 @@ def infer_epic_state(epic_dir, tasks_total, tasks_completed):
         return IMPLEMENTING
 
     return status
+
+
+def attach_evidence(epic_dir, evidence_type, file_name):
+    outcome = load_outcome(epic_dir)
+    evidence = outcome.setdefault("evidence", {})
+    evidence[evidence_type] = file_name
+    save_outcome(epic_dir, outcome)
+    return outcome

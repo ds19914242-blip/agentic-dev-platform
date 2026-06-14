@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.outcome_store import attach_evidence
+
 
 def now_iso():
     return datetime.now().isoformat(timespec="seconds")
@@ -86,4 +88,5 @@ def write_verification_evidence(epic_dir, evidence):
 """
     md_path.write_text(md)
 
+    attach_evidence(epic_dir, "verification_report", "verification-evidence.md")
     return md_path, json_path

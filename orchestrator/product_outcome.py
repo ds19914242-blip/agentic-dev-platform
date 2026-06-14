@@ -3,6 +3,8 @@ import re
 from datetime import datetime
 from pathlib import Path
 
+from orchestrator.outcome_store import attach_evidence
+
 
 def _read(path):
     path = Path(path)
@@ -97,6 +99,7 @@ def write_product_outcome(epic_dir, outcome):
     md_path = epic_dir / "product-outcome.md"
 
     json_path.write_text(json.dumps(outcome, indent=2, ensure_ascii=False))
+    attach_evidence(epic_dir, "product_outcome", "product-outcome.json")
 
     md = f"""# Product Outcome Verification
 
@@ -132,6 +135,7 @@ def write_product_outcome(epic_dir, outcome):
 {outcome["verified_at"]}
 """
     md_path.write_text(md)
+    attach_evidence(epic_dir, "product_outcome_report", "product-outcome.md")
     return md_path, json_path
 
 
