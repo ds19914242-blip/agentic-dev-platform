@@ -109,6 +109,11 @@ COMMANDS = {
         "description": "Run the default agent graph",
         "legacy": False,
     },
+    "multi-agent-graph": {
+        "script": "run_multi_agent_graph.py",
+        "description": "Run the fan-out/fan-in multi-agent graph",
+        "legacy": False,
+    },
     "validate": {
         "script": "validate_latest_run.py",
         "description": "Validate latest run",
