@@ -79,6 +79,11 @@ COMMANDS = {
         "description": "Run acceptance verification or generated Playwright tests for an epic",
         "legacy": False,
     },
+    "release-check": {
+        "script": "run_deployment_verification.py",
+        "description": "Verify production deployment and confirm release",
+        "legacy": False,
+    },
     "acceptance-status": {
         "script": "run_acceptance_status.py",
         "description": "Show latest acceptance verification result",

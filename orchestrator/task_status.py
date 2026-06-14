@@ -10,6 +10,10 @@ class TaskStatus(str, Enum):
     PR_CREATED = "pr_created"
     MERGED = "merged"
 
+    PRODUCTION_VERIFICATION_RUNNING = "production_verification_running"
+    RELEASE_CONFIRMED = "release_confirmed"
+    RELEASE_FAILED = "release_failed"
+
     DONE = "done"
     DONE_NO_PR = "done_no_pr"
 
@@ -24,6 +28,9 @@ class TaskStatus(str, Enum):
 ORDERED_STATUSES = [
     status.value
     for status in [
+        TaskStatus.RELEASE_CONFIRMED,
+        TaskStatus.RELEASE_FAILED,
+        TaskStatus.PRODUCTION_VERIFICATION_RUNNING,
         TaskStatus.MERGED,
         TaskStatus.PR_CREATED,
         TaskStatus.DONE,
@@ -44,13 +51,16 @@ ACTIVE_STATUSES = {
     TaskStatus.TODO.value,
     TaskStatus.BLOCKED.value,
     TaskStatus.MANUAL_VERIFICATION_FAILED.value,
+    TaskStatus.RELEASE_FAILED.value,
 }
 
 SKIP_STATUSES = {
     TaskStatus.IN_PROGRESS.value,
     TaskStatus.PR_CREATED.value,
     TaskStatus.MERGED.value,
+    TaskStatus.PRODUCTION_VERIFICATION_RUNNING.value,
     TaskStatus.MANUAL_VERIFICATION_PASSED.value,
+    TaskStatus.RELEASE_CONFIRMED.value,
 }
 
 COMPLETED_STATUSES = {
@@ -61,6 +71,7 @@ COMPLETED_STATUSES = {
     TaskStatus.ALREADY_SATISFIED.value,
     TaskStatus.NO_CHANGES_NEEDED.value,
     TaskStatus.MANUAL_VERIFICATION_PASSED.value,
+    TaskStatus.RELEASE_CONFIRMED.value,
 }
 
 
