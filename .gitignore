@@ -13,3 +13,12 @@ __pycache__/
 runs/latest-feature-prompt.md
 runs/feature-request-prompt.md
 runs/claude-code-feature-prompt.md
+
+# Agentic runtime state
+/runs/
+/backlog/*/
+/evidence/
+/tmp/
+/.pytest_cache/
+__pycache__/
+*.pyc
