@@ -1,6 +1,6 @@
 from orchestrator.agent_runtime.builtin_agents import create_builtin_registry
 from orchestrator.agent_runtime.graph import AgentGraph
-from orchestrator.agent_runtime.graph_plan import plan_graph_for_task
+from orchestrator.agent_runtime.llm_graph_planner import plan_graph as plan_graph_for_task
 from orchestrator.agent_runtime.agents.lane_agents import (
     BackendImplementationAgent,
     FrontendImplementationAgent,

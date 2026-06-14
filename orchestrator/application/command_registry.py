@@ -1,8 +1,13 @@
 COMMANDS = {
     "feature": {
-        "script": "run_autonomous_feature.py",
-        "description": "Run one autonomous feature",
+        "script": "run_runtime_orchestrator.py",
+        "description": "Run one feature through Agent Runtime orchestrator",
         "legacy": False,
+    },
+    "feature-legacy": {
+        "script": "run_autonomous_feature.py",
+        "description": "Run one feature through legacy autonomous workflow",
+        "legacy": True,
     },
     "decompose": {
         "script": "decompose_feature.py",
