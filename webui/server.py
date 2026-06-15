@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-20"
+API_VERSION = "workspace-33"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -552,19 +552,92 @@ def _task_branch(epic_id, stem):
     return f"agentic/task-{_epic_branch(epic_id).split('-', 1)[-1]}-{stem}"
 
 
+def _dep_base_ref(epic_id, stem, repo, job=None):
+    """Base for a task = main + the task's already-accepted dependencies, assembled
+    in topo order, so a dependent task is implemented ON TOP of what it depends on.
+    Keeps several tasks that edit the same file from conflicting at assembly time.
+    Defensive: on ANY problem it falls back to plain main — but now it EMITS the
+    reason so a silent fallback is never a mystery. Returns (base_ref, depbase_branch|None)."""
+    base = _base_ref(repo)
+    def say(msg, level=""):
+        if job:
+            job.emit(msg, level)
+    try:
+        num = _task_num(stem + ".md")
+        files = sorted((BACKLOG_DIR / epic_id).glob("task-*.md"))
+        depmap = epic_dep_nums(epic_id, files)
+        deps, stack = set(), list(depmap.get(num, set()))
+        while stack:
+            d = stack.pop()
+            if d in deps:
+                continue
+            deps.add(d)
+            stack.extend(depmap.get(d, set()))
+        if not deps:
+            say(f"dep-base: задача #{num} без зависимостей — строю от {base}")
+            return base, None
+        rs = load_runstate(epic_id)
+        byname = {_task_num(f.name): f.name for f in files}
+        order = [n for n in _topo_order(list(deps), depmap) if n in deps]
+        applic = []
+        for n in order:
+            run = rs.get(byname.get(n, ""), {})
+            head = run.get("head")
+            if run.get("changed") and head and head != run.get("base"):
+                applic.append((n, head))
+            else:
+                say(f"dep-base: зависимость #{n} ещё не выполнена/без коммита (state={run.get('state')}) — её правки не лягут в базу", "skip")
+        if not applic:
+            say(f"dep-base: ни одна зависимость #{num} не имеет коммита — строю от {base}", "skip")
+            return base, None
+        _git_run(repo, ["worktree", "prune"])
+        db = f"agentic/depbase-{_epic_branch(epic_id).split('-', 1)[-1]}-{num:03d}"
+        wt = Path(repo).parent / ".agentic-worktrees" / f"depbase-{num:03d}-{datetime.now().strftime('%H%M%S')}"
+        if wt.exists():
+            shutil.rmtree(wt, ignore_errors=True)
+        # a stale worktree may hold the depbase branch checked out → free it
+        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+        r = _git_run(repo, ["worktree", "add", "-B", db, str(wt), base])
+        if r.returncode != 0:
+            say(f"dep-base: не смог создать worktree ({(r.stderr or '').strip()[:160]}) — строю от {base}", "err")
+            return base, None
+        try:
+            for n, head in applic:
+                cp = _git_run(wt, ["cherry-pick", head])
+                if cp.returncode != 0:
+                    confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines() if l.startswith(("UU", "AA", "DD"))]
+                    _git_run(wt, ["cherry-pick", "--abort"])
+                    say(f"dep-base: зависимости конфликтуют между собой на #{n} ({', '.join(confl) or 'files'}) — строю от {base}", "err")
+                    return base, None
+            depbase_head = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+        finally:
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
+        if depbase_head and depbase_head != (_git_run(repo, ["rev-parse", base]).stdout or "").strip():
+            say(f"dep-base: строю поверх зависимостей {', '.join('#'+str(n) for n,_ in applic)} → base {depbase_head[:9]} (сборка ляжет без конфликта)", "ok")
+            return depbase_head, db
+        say(f"dep-base: зависимости не дали изменений — строю от {base}", "skip")
+        return base, None
+    except Exception as exc:
+        say(f"dep-base: ошибка ({exc}) — строю от {base}", "err")
+        return base, None
+
+
 def _run_task(epic_id, task_file, product, repo, job):
-    """Implement ONE task in a worktree from base; commit it on its OWN reusable
-    branch agentic/task-… so the epic build can later cherry-pick it. Runs the
-    agent (LLM) — this is the only place the agent is invoked."""
+    """Implement ONE task in a worktree built on top of its accepted dependencies;
+    commit it on its OWN reusable branch agentic/task-… so the epic build can later
+    cherry-pick it cleanly. Runs the agent (LLM) — the only place the agent runs."""
     task_path = BACKLOG_DIR / epic_id / task_file
     if not task_path.is_file():
         return {"ok": False, "error": "task not found"}
     stem = task_path.stem
-    base = _base_ref(repo)
+    base, depbase = _dep_base_ref(epic_id, stem, repo, job)
     tb = _task_branch(epic_id, stem)
     wt = Path(repo).parent / ".agentic-worktrees" / f"{stem}-{datetime.now().strftime('%H%M%S')}"
     job.emit(f"Creating worktree on {tb} from {base} (main untouched)")
     r = _git_run(repo, ["worktree", "add", "-B", tb, str(wt), base])
+    if depbase:
+        _git_run(repo, ["branch", "-D", depbase])
     if r.returncode != 0:
         set_runstate(epic_id, task_file, state="failed", error=(r.stderr or "").strip())
         return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
@@ -689,7 +762,7 @@ def build_epic(epic_id):
         if r.returncode != 0:
             return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
         try:
-            picked, skipped = 0, 0
+            picked, skipped, conflict = 0, 0, False
             for n in order:
                 tf = byname.get(n)
                 if not tf:
@@ -705,9 +778,13 @@ def build_epic(epic_id):
                     confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines()
                              if l.startswith(("UU", "AA", "DD"))]
                     _git_run(wt, ["cherry-pick", "--abort"])
-                    job.emit(f"#{n} {tf}: CONFLICT on {', '.join(confl) or 'files'} — assembly stopped", "err")
+                    conflict = True
+                    job.emit(f"#{n} {tf}: CONFLICT on {', '.join(confl) or 'files'} — assembly stopped, partial branch discarded", "err")
+                    job.emit("Этот таск правит те же строки, что и его зависимости, но был выполнен от main. "
+                             "Сбрось его (Вернуть в todo) и перезапусти — он соберётся поверх зависимостей без конфликта.", "err")
                     return {"ok": False, "error": "merge conflict at #" + str(n),
-                            "conflict_task": tf, "conflict_files": confl, "branch": eb}
+                            "conflict_task": tf, "conflict_files": confl,
+                            "hint": "reset_and_rerun"}
                 job.emit(f"#{n} {tf}: applied", "ok")
                 picked += 1
             job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
@@ -716,6 +793,8 @@ def build_epic(epic_id):
         finally:
             _git_run(repo, ["worktree", "remove", "--force", str(wt)])
             _git_run(repo, ["worktree", "prune"])
+            if conflict:
+                _git_run(repo, ["branch", "-D", eb])
     return target
 
 
@@ -1098,6 +1177,18 @@ def preview_start(epic_id):
             "user": "admin", "password": "admin"}
 
 
+def preview_active():
+    """The single currently-running preview (one port, one worktree at a time),
+    so the sidebar can offer Open/Stop from anywhere."""
+    for eid in list(PREVIEW_PROCS):
+        st = _preview_state(eid)
+        if st and st.get("running"):
+            title = _epic_human_title(eid) or eid
+            return {"running": True, "epic_id": eid, "port": st["port"],
+                    "url": st["url"], "title": title}
+    return {"running": False}
+
+
 def preview_log(epic_id):
     eid = _safe_epic_id(epic_id)
     st = _preview_state(eid)
@@ -1272,6 +1363,44 @@ def reset_epic_runs(epic_id):
     return {"ok": True, "epic_id": eid, "reset_branch": deleted}
 
 
+def reset_task_run(epic_id, task_file):
+    """Return ONE task to todo: clear a stuck/running inflight job, drop its
+    run-state entry, and delete its reusable branch so a re-run starts clean.
+    Lets the user recover a task whose run crashed mid-flight without nuking
+    the whole epic (unlike reset_epic_runs)."""
+    eid = _safe_epic_id(epic_id)
+    if not eid or "/" in (task_file or "") or ".." in (task_file or ""):
+        return {"ok": False, "error": "invalid task reference"}
+    # 1) clear any stuck inflight job for this task (the "running…" that never ended)
+    key = ("task_run", eid, task_file)
+    with JOBS_LOCK:
+        jid = INFLIGHT.get(key)
+        if jid is not None:
+            INFLIGHT.pop(key, None)
+            j = JOBS.get(jid)
+            if j and not j.done:
+                j.done = True
+                j.result = {"ok": False, "error": "reset by user"}
+    # 2) drop this task's run-state entry -> it reads as todo again
+    d = load_runstate(eid)
+    removed = d.pop(task_file, None)
+    try:
+        _runstate_path(eid).write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
+    # 3) delete the task's reusable branch so the next run is clean
+    deleted = None
+    product, repo, err = _resolve_repo(eid)
+    if not err and repo:
+        stem = Path(task_file).stem
+        tb = _task_branch(eid, stem)
+        _git_run(repo, ["worktree", "prune"])
+        if _git_run(repo, ["branch", "-D", tb]).returncode == 0:
+            deleted = tb
+    return {"ok": True, "epic_id": eid, "task_file": task_file,
+            "was": (removed or {}).get("state"), "deleted_branch": deleted}
+
+
 def task_detail(epic_id, task_file):
     eid = _safe_epic_id(epic_id)
     if not eid or "/" in (task_file or "") or ".." in (task_file or ""):
@@ -1315,8 +1444,17 @@ def product_overview(product_name):
             tstatus[st] = tstatus.get(st, 0) + 1
     bl = read_baseline(product_name)
     hist = repo_history(product_name)
+    stages = {}
+    for e in epics:
+        try:
+            s = epic_stage(e["id"]).get("stage")
+        except Exception:
+            s = None
+        if s:
+            stages[s] = stages.get(s, 0) + 1
     return {
         "epics_total": len(epics), "epics_by_status": estatus,
+        "epics_by_stage": stages,
         "tasks_total": total_tasks, "tasks_by_status": tstatus,
         "baseline": bl.get("overall") if bl.get("exists") else None,
         "runs": len(hist.get("runs", [])),
@@ -1363,6 +1501,9 @@ def epic_detail(epic_id):
         })
 
     tasks = []
+    rs = load_runstate(epic_id)
+    task_paths = [epic_dir / n for n in files if n.startswith("task-") and n.endswith(".md")]
+    depmap = epic_dep_nums(epic_id, task_paths)
     for name in files:
         if name.startswith("task-") and name.endswith(".md"):
             ttext = (epic_dir / name).read_text(errors="ignore")
@@ -1378,7 +1519,21 @@ def epic_detail(epic_id):
                 if line.strip().startswith("### Task"):
                     title = line.replace("###", "").strip()
                     break
-            tasks.append({"file": name, "title": title, **fields})
+            run = rs.get(name, {})
+            rstate = run.get("state")
+            if fields.get("status") in _DONE_STATUSES or rstate == "accepted":
+                eff = "accepted" if rstate == "accepted" else "done"
+            elif rstate == "running":
+                eff = "running"
+            elif rstate == "failed":
+                eff = "failed"
+            elif rstate in ("implemented", "no_changes"):
+                eff = "implemented"
+            else:
+                eff = fields.get("status") or "todo"
+            tasks.append({"file": name, "title": title, "run_state": rstate,
+                          "eff_status": eff, "num": _task_num(name),
+                          "depends_on": sorted(depmap.get(_task_num(name), [])), **fields})
 
     def _txt(name):
         p = epic_dir / name
@@ -1386,7 +1541,11 @@ def epic_detail(epic_id):
 
     have = set(files)
     has_task = any(f.startswith("task-") and f.endswith(".md") for f in have)
-    if "product-spec.md" not in have:
+    is_quick = bool(load_epic_state(epic_id).get("quick"))
+    epic_kind = load_epic_state(epic_id).get("kind") or ("task" if is_quick else "")
+    if is_quick and has_task:
+        next_action = {"id": "execute", "label": "Run the task", "agent": "Runtime agents"}
+    elif "product-spec.md" not in have:
         next_action = {"id": "decompose", "label": "Run Product Agent", "agent": "Product Agent"}
     elif "feature-spec.md" not in have:
         next_action = {"id": "approve_product", "label": "Approve → Feature spec", "agent": "Product Analyst Agent"}
@@ -1400,6 +1559,8 @@ def epic_detail(epic_id):
         "stations": stations,
         "artifacts": artifacts,
         "tasks": tasks,
+        "quick": is_quick,
+        "kind": epic_kind,
         "outcome": _read_json(epic_dir / "outcome.json"),
         "statuses": {
             "product": _txt("product-status.txt"),
@@ -1668,6 +1829,108 @@ def get_analysis(product_name):
 
 
 # --- the one write action in stage 1: run the Product Agent (decompose) -------
+def _inbox_path():
+    return BACKLOG_DIR / "_inbox.json"
+
+
+def inbox_load():
+    p = _inbox_path()
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            return {"items": []}
+    return {"items": []}
+
+
+def inbox_save(data):
+    try:
+        BACKLOG_DIR.mkdir(parents=True, exist_ok=True)
+        _inbox_path().write_text(json.dumps(data, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
+
+
+def inbox_list(product):
+    items = [i for i in inbox_load().get("items", []) if not product or i.get("product") == product]
+    return {"items": sorted(items, key=lambda i: i.get("created", ""), reverse=True)}
+
+
+def inbox_add(product, itype, text):
+    itype = itype if itype in ("epic", "task", "bug") else "task"
+    if not (text or "").strip():
+        return {"ok": False, "error": "empty text"}
+    d = inbox_load()
+    item = {"id": uuid.uuid4().hex[:12], "product": product, "type": itype,
+            "text": text.strip(), "status": "new",
+            "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+    d.setdefault("items", []).append(item)
+    inbox_save(d)
+    return {"ok": True, "item": item}
+
+
+def inbox_delete(item_id):
+    d = inbox_load()
+    before = len(d.get("items", []))
+    d["items"] = [i for i in d.get("items", []) if i.get("id") != item_id]
+    inbox_save(d)
+    return {"ok": True, "removed": before - len(d["items"])}
+
+
+def run_quick_task(product_name, request, kind="task"):
+    """A 'quick task' is a ONE-task epic with NO planning phase: the user's plain
+    request becomes a single task the agent implements directly. kind='bug' gives the
+    agent a diagnostic frame (reproduce -> root cause -> minimal fix -> guard) instead of
+    a plain 'implement this'. Flows through the normal execution UI afterwards."""
+    try:
+        from orchestrator.product_registry import load_product_config
+        import decompose_feature as df
+    except Exception as exc:
+        return {"ok": False, "error": f"Platform import failed: {exc}"}
+    try:
+        product = load_product_config(product_name)
+    except Exception as exc:
+        return {"ok": False, "error": f"Product config error: {exc}"}
+    if not (request or "").strip():
+        return {"ok": False, "error": "empty request"}
+    kind = "bug" if kind == "bug" else "task"
+    repo_path = product.get("repo_path", "")
+    prefix = "bug " if kind == "bug" else "quick "
+    epic_dir = df.make_epic_dir(prefix + request)
+    eid = epic_dir.name
+    (epic_dir / "product.txt").write_text(product_name + "\n")
+    (epic_dir / "epic.md").write_text(
+        f"# Epic Request\n\n## Product\n\n{product_name}\n\n"
+        f"## Repository\n\n{repo_path}\n\n## Request\n\n{request}\n")
+    title = request.strip().splitlines()[0][:80]
+    if kind == "bug":
+        (epic_dir / "task-001.md").write_text(
+            "Status: todo\nType: bug_fix\n\n"
+            f"### Task 001 — Bug: {title}\n\n"
+            f"**Problem:** {request.strip()}\n"
+            "**Goal:** Reproduce the issue, find the ROOT CAUSE, and fix it with the smallest "
+            "safe change — do not just patch the symptom. Add a lightweight guard or test only "
+            "if it is cheap and directly relevant.\n"
+            "**Scope:** Touch only what the fix needs. Do not refactor unrelated code.\n"
+            "**Acceptance criteria:** The bug no longer reproduces; `npx tsc --noEmit` and the "
+            "build pass; no dangling references; no unrelated changes.\n"
+            "**Risk:** medium\n\n"
+            "## Depends On\n\n_None_\n")
+    else:
+        (epic_dir / "task-001.md").write_text(
+            "Status: todo\n\n"
+            f"### Task 001 — {title}\n\n"
+            f"**Goal:** {request.strip()}\n"
+            "**Scope:** Implement the request directly, in the smallest reasonable change. "
+            "Touch only what the request needs.\n"
+            "**Acceptance criteria:** The request is satisfied; `npx tsc --noEmit` and the build "
+            "pass; no dangling references remain.\n"
+            "**Risk:** medium\n\n"
+            "## Depends On\n\n_None_\n")
+    set_epic_state(eid, quick=True, kind=kind)
+    return {"ok": True, "epic_id": eid, "kind": kind}
+
+
 def run_decompose(product_name, request):
     """Drive the real platform decompose stage. Always scaffolds the epic;
     attempts the Product Agent (which needs the `claude` CLI). Returns a log
@@ -2210,8 +2473,26 @@ class Handler(BaseHTTPRequestHandler):
                     "agents": AGENTS,
                     "pipeline": PIPELINE,
                 })
+            if path == "/api/inbox":
+                return self._send(200, inbox_list(q.get("product", [""])[0]))
             if path == "/api/epics":
                 return self._send(200, {"epics": list_epics(q.get("product", [""])[0])})
+            if path == "/api/epics/overview":
+                eps = list_epics(q.get("product", [""])[0])
+                for e in eps:
+                    try:
+                        stg = epic_stage(e["id"])
+                        e["stage"] = stg.get("stage")
+                        e["accepted"] = len(stg.get("accepted") or [])
+                        e["total"] = stg.get("total")
+                        e["validation"] = stg.get("validation")
+                        e["pushed"] = stg.get("pushed")
+                        e["pr_url"] = stg.get("pr_url")
+                        e["preview_running"] = stg.get("preview_running")
+                        e["kind"] = load_epic_state(e["id"]).get("kind") or ("task" if load_epic_state(e["id"]).get("quick") else "epic")
+                    except Exception:
+                        e["stage"] = None
+                return self._send(200, {"epics": eps})
             if path == "/api/epics/archived":
                 return self._send(200, {"epics": list_archived_epics(q.get("product", [""])[0])})
             if path == "/api/overview":
@@ -2230,6 +2511,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, epic_fix_diff(q.get("epic_id", [""])[0], q.get("path", [""])[0]))
             if path == "/api/epic/preview-log":
                 return self._send(200, preview_log(q.get("epic_id", [""])[0]))
+            if path == "/api/preview/active":
+                return self._send(200, preview_active())
             if path == "/api/jobs/active":
                 with JOBS_LOCK:
                     active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
@@ -2299,6 +2582,19 @@ class Handler(BaseHTTPRequestHandler):
                 job, started = start_job("decompose", ("decompose", product, request),
                                          _forward(run_decompose, product, request))
                 return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/quick-task":
+                product = (payload.get("product") or "").strip()
+                request = (payload.get("request") or "").strip()
+                kind = (payload.get("kind") or "task").strip()
+                if not product or not request:
+                    return self._send(400, {"error": "product and request are required"})
+                return self._send(200, run_quick_task(product, request, kind))
+            if u.path == "/api/inbox/add":
+                return self._send(200, inbox_add((payload.get("product") or "").strip(),
+                                                 (payload.get("type") or "task").strip(),
+                                                 (payload.get("text") or "").strip()))
+            if u.path == "/api/inbox/delete":
+                return self._send(200, inbox_delete((payload.get("id") or "").strip()))
             if u.path == "/api/connect-repo":
                 return self._send(200, connect_repo(
                     payload.get("path", ""), payload.get("name", ""),
@@ -2357,6 +2653,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"job_id": job.id, "started": started})
             if u.path == "/api/epic/reset-runs":
                 return self._send(200, reset_epic_runs((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/task/reset":
+                return self._send(200, reset_task_run((payload.get("epic_id") or "").strip(),
+                                                      (payload.get("task_file") or "").strip()))
             if u.path == "/api/task/accept":
                 eid = _safe_epic_id((payload.get("epic_id") or "").strip())
                 tf = (payload.get("task_file") or "").strip()

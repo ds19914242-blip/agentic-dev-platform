@@ -121,11 +121,18 @@ h2{font-size:15px;margin:0 0 10px}
     <div><div class="lbl">Active product</div><select id="product-sel" onchange="onProductChange()"></select></div>
     <div><div class="lbl">Platform</div><div class="nav"><a data-v="repos" onclick="go('repos')"><span class="b"></span> Repositories</a></div></div>
     <div id="prod-nav"><div class="lbl">Product</div><div class="nav">
-      <a data-v="overview" onclick="go('overview')"><span class="b"></span> Overview</a>
+      <a data-v="dashboard" onclick="go('dashboard')"><span class="b"></span> Dashboard</a>
+      <a data-v="inbox" onclick="go('inbox')"><span class="b"></span> Бэклог</a>
       <a data-v="repository" onclick="go('repository')"><span class="b"></span> Repository</a>
-      <a data-v="planning" onclick="go('planning')"><span class="b"></span> Planning</a>
       <a data-v="activity" onclick="go('activity')"><span class="b"></span> Activity</a>
     </div></div>
+    <div id="side-epics-box" style="display:none">
+      <div class="lbl" style="display:flex;justify-content:space-between;align-items:center">Epics
+        <span style="cursor:pointer;font-size:12px;opacity:.6" onclick="loadSideEpics()" title="refresh">↻</span></div>
+      <div class="nav" id="side-epics" style="max-height:38vh;overflow:auto"></div>
+    </div>
+    <div id="side-preview-box" style="display:none"><div class="lbl">Local preview</div>
+      <div class="nav" id="side-preview"></div></div>
     <div class="foot" id="foot">api —</div>
   </aside>
 
@@ -147,6 +154,12 @@ h2{font-size:15px;margin:0 0 10px}
     </section>
 
     <div id="prod-bar" class="prodbar" style="display:none"></div>
+
+    <section id="view-dashboard" style="display:none"><div id="pane-dashboard"></div></section>
+
+    <section id="view-inbox" style="display:none"><div id="pane-inbox"></div></section>
+
+    <section id="view-epic" style="display:none"><div id="epic-pane"></div></section>
 
     <section id="view-overview" style="display:none"><div id="pane-overview"></div></section>
 
@@ -176,13 +189,14 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-20";
+const FE_VERSION="workspace-33";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
+let EPIC_TASKS=[],EPIC_TASK_VIEW="board",EPIC_STATIONS=[],EPIC_KIND="",ARCH_OPEN=false;
 const SUBS={repository:["files","structure","analysis"],planning:["epics","backlog"],activity:["changes","history"]};
 const SUBSTATE={repository:"files",planning:"epics",activity:"changes"};
-const LOADERS={overview:loadOverview,files:loadFiles,structure:loadStructure,analysis:loadAnalysis,epics:loadEpics,backlog:loadBacklog,changes:loadChanges,history:loadHistory};
+const LOADERS={dashboard:loadDashboard,inbox:loadInbox,overview:loadOverview,files:loadFiles,structure:loadStructure,analysis:loadAnalysis,epics:loadEpics,backlog:loadBacklog,changes:loadChanges,history:loadHistory};
 
 async function api(p,opt){const r=await fetch(p,opt);const t=await r.text();try{return JSON.parse(t)}catch(e){return{error:t||("HTTP "+r.status)}}}
 function toast(m){const b=$("#banner");if(b.dataset.sticky==="1")return;b.style.display="";b.textContent=m;setTimeout(()=>{b.style.display="none"},4000)}
@@ -240,19 +254,47 @@ async function boot(){
   if(STATE.api_version&&STATE.api_version!==FE_VERSION){const b=$("#banner");b.dataset.sticky="1";b.style.display="";b.textContent="⚠ API version mismatch: frontend "+FE_VERSION+", backend "+STATE.api_version+". Обнови server.py или index.html.";}
   $("#product-sel").innerHTML=(STATE.products||[]).map(p=>'<option>'+esc(p.name)+'</option>').join("");
   CUR=(STATE.products[0]||{}).name||"";
-  go(STATE.products.length?"overview":"repos");
+  loadSideEpics();
+  window.addEventListener("hashchange",applyRoute);
+  if(!STATE.products.length){go("repos");return}
+  applyRoute();
 }
+function applyRoute(){
+  const h=(location.hash||"").replace(/^#\/?/,"");
+  const m=h.match(/^epic\/(.+)$/);
+  if(m){openEpic(decodeURIComponent(m[1]));return}
+  go(["dashboard","inbox","repository","activity","repos"].includes(h)?h:"dashboard");
+}
+function setHash(h){if((location.hash||"").replace(/^#\/?/,"")!==h)history.replaceState(null,"","#/"+h);}
 function curProduct(){return (STATE.products||[]).find(p=>p.name===CUR)||{}}
-function onProductChange(){CUR=$("#product-sel").value;go(VIEW==="repos"?"overview":VIEW)}
+function onProductChange(){CUR=$("#product-sel").value;EPIC=null;go("dashboard");loadSideEpics();}
+function sideStageCls(s){return (s==="pushed"||s==="validated"||s==="previewed")?"ok":s==="assembled"?"warn":""}
+function loadSideEpics(){
+  if(!CUR){$("#side-epics-box").style.display="none";return}
+  api("/api/epics/overview?product="+encodeURIComponent(CUR)).then(r=>{
+    const eps=(r.epics||[]);
+    const box=$("#side-epics-box");if(box)box.style.display=eps.length?"":"none";
+    const el=$("#side-epics");if(!el)return;
+    el.innerHTML=eps.map(e=>`<a onclick="openEpic('${esc(e.id)}')" title="${esc(e.request||e.id)}" style="gap:6px">
+      <span class="b"></span>
+      <span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px">${esc((e.request||e.id).slice(0,42))}</span>
+      ${e.stage?`<span class="pill ${sideStageCls(e.stage)}" style="font-size:9px;padding:1px 5px">${esc(e.stage)}</span>`:""}</a>`).join("")
+      ||'<a class="muted" style="cursor:default">— нет эпиков —</a>';
+  });
+}
+function openEpicNav(id){openEpic(id);}
+function backToDashboard(){EPIC=null;go("dashboard");}
 function go(v){VIEW=v;
   document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("on",a.dataset.v===v));
-  ["repos","overview","repository","planning","activity"].forEach(x=>{const el=$("#view-"+x);if(el)el.style.display=x===v?"":"none"});
+  ["repos","dashboard","inbox","epic","overview","repository","planning","activity"].forEach(x=>{const el=$("#view-"+x);if(el)el.style.display=x===v?"":"none"});
   const isProd=v!=="repos";
   $("#prod-nav").style.display=STATE.products.length?"":"none";
-  $("#prod-bar").style.display=isProd?"":"none";
+  $("#prod-bar").style.display=(isProd&&v!=="epic")?"":"none";
+  if(["dashboard","inbox","repository","activity","repos"].includes(v))setHash(v);
   if(v==="repos"){renderRepos();return}
+  if(v==="epic")return;
   renderProdBar();
-  if(SUBS[v])sub(v,SUBSTATE[v]);else LOADERS[v]();
+  if(SUBS[v])sub(v,SUBSTATE[v]);else if(LOADERS[v])LOADERS[v]();
 }
 function sub(view,t){SUBSTATE[view]=t;
   document.querySelectorAll("#view-"+view+" .tabs button").forEach(b=>b.classList.toggle("on",b.dataset.st===t));
@@ -260,17 +302,25 @@ function sub(view,t){SUBSTATE[view]=t;
   LOADERS[t]();
 }
 
-function renderProdBar(){
+async function renderProdBar(){
   const p=curProduct();
-  $("#prod-bar").innerHTML=`<div class="row" style="justify-content:space-between">
+  $("#prod-bar").innerHTML=`<div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
     <div><div class="rn" style="font-size:16px">${esc(p.name)}</div><div class="rp">${esc(p.repo_path||"—")}</div></div>
-    <div class="row">
+    <div class="row" id="pb-tags" style="flex-wrap:wrap;gap:6px">
       <span class="tag">${esc(p.framework||"—")}</span>
       <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
       <button class="btn sm" onclick="runAnalyze(this)">${p.has_analysis?"Re-analyze":"Analyze"}</button>
       <button class="btn ghost sm" onclick="runBaseline(this)">Baseline</button>
     </div></div>
     <div class="log" id="ws-log" style="display:none;margin-top:10px"></div>`;
+  try{
+    const op=await api("/api/repo/operational?product="+encodeURIComponent(CUR));
+    const dep=(op&&op.deployment)||{};const vals=(op&&op.validators)||[];
+    const tags=$("#pb-tags");if(!tags)return;
+    const extra=vals.map(v=>`<span class="tag">${esc(v.name)}</span>`).join("")+
+      (dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank" rel="noopener">prod ↗</a>`:"");
+    if(extra)tags.insertAdjacentHTML("afterbegin",extra);
+  }catch(e){}
 }
 
 function renderRepos(){
@@ -304,6 +354,170 @@ async function runBaseline(btn){btn.disabled=true;btn.textContent="Running…";$
   btn.disabled=false;btn.textContent="Baseline";}
 
 /* Overview */
+let WORK_TYPE="epic",INBOX=[];
+function workHint(t){return t==="bug"?"Что-то сломано: агент найдёт причину и починит сразу.":t==="task"?"Мелкая правка: агент сделает сразу, без планирования.":"Крупная фича: планирование → задачи.";}
+function setWorkType(t){WORK_TYPE=t;
+  document.querySelectorAll("#work-type button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
+  const hint=$("#work-hint");if(hint)hint.textContent=workHint(t);
+}
+async function doWork(dest,btn){
+  const req=($("#req")?.value||"").trim();if(!req){toast("Опиши задачу");return}
+  if(dest==="backlog"){
+    const r=await api("/api/inbox/add",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR,type:WORK_TYPE,text:req})});
+    if(r&&r.error){toast(r.error);return}
+    $("#req").value="";toast("Добавлено в бэклог");loadBacklogInbox();return;
+  }
+  if(WORK_TYPE==="epic"){decompose(btn);return;}
+  btn.disabled=true;btn.textContent="Создаю…";
+  const r=await api("/api/quick-task",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR,request:req,kind:WORK_TYPE})});
+  btn.disabled=false;btn.textContent="Сделать сейчас →";
+  if(r&&r.error){toast(r.error);return}
+  toast((WORK_TYPE==="bug"?"Баг":"Задача")+" создана — нажми Run");
+  loadSideEpics();if(r.epic_id)openEpic(r.epic_id);
+}
+function inboxBadge(t){return t==="bug"?'<span class="pill bad" style="font-size:10px">🐞 баг</span>':t==="epic"?'<span class="pill" style="font-size:10px">эпик</span>':'<span class="pill warn" style="font-size:10px">задача</span>';}
+function stageLabelRu(s){return {implementing:"в работе",assembled:"собран",validated:"проверен",previewed:"превью",pushed:"запушен"}[s]||s||"новый";}
+function inboxActiveRow(e){
+  return `<div class="epic-row" style="gap:8px;cursor:pointer" onclick="openEpic('${esc(e.id)}')">
+    <span class="pill ${sideStageCls(e.stage)}" style="font-size:10px">${stageLabelRu(e.stage)}</span>
+    <div class="er-t" style="flex:1">${esc((e.request||e.id||"").slice(0,100))}</div>
+    <span class="muted mono" style="font-size:10px">${esc((e.id||"").slice(0,15))}</span></div>`;
+}
+function inboxCapturedRow(i){
+  return `<div class="epic-row" style="gap:8px">
+    <span class="pill" style="font-size:10px;background:var(--panel2);color:var(--dim)">в бэклоге</span>
+    <div class="er-t" style="flex:1">${esc((i.text||"").slice(0,100))}</div>
+    <button class="btn sm" style="font-size:11px;padding:4px 9px" onclick="startBacklog('${i.id}')">Начать →</button>
+    <button class="btn ghost sm" style="font-size:11px;padding:4px 9px" onclick="delBacklog('${i.id}')">✕</button></div>`;
+}
+async function loadBacklogInbox(){
+  const el=$("#inbox-typed");if(!el)return;
+  const [inb,ov]=await Promise.all([
+    api("/api/inbox?product="+encodeURIComponent(CUR)),
+    api("/api/epics/overview?product="+encodeURIComponent(CUR))
+  ]);
+  INBOX=inb.items||[];
+  const groups={epic:{active:[],captured:[]},task:{active:[],captured:[]},bug:{active:[],captured:[]}};
+  (ov.epics||[]).forEach(e=>{const k=e.kind==="bug"?"bug":e.kind==="task"?"task":"epic";groups[k].active.push(e);});
+  INBOX.forEach(i=>{const k=(i.type==="bug"||i.type==="task"||i.type==="epic")?i.type:"task";groups[k].captured.push(i);});
+  const labels={epic:"Эпики",task:"Задачи",bug:"Баги"};
+  let h="";
+  for(const t of ["epic","task","bug"]){
+    const g=groups[t],n=g.active.length+g.captured.length;
+    h+=`<div class="card" style="margin-bottom:14px"><h2>${labels[t]} <span class="muted" style="font-weight:400">(${n})</span></h2>`;
+    if(!n)h+='<div class="muted" style="font-size:13px">Пусто.</div>';
+    else h+=g.active.map(inboxActiveRow).join("")+g.captured.map(inboxCapturedRow).join("");
+    h+="</div>";
+  }
+  el.innerHTML=h;
+}
+async function loadArchive(){
+  const el=$("#inbox-archive");if(!el)return;
+  const r=await api("/api/epics/archived?product="+encodeURIComponent(CUR));
+  const arr=r.epics||[];
+  if(!arr.length){el.innerHTML="";return;}
+  el.innerHTML=`<div class="card"><h2 style="cursor:pointer;user-select:none" onclick="toggleArchive()"><span id="arch-caret">${ARCH_OPEN?"▾":"▸"}</span> Архив (${arr.length})</h2>
+    <div id="archive-body" style="display:${ARCH_OPEN?"":"none"};margin-top:8px">`+
+    arr.map(e=>`<div class="epic-row" style="gap:8px">
+      <div class="er-t" style="flex:1">${esc((e.request||e.id||"").slice(0,100))}</div>
+      <span class="muted mono" style="font-size:10px">${esc((e.id||"").slice(0,15))}</span>
+      <button class="btn ghost sm" style="font-size:11px;padding:4px 9px" onclick="restoreEpic('${esc(e.id)}')">↩ восстановить</button></div>`).join("")+
+    `</div></div>`;
+}
+function toggleArchive(){ARCH_OPEN=!ARCH_OPEN;const b=$("#archive-body"),c=$("#arch-caret");if(b)b.style.display=ARCH_OPEN?"":"none";if(c)c.textContent=ARCH_OPEN?"▾":"▸";}
+async function startBacklog(id){
+  const it=INBOX.find(x=>x.id===id);if(!it)return;
+  if(it.type==="epic"){
+    await api("/api/inbox/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
+    loadBacklogInbox();
+    runJob("/api/decompose",{product:CUR,request:it.text},"#dlog",res=>{loadSideEpics();if(res&&res.epic_id)openEpic(res.epic_id);});
+    return;
+  }
+  const r=await api("/api/quick-task",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR,request:it.text,kind:it.type})});
+  if(r&&r.error){toast(r.error);return}
+  await api("/api/inbox/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
+  loadBacklogInbox();loadSideEpics();if(r.epic_id)openEpic(r.epic_id);
+}
+async function delBacklog(id){
+  await api("/api/inbox/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({id})});
+  loadBacklogInbox();
+}
+const DASH_COLS=[["implementing","В работе"],["assembled","Собраны"],["validated","Проверены"],["previewed","Превью"],["pushed","Запушены"]];
+function dashNext(e){
+  if(e.stage==="implementing")return (e.accepted===e.total&&e.total>0)?"Собрать ветку":"К задачам";
+  if(e.stage==="assembled")return e.validation==="failed"?"Fix build":"Validate";
+  if(e.stage==="validated")return "Preview / Push";
+  if(e.stage==="previewed")return "Push";
+  if(e.stage==="pushed")return e.pr_url?"Открыть PR":"Закрыть";
+  return "Открыть";
+}
+function dashCard(e){
+  const signal=e.validation==="failed"?'<span class="pill bad" style="font-size:9px">build failed</span>'
+    :e.preview_running?'<span class="pill ok" style="font-size:9px">preview</span>':"";
+  const prog=(e.total!=null&&e.total>0)?`<div class="muted" style="font-size:11px;margin-top:5px">${e.accepted||0}/${e.total} задач принято</div>`:"";
+  return `<div class="card" style="margin-bottom:10px;padding:12px;cursor:pointer" onclick="openEpicNav('${esc(e.id)}')">
+    <div class="er-t" style="font-size:13px;margin-bottom:7px;line-height:1.35">${esc((e.request||e.id).slice(0,72))}</div>
+    <div class="row" style="gap:6px;flex-wrap:wrap"><span class="pill ${sideStageCls(e.stage)}" style="font-size:9px">${esc(e.stage||"—")}</span>${signal}</div>
+    ${prog}
+    <button class="btn sm" style="margin-top:9px;font-size:12px;padding:7px 12px" onclick="event.stopPropagation();openEpicNav('${esc(e.id)}')">${dashNext(e)} →</button>
+  </div>`;
+}
+async function loadDashboard(){
+  const wrap=$("#pane-dashboard");wrap.innerHTML='<div class="muted">Loading…</div>';
+  const r=await api("/api/epics/overview?product="+encodeURIComponent(CUR));
+  const eps=(r.epics||[]);
+  const by={};DASH_COLS.forEach(c=>by[c[0]]=[]);
+  eps.forEach(e=>{(by[e.stage]||(by[e.stage]=[])).push(e)});
+  const failed=eps.filter(e=>e.validation==="failed").length;
+  const active=eps.filter(e=>e.stage&&e.stage!=="pushed").length;
+  let h=`<div class="eyebrow">Orchestration · ${esc(CUR)}</div><h1>Dashboard</h1>
+    <div class="note">${eps.length} эпиков · ${active} в работе · ${eps.filter(e=>e.stage==="pushed").length} запушено${failed?` · <span style="color:var(--red)">${failed} с упавшим билдом</span>`:""}</div>
+    <div id="dash-branch" class="note" style="margin-top:4px"></div>`;
+  h+='<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-top:14px;align-items:start">';
+  for(const [key,label] of DASH_COLS){
+    h+=`<div><div class="lbl" style="margin-bottom:8px">${label} <span class="muted">(${by[key].length})</span></div>`
+      +(by[key].map(dashCard).join("")||'<div class="muted" style="font-size:12px;padding:6px">—</div>')+'</div>';
+  }
+  if(!eps.length)h+='</div><div class="banner-soft" style="margin-top:14px">Пока пусто. Заведи работу в разделе <a style="cursor:pointer;color:var(--blue)" onclick="go(\'inbox\')">Бэклог</a> — там создаются эпики, задачи и баги.</div><div style="display:none">';
+  wrap.innerHTML=h+'</div>';
+  api("/api/repo/changes?product="+encodeURIComponent(CUR)).then(c=>{
+    const el=$("#dash-branch");if(!el||!c||c.exists===false||c.is_git===false)return;
+    el.innerHTML=`Текущая ветка: <span class="mono" style="color:var(--txt)">${esc(c.branch||"—")}</span> · ${c.count||0} изменений${c.count?` · <a style="cursor:pointer;color:var(--blue)" onclick="go('activity')">смотреть</a>`:""}`;
+  });
+}
+async function loadInbox(){
+  const wrap=$("#pane-inbox");if(!wrap)return;
+  wrap.innerHTML=`<div class="eyebrow">Orchestration · ${esc(CUR)}</div><h1>Бэклог</h1>
+    <div class="card" style="margin:14px 0"><h2>Новая работа</h2>
+      <div class="tabs" id="work-type" style="margin-bottom:10px">
+        <button data-t="epic" class="${WORK_TYPE==='epic'?'on':''}" onclick="setWorkType('epic')">Эпик</button>
+        <button data-t="task" class="${WORK_TYPE==='task'?'on':''}" onclick="setWorkType('task')">Задача</button>
+        <button data-t="bug" class="${WORK_TYPE==='bug'?'on':''}" onclick="setWorkType('bug')">Баг</button></div>
+      <textarea id="req" placeholder="Опиши обычным языком."></textarea>
+      <div class="row" style="margin-top:10px;gap:8px"><button class="btn" onclick="doWork('now',this)">Сделать сейчас →</button>
+        <button class="btn ghost" onclick="doWork('backlog',this)">В бэклог</button>
+        <span class="muted" id="work-hint" style="font-size:12px">${workHint(WORK_TYPE)}</span></div>
+      <div class="log" id="dlog" style="display:none;margin-top:10px"></div></div>
+    <div id="inbox-typed"></div>
+    <div id="inbox-archive" style="margin-top:18px"></div>`;
+  loadBacklogInbox();
+  loadArchive();
+}
+async function loadRepoHead(){
+  const head=$("#repo-head");if(!head)return;head.innerHTML="";
+  const p=curProduct();
+  const op=await api("/api/repo/operational?product="+encodeURIComponent(CUR));
+  const dep=(op&&op.deployment)||{};
+  const vals=(op&&op.validators)||[];
+  head.innerHTML=`<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
+    <div><div class="rn" style="font-size:15px">${esc(p.name)}</div><div class="rp mono" style="font-size:12px">${esc(p.repo_path||"—")}</div></div>
+    <div class="row" style="gap:6px;flex-wrap:wrap">
+      <span class="tag">${esc(p.framework||"—")}</span>
+      ${vals.map(v=>`<span class="tag">${esc(v.name)}</span>`).join("")}
+      <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
+      ${dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank" rel="noopener">prod ↗</a>`:""}
+    </div></div></div>`;
+}
 async function loadOverview(){
   $("#pane-overview").innerHTML='<div class="muted">Loading…</div>';
   const o=await api("/api/overview?product="+encodeURIComponent(CUR));
@@ -317,8 +531,13 @@ async function loadOverview(){
     `<div class="s"><div class="n">${o.runs}</div><div class="k">runs</div></div>`+
     `<div class="s"><div class="n" style="color:var(--${blCls==='ok'?'teal':blCls==='bad'?'red':'dim'})">${o.baseline||"—"}</div><div class="k">baseline</div></div>`+
     `<div class="s"><div class="n">${o.analysis_exists?"✓":"—"}</div><div class="k">analyzed</div></div>`+'</div>';
-  h+='<div class="card" style="margin-bottom:14px"><h2>Epics by status</h2><div class="row">'+Object.entries(o.epics_by_status||{}).map(([k,v])=>`<span class="pill ${statusCls(k)}">${esc(k)} · ${v}</span>`).join("")+'</div></div>';
-  h+='<div class="card" style="margin-bottom:14px"><h2>Tasks by status</h2><div class="row">'+Object.entries(o.tasks_by_status||{}).map(([k,v])=>`<span class="pill ${statusCls(k)}">${esc(k)} · ${v}</span>`).join("")+'</div></div>';
+  const stg=o.epics_by_stage||{};
+  h+='<div class="card" style="margin-bottom:14px"><h2>Конвейер эпиков</h2><div class="row" style="gap:8px;flex-wrap:wrap">'+
+    DASH_COLS.map(([k,lb])=>`<span class="pill ${sideStageCls(k)}">${lb} · ${stg[k]||0}</span>`).join("")+
+    '</div><div class="muted" style="font-size:12px;margin-top:8px">Открой <a style="cursor:pointer;color:var(--blue)" onclick="go(\'dashboard\')">Dashboard</a>, чтобы вести эпики по стадиям.</div></div>';
+  h+='<div class="card" style="margin-bottom:14px"><h2>Здоровье продукта</h2><div class="row" style="gap:8px;flex-wrap:wrap">'+
+    `<span class="pill ${blCls}">baseline: ${o.baseline||"—"}</span>`+
+    Object.entries(o.tasks_by_status||{}).map(([k,v])=>`<span class="pill ${statusCls(k)}">${esc(k)} · ${v}</span>`).join("")+'</div></div>';
   if(dep.provider||dep.production_url){h+='<div class="card"><h2>Operational</h2><div class="row">'+(dep.provider?`<span class="tag">deploy: ${esc(dep.provider)}</span>`:"")+(dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank">${esc(dep.production_url)}</a>`:"")+(op.validators||[]).map(v=>`<span class="tag">${esc(v.name)}</span>`).join("")+'</div></div>';}
   $("#pane-overview").innerHTML=h;
 }
@@ -348,10 +567,19 @@ async function loadStructure(){$("#pane-structure").innerHTML='<div class="muted
   if(s.error){$("#pane-structure").innerHTML='<div class="empty">'+esc(s.error)+'</div>';return}
   if(s.exists===false){$("#pane-structure").innerHTML='<div class="banner-soft">Repository path not found: <span class="mono">'+esc(s.repo)+'</span>. Проверь путь в Repositories → Connect.</div>';return}
   if(s.is_empty){$("#pane-structure").innerHTML='<div class="banner-soft">No recognizable app structure yet. Дерево файлов доступно во вкладке Files.</div>';return}
-  let h='<div class="note">'+s.file_count+' files · '+(s.analysis_exists?"analyzed":"not analyzed")+'</div><div class="card" style="margin-bottom:14px"><h2>Categories</h2>';
-  const c=s.categories||{};for(const k of Object.keys(c))h+='<div class="cat"><h3>'+esc(k)+' ('+c[k].length+')</h3>'+c[k].slice(0,40).map(f=>'<div class="fl">'+esc(f)+'</div>').join("")+'</div>';
-  h+='</div><div class="card"><h2>Hot modules</h2><div class="muted" style="font-size:12px;margin-bottom:8px">Most-imported internal modules</div>';
-  const hot=s.hot_modules||[];h+=hot.length?hot.map(m=>'<div class="fl">'+esc(m.module)+' <span class="muted">· '+m.count+'</span></div>').join(""):'<div class="muted">No internal imports detected.</div>';
+  let h='<div class="note">'+s.file_count+' files · '+(s.analysis_exists?"analyzed":"not analyzed")+'</div>';
+  const cats=Object.entries(s.categories||{}).sort((a,b)=>b[1].length-a[1].length);
+  h+='<div style="column-width:300px;column-gap:12px;margin-bottom:14px">';
+  for(const [k,arr] of cats){
+    h+=`<div class="card" style="padding:12px 14px;break-inside:avoid;margin:0 0 12px;display:inline-block;width:100%;box-sizing:border-box"><div class="lbl" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span style="color:var(--amber)">${esc(k)}</span><span class="muted">${arr.length}</span></div>`+
+      `<div style="max-height:230px;overflow:auto;display:flex;flex-direction:column;gap:1px">`+
+      arr.map(f=>'<div class="fl" style="font-size:12px">'+esc(f)+'</div>').join("")+`</div></div>`;
+  }
+  h+='</div>';
+  const merged={};(s.hot_modules||[]).forEach(m=>{const name=(m.module||"").replace(/^(\.\.?\/)+/,"").replace(/\.(jsx?|tsx?)$/,"");if(name)merged[name]=(merged[name]||0)+(m.count||0);});
+  const hot=Object.entries(merged).sort((a,b)=>b[1]-a[1]).slice(0,12);
+  h+='<div class="card"><h2>Часто импортируемые модули</h2><div class="muted" style="font-size:12px;margin-bottom:10px">Файлы, которые импортируются чаще всего — «ядро» кодовой базы. Их правки задевают многое, поэтому менять их рискованнее (полезно знать перед декомпозицией).</div>';
+  h+=hot.length?'<div style="display:flex;flex-direction:column;gap:2px">'+hot.map(([m,c])=>`<div class="fl" style="font-size:13px;display:flex;justify-content:space-between"><span class="mono">${esc(m)}</span><span class="muted">${c} импортов</span></div>`).join("")+'</div>':'<div class="muted">Внутренних импортов не обнаружено.</div>';
   $("#pane-structure").innerHTML=h+'</div>';}
 
 /* Analysis */
@@ -414,9 +642,9 @@ async function toggleArchived(btn){const box=$("#archived-list");
   const r=await api("/api/epics/archived?product="+encodeURIComponent(CUR));const ep=r.epics||[];
   box.innerHTML='<div class="note" style="margin-top:6px">Archived ('+ep.length+')</div>'+(ep.length?ep.map(e=>`<div class="epic-row" style="opacity:.7;cursor:default"><div class="er-t">${esc(e.request||e.id)}</div><span class="pill">${esc(e.status||"—")}</span><button class="btn ghost sm" onclick="restoreEpic('${esc(e.id)}')">Restore</button><button class="btn ghost sm" onclick="deleteEpic('${esc(e.id)}')">Delete</button></div>`).join(""):'<div class="muted">Nothing archived.</div>');
 }
-async function archiveEpic(id){const r=await api("/api/epic/archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Archived");loadEpics();}
-async function restoreEpic(id){const r=await api("/api/epic/restore",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Restored");loadEpics();}
-async function deleteEpic(id){if(!confirm("Delete this epic permanently?"))return;const r=await api("/api/epic/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Deleted");loadEpics();}
+async function archiveEpic(id){const r=await api("/api/epic/archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Archived");backToDashboard();loadSideEpics();}
+async function restoreEpic(id){const r=await api("/api/epic/restore",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Restored");backToDashboard();loadSideEpics();}
+async function deleteEpic(id){if(!confirm("Delete this epic permanently?"))return;const r=await api("/api/epic/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Deleted");backToDashboard();loadSideEpics();}
 async function decompose(btn){const req=$("#req").value.trim();if(!req){toast("Опиши запрос");return}
   btn.disabled=true;btn.textContent="Running…";
   runJob("/api/decompose",{product:CUR,request:req},"#dlog",res=>{
@@ -424,33 +652,179 @@ async function decompose(btn){const req=$("#req").value.trim();if(!req){toast("�
     if(res&&res.epic_id)setTimeout(()=>openEpic(res.epic_id),300);
   });}
 async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent(id));if(d.error||!d.summary){toast("Epic not found");return}EPIC=id;
-  $("#plan-list").style.display="none";const box=$("#plan-detail");box.style.display="";const s=d.summary,na=d.next_action||{};
-  const rail=(d.stations||[]).map(st=>`<div class="station ${st.status||""}"><div class="s-st">${esc(st.status||"")}</div><div class="s-lb">${esc(st.label)}</div></div>`).join("");
+  VIEW="epic";document.querySelectorAll(".nav a").forEach(a=>a.classList.remove("on"));
+  ["repos","dashboard","epic","overview","repository","planning","activity"].forEach(x=>{const el=$("#view-"+x);if(el)el.style.display=x==="epic"?"":"none"});
+  $("#prod-nav").style.display=STATE.products.length?"":"none";$("#prod-bar").style.display="none";
+  setHash("epic/"+encodeURIComponent(id));
+  const box=$("#epic-pane");const s=d.summary,na=d.next_action||{};
+  EPIC_STATIONS=d.quick?[]:(d.stations||[]);EPIC_KIND=d.kind||"";
+  const quickBadge=d.kind==="bug"?'<span class="pill bad">🐞 баг</span>':d.quick?'<span class="pill" style="background:#3a2d10;color:var(--amber)">⚡ задача</span>':"";
   let action="";
   if(na.id==="approve_product")action=`<button class="btn" onclick="approve('product','${esc(id)}',this)">Approve → Feature spec</button> <span class="muted" style="font-size:12px">${esc(na.agent||"")}, ~30–60s</span>`;
   else if(na.id==="approve_spec")action=`<button class="btn" onclick="approve('spec','${esc(id)}',this)">Approve → Backlog tasks</button> <span class="muted" style="font-size:12px">${esc(na.agent||"")}, ~30–60s</span>`;
   else if(na.id==="decompose")action=`<button class="btn" onclick="approve('product','${esc(id)}',this)">Run Product Agent</button>`;
-  else if(na.id==="execute")action=`<div class="banner-soft">Planning complete — эпик готов к имплементации (этап появится позже, код не трогаем).</div>`;
-  const tasks=(d.tasks||[]).length?'<div class="card" style="margin-bottom:14px"><h2>Tasks ('+d.tasks.length+')</h2>'+d.tasks.map(t=>`<div class="epic-row" style="cursor:default"><div class="er-t">${esc(t.title||t.file)}</div><span class="pill ${statusCls(t.status)}">${esc(t.status||"—")}</span>${t.run?`<span class="muted mono" style="font-size:11px">${esc(t.run)}</span>`:""}${t.pr?`<a class="btn ghost sm" href="${esc(t.pr)}" target="_blank">PR ↗</a>`:""}</div>`).join("")+'</div>':"";
+  else if(na.id==="execute")action=`<div class="banner-soft">${d.quick?"Быстрая задача — нажми <b>Run</b> на задаче ниже, затем собери ветку и Validate.":"Планирование завершено — выполняй задачи ниже и собирай ветку эпика."}</div>`;
+  EPIC_TASKS=d.tasks||[];
+  const taskPanel=(d.tasks||[]).length?`<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Tasks (${d.tasks.length})</h2>
+    <div class="row" style="gap:10px;align-items:center"><button class="btn sm" style="font-size:12px" onclick="etaskRunReady()" title="Запустить все todo с принятыми зависимостями">Run all ready</button>
+    <div class="tabs" id="etask-tabs" style="margin:0"><button data-tv="graph" onclick="renderEpicTasks('graph')">Граф</button><button data-tv="board" onclick="renderEpicTasks('board')">Доска</button><button data-tv="list" onclick="renderEpicTasks('list')">Список</button></div></div></div>
+    <div id="etask-body" style="margin-top:12px"></div>
+    <div class="log" id="etasklog" style="display:none;margin-top:12px"></div></div>`:"";
   const order=["product-spec.md","feature-spec.md","decomposition.md","acceptance-scenarios.md","epic.md"];
   const rank=n=>{const i=order.indexOf(n);if(i>=0)return i;if(/^task-\d+\.md$/.test(n))return 50;return 80};
   const arts=(d.artifacts||[]).slice().filter(a=>!/^task-\d+\.md$/.test(a.name)).sort((a,b)=>rank(a.name)-rank(b.name)||a.name.localeCompare(b.name));
   const artList=arts.length?arts.map(a=>`<div class="trow" id="art-${esc(a.name)}" onclick="viewArtifact('${esc(id)}','${esc(a.name)}',this)" style="flex-direction:column;align-items:flex-start;gap:1px"><span>${esc(a.name)}</span>${artLabel(a.name)?`<span class="muted" style="font-size:10.5px;font-family:var(--ui)">${esc(artLabel(a.name))}</span>`:""}</div>`).join(""):'<div class="muted" style="padding:8px">Not produced yet.</div>';
-  box.innerHTML=`<div class="row" style="margin-bottom:12px;justify-content:space-between"><div class="row"><button class="btn ghost sm" onclick="loadEpics()">← Epics</button><span class="pill ${statusCls(s.status)}">${esc(s.status||"—")}</span></div>
+  box.innerHTML=`<div class="row" style="margin-bottom:12px;justify-content:space-between"><div class="row"><button class="btn ghost sm" onclick="backToDashboard()">← Dashboard</button>${quickBadge}<span class="pill ${statusCls(s.status)}">${esc(s.status||"—")}</span></div>
     <div class="row"><button class="btn ghost sm" onclick="archiveEpic('${esc(id)}')">Archive</button><button class="btn ghost sm" onclick="deleteEpic('${esc(id)}')">Delete</button></div></div>
-    <h1 style="font-size:18px;margin-bottom:6px">${esc(s.request||id)}</h1><div class="note">${esc(id)}</div>
-    <div class="rail">${rail}</div>
+    <h1 style="font-size:18px;margin-bottom:6px">${esc(s.request||id)}</h1><div class="note">${esc(CUR)} › ${esc(id)}</div>
+    <div class="rail" id="epic-rail"></div>
     <div class="card" style="margin-bottom:14px"><h2>Next</h2>${action||'<div class="muted">—</div>'}<div class="log" id="alog" style="display:none;margin-top:10px"></div></div>
     <div class="card" style="margin-bottom:14px"><h2>Execution · <span class="mono" style="font-size:12px">${esc(epicBranch(id))}</span></h2>
       <div id="exec-gate" style="margin-bottom:8px"><span class="muted">checking…</span></div>
       <div class="row"><span id="exec-build"></span>
       <button class="btn ghost sm" onclick="resetEpicRuns('${esc(id)}')">Restart by DAG</button>
-      <span class="muted" style="font-size:12px">Сборка = cherry-pick принятых задач по DAG. Без агента, main не трогается, без PR.</span></div>
+      <span class="muted" style="font-size:12px">Сборка = задачи по DAG поверх зависимостей. Без агента, main не трогается, без PR.</span></div>
       <div class="log" id="epiclog" style="display:none;margin-top:10px"></div></div>
-    ${tasks}
+    ${taskPanel}
     <div class="card"><h2>Artifacts</h2><div class="split"><div class="tree" id="artlist">${artList}</div><div class="viewer" id="aview"><div class="vh">select an artifact</div></div></div></div>`;
   if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));
+  renderEpicTasks(EPIC_TASK_VIEW);
+  renderEpicRail(id,null);
   refreshExecGate(id);}
+function renderEpicRail(id,st){
+  const el=$("#epic-rail");if(!el)return;
+  const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",pushed:"Pushed"};
+  const plan=(EPIC_STATIONS||[]).filter(x=>x.label!=="Execute & verify");
+  let html=plan.map(x=>`<div class="station ${x.status||""}"><div class="s-st">${esc(x.status||"")}</div><div class="s-lb">${esc(x.label)}</div></div>`).join("");
+  if(st){
+    const stages=st.stages||["implementing","assembled","validated","previewed","pushed"];
+    const ci=stages.indexOf(st.stage);
+    html+=stages.map((sname,i)=>{const cls=i<ci?"done":i===ci?"active":"";return `<div class="station ${cls}"><div class="s-st">${cls}</div><div class="s-lb">${esc(labels[sname]||sname)}</div></div>`}).join("");
+  }
+  el.innerHTML=html;
+}
+function renderEpicTasks(view){
+  EPIC_TASK_VIEW=view||EPIC_TASK_VIEW||"graph";
+  document.querySelectorAll("#etask-tabs button").forEach(b=>b.classList.toggle("on",b.dataset.tv===EPIC_TASK_VIEW));
+  const el=$("#etask-body");if(!el)return;
+  const t=EPIC_TASKS||[];
+  el.innerHTML=EPIC_TASK_VIEW==="graph"?drawDag(t):EPIC_TASK_VIEW==="board"?epicMiniBoard(t):epicTaskList(t);
+}
+function etaskReady(t){
+  if(t.eff_status&&t.eff_status!=="todo"&&t.eff_status!=="failed")return false;
+  const byNum={};(EPIC_TASKS||[]).forEach(x=>byNum[x.num]=x);
+  return (t.depends_on||[]).every(n=>{const d=byNum[n];return d&&(d.eff_status==="accepted"||d.eff_status==="done")});
+}
+function etaskActions(t){
+  const f=esc(t.file),s=t.eff_status||"todo";
+  const reset=`<button class="btn ghost sm" style="font-size:11px;padding:4px 9px" onclick="event.stopPropagation();etaskReset('${f}')" title="Сбросить прогон и вернуть в todo">↩ todo</button>`;
+  const run=l=>`<button class="btn sm" style="font-size:11px;padding:4px 9px" onclick="event.stopPropagation();etaskRun('${f}')">${l} →</button>`;
+  const runDis=`<button class="btn sm" disabled style="font-size:11px;padding:4px 9px" title="ждёт зависимости">Run →</button>`;
+  const accept=`<button class="btn sm" style="font-size:11px;padding:4px 9px" onclick="event.stopPropagation();etaskAccept('${f}')">Accept ✓</button>`;
+  const showlog=`<button class="btn ghost sm" style="font-size:11px;padding:4px 9px" onclick="event.stopPropagation();etaskRun('${f}')" title="Показать живой лог прогона">лог</button>`;
+  if(s==="running")return `<span class="pill warn" style="font-size:10px">running…</span> ${showlog} ${reset}`;
+  if(s==="implemented"||s==="no_changes")return `${accept} ${run("Re-run")} ${reset}`;
+  if(s==="accepted"||s==="done")return reset;
+  if(s==="failed")return `${etaskReady(t)?run("Re-run"):runDis} ${reset}`;
+  return etaskReady(t)?run("Run"):runDis;
+}
+async function refreshEpicTasks(){
+  if(!EPIC)return;
+  const d=await api("/api/epic?id="+encodeURIComponent(EPIC));
+  if(d&&d.tasks){EPIC_TASKS=d.tasks;renderEpicTasks(EPIC_TASK_VIEW);}
+  refreshExecGate(EPIC);loadSideEpics();
+}
+let _etaskTimer=null;
+function _etaskPoll(){
+  if(_etaskTimer)return;
+  _etaskTimer=setInterval(async()=>{
+    await refreshEpicTasks();
+    if(!(EPIC_TASKS||[]).some(t=>t.eff_status==="running")){clearInterval(_etaskTimer);_etaskTimer=null;}
+  },3000);
+}
+async function etaskRun(file){
+  renderEpicTasks(EPIC_TASK_VIEW);
+  runJob("/api/task/run",{epic_id:EPIC,task_file:file},"#etasklog",res=>{
+    if(res&&res.error)toast(res.error);
+    else if(res&&res.state==="no_changes")toast("Агент не внёс изменений — см. лог");
+    else toast("Задача завершена");
+    refreshEpicTasks();
+  });
+  setTimeout(refreshEpicTasks,700);
+}
+async function etaskRunQuiet(file){
+  const r=await api("/api/task/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:EPIC,task_file:file})});
+  if(r&&r.error){toast(r.error);return}
+  setTimeout(refreshEpicTasks,700);_etaskPoll();
+}
+async function etaskAccept(file){
+  const r=await api("/api/task/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:EPIC,task_file:file})});
+  if(r&&r.error){toast(r.error);return}
+  toast("Accepted — зависимые разблокированы");refreshEpicTasks();
+}
+async function etaskReset(file){
+  if(!confirm("Вернуть задачу в todo? Сбросит прогон, снимет подвисший статус и удалит её ветку — потом перезапустишь начисто. Остальной эпик не трогается."))return;
+  const r=await api("/api/task/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:EPIC,task_file:file})});
+  if(r&&r.error){toast(r.error);return}
+  toast("Возвращена в todo"+(r.deleted_branch?" · ветка удалена":""));refreshEpicTasks();
+}
+function etaskRunReady(){
+  const ready=(EPIC_TASKS||[]).filter(etaskReady);
+  if(!ready.length){toast("Нет готовых задач (todo с принятыми зависимостями)");return}
+  if(ready.length===1){etaskRun(ready[0].file);return}
+  if(!confirm("Запустить все готовые ("+ready.length+")? Каждая — свой worktree поверх зависимостей, main не трогается. Лог будет общим — следи по доске."))return;
+  ready.forEach((t,i)=>setTimeout(()=>etaskRunQuiet(t.file),i*250));
+}
+function taskColor(s){return (s==="done"||s==="accepted")?"var(--teal)":s==="running"?"var(--amber)":s==="failed"?"var(--red)":s==="implemented"?"var(--blue)":"var(--faint)"}
+function shortTitle(t){return (t.title||t.file).replace(/^Task\s*\d+\s*[—-]\s*/,"")}
+function epicTaskList(tasks){
+  return tasks.map(t=>`<div class="epic-row" style="cursor:pointer;gap:8px" onclick="viewArtifact('${esc(EPIC)}','${esc(t.file)}',null)">
+    <div class="er-t" style="flex:1">#${t.num} ${esc(shortTitle(t))}</div>
+    ${(t.depends_on&&t.depends_on.length)?`<span class="muted mono" style="font-size:10px">deps ${t.depends_on.map(n=>"#"+n).join(",")}</span>`:""}
+    <span class="pill ${statusCls(t.eff_status)}">${esc(t.eff_status||"todo")}</span>
+    ${etaskActions(t)}
+    ${t.pr?`<a class="btn ghost sm" href="${esc(t.pr)}" target="_blank" onclick="event.stopPropagation()">PR ↗</a>`:""}</div>`).join("");
+}
+function epicMiniBoard(tasks){
+  const cols=[["todo","Todo"],["running","Running"],["implemented","Review"],["done","Done"]];
+  const colOf=t=>{const s=t.eff_status;return (s==="accepted"||s==="done")?"done":s==="running"?"running":(s==="implemented"||s==="no_changes")?"implemented":s==="failed"?"running":"todo"};
+  const by={todo:[],running:[],implemented:[],done:[]};tasks.forEach(t=>by[colOf(t)].push(t));
+  return '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px">'+cols.map(([k,lb])=>
+    `<div><div class="lbl" style="margin-bottom:6px">${lb} <span class="muted">(${by[k].length})</span></div>`
+    +(by[k].map(t=>`<div class="card" style="padding:9px;margin-bottom:6px;font-size:12px;border-left:3px solid ${taskColor(t.eff_status)}">
+      <div style="cursor:pointer;margin-bottom:7px" onclick="viewArtifact('${esc(EPIC)}','${esc(t.file)}',null)">#${t.num} ${esc(shortTitle(t).slice(0,30))}</div>
+      <div class="row" style="gap:5px;flex-wrap:wrap">${etaskActions(t)}</div></div>`).join("")||'<div class="muted" style="font-size:11px">—</div>')
+    +'</div>').join("")+'</div>';
+}
+function drawDag(tasks){
+  if(!tasks.length)return '<div class="muted" style="padding:12px">Нет задач.</div>';
+  const byNum={};tasks.forEach(t=>byNum[t.num]=t);
+  const depth={};
+  function dep(n,seen){if(depth[n]!=null)return depth[n];if(seen.has(n))return 0;seen.add(n);
+    const ds=(byNum[n].depends_on||[]).filter(x=>byNum[x]);
+    const v=ds.length?1+Math.max(...ds.map(x=>dep(x,seen))):0;depth[n]=v;return v;}
+  tasks.forEach(t=>dep(t.num,new Set()));
+  const layers={};tasks.forEach(t=>{(layers[depth[t.num]]||(layers[depth[t.num]]=[])).push(t)});
+  const maxd=Math.max(...Object.keys(layers).map(Number));
+  const colW=210,rowH=66,padX=16,padY=16,nodeW=178,nodeH=46;
+  const maxRows=Math.max(...Object.values(layers).map(a=>a.length));
+  const W=padX*2+(maxd+1)*colW-(colW-nodeW),H=padY*2+maxRows*rowH;
+  const pos={};
+  for(let d=0;d<=maxd;d++){(layers[d]||[]).forEach((t,i)=>{pos[t.num]={x:padX+d*colW,y:padY+i*rowH}})}
+  let edges="",nodes="";
+  tasks.forEach(t=>(t.depends_on||[]).forEach(dp=>{if(!pos[dp]||!pos[t.num])return;const a=pos[dp],b=pos[t.num];
+    edges+=`<path d="M ${a.x+nodeW} ${a.y+nodeH/2} C ${a.x+nodeW+30} ${a.y+nodeH/2}, ${b.x-30} ${b.y+nodeH/2}, ${b.x} ${b.y+nodeH/2}" fill="none" stroke="var(--line2)" stroke-width="1.5" marker-end="url(#arr)"/>`;}));
+  tasks.forEach(t=>{const p=pos[t.num],col=taskColor(t.eff_status);
+    nodes+=`<g style="cursor:pointer" onclick="viewArtifact('${esc(EPIC)}','${esc(t.file)}',null)">
+      <rect x="${p.x}" y="${p.y}" width="${nodeW}" height="${nodeH}" rx="9" fill="var(--panel)" stroke="${col}" stroke-width="1.5"/>
+      <circle cx="${p.x+15}" cy="${p.y+nodeH/2}" r="5" fill="${col}"/>
+      <text x="${p.x+28}" y="${p.y+19}" fill="var(--txt)" font-size="11" font-family="var(--ui)">#${t.num}</text>
+      <text x="${p.x+28}" y="${p.y+34}" fill="var(--dim)" font-size="10" font-family="var(--ui)">${esc(shortTitle(t).slice(0,21))}</text></g>`;});
+  return `<div style="overflow:auto;padding-bottom:4px"><svg width="${W}" height="${H}" xmlns="http://www.w3.org/2000/svg" style="min-width:100%">
+    <defs><marker id="arr" markerWidth="9" markerHeight="9" refX="7" refY="4.5" orient="auto"><path d="M0,0 L9,4.5 L0,9 z" fill="var(--line2)"/></marker></defs>
+    ${edges}${nodes}</svg>
+    <div class="muted" style="font-size:11px;margin-top:4px">Узлы кликабельны · цвет = статус (серый todo · синий implemented · жёлтый running · зелёный done/accepted · красный failed)</div></div>`;
+}
 async function refreshExecGate(id){
   const st=await api("/api/epic/stage?epic_id="+encodeURIComponent(id));
   const g=$("#exec-gate"),b=$("#exec-build");if(!g||!b)return;
@@ -460,31 +834,15 @@ async function refreshExecGate(id){
   let val="";
   if(st.validation==="passed")val=' <span class="pill ok">tsc+build ✓</span>';
   else if(st.validation==="failed")val=' <span class="pill bad">build FAILED</span>';
-  let previewRow="";
-  if(st.assembled){
-    const purl=st.preview_url||("http://localhost:"+st.preview_port);
-    if(st.preview_running){
-      previewRow=`<div class="row" style="margin-top:10px;gap:8px;align-items:center">`
-        +`<span class="muted" style="font-size:12px">Preview:</span>`
-        +`<span class="pill ok">running</span>`
-        +`<a class="btn ghost sm" href="${esc(purl)}" target="_blank" rel="noopener" style="font-size:13px;padding:8px 14px">Открыть ${esc(purl)}</a>`
-        +`<button class="btn ghost sm" style="font-size:13px;padding:8px 14px" onclick="stopPreview('${esc(id)}')">Stop</button>`
-        +`<span class="muted" style="font-size:12px">тест-логин <b>admin</b> / <b>admin</b></span></div>`;
-      startPreviewPoll(id);
-    }else{
-      previewRow=`<div class="row" style="margin-top:10px;gap:8px;align-items:center">`
-        +`<span class="muted" style="font-size:12px">Preview:</span>`
-        +`<button class="btn sm" style="font-size:13px;padding:8px 14px" onclick="startPreview('${esc(id)}',this)">Start preview (:3100)</button>`
-        +`<span class="muted" style="font-size:12px">поднять localhost ветки эпика — в любой момент</span></div>`;
-    }
-  }
+  const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
     releasedInfo=st.pr_url
       ?`<div style="margin-top:8px"><a class="pill ok" href="${esc(st.pr_url)}" target="_blank" rel="noopener">Pushed → открыть PR (мержишь сам)</a></div>`
       :`<div style="margin-top:8px"><span class="pill ok">Pushed в origin</span> <span class="muted" style="font-size:12px">— открой PR на GitHub и смержи сам</span></div>`;
   }
-  g.innerHTML=stageRail(st)+gate+val+previewRow+releasedInfo;
+  g.innerHTML=gate+val+releasedInfo;
+  renderEpicRail(id,st);
   const assembleBtn=st.buildable
     ?`<button class="btn" onclick="buildEpic('${esc(id)}',this)">${st.assembled?"Пересобрать ветку":"Собрать ветку эпика"} →</button>`
     :`<button class="btn" disabled title="Сначала прими все задачи на доске">Собрать ветку эпика →</button>`;
@@ -501,6 +859,16 @@ async function refreshExecGate(id){
     ?` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="viewFixDiff('${esc(id)}')">Дифф фикса</button>`
     :"";
   let flow="";
+  if(st.validated){
+    if(st.preview_running){
+      flow+=` <span class="pill ok" style="font-size:11px">preview</span>`
+        +` <a class="btn ghost sm" href="${esc(purl)}" target="_blank" rel="noopener" style="font-size:13px;padding:10px 15px">Открыть ${esc(purl)}</a>`
+        +` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="stopPreview('${esc(id)}')">Stop preview</button>`;
+      startPreviewPoll(id);
+    }else if(!st.pushed){
+      flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="startPreview('${esc(id)}',this)">Preview (:3100) →</button>`;
+    }
+  }
   if(st.validated&&!st.previewed&&!st.pushed){
     flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="markPreviewed('${esc(id)}')">Отметить Previewed →</button>`;
   }
@@ -511,10 +879,12 @@ async function refreshExecGate(id){
     flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
   }
   if(st.pushed){
-    flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="closeEpic('${esc(id)}')">Закрыть эпик (в архив)</button>`
+    const closeLabel=EPIC_KIND==="bug"?"Закрыть баг (в архив)":EPIC_KIND==="task"?"Закрыть задачу (в архив)":"Закрыть эпик (в архив)";
+    flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="closeEpic('${esc(id)}')">${closeLabel}</button>`
         +` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
   }
   b.innerHTML=assembleBtn+" "+validateBtn+fixBtn+fixDiffBtn+flow;
+  loadSideEpics();
 }
 function stageRail(st){
   const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",pushed:"Pushed"};
@@ -693,17 +1063,26 @@ async function openTask(epicId,file){
   const canRun=!run.state||run.state==="failed"||run.state==="no_changes"||run.state==="implemented";
   const runBtn=canRun?`<button class="btn ghost sm" onclick="runTask('${esc(epicId)}','${esc(file)}');setTimeout(()=>openTask('${esc(epicId)}','${esc(file)}'),400)">${run.state?"Re-run":"Run"} →</button>`:'<span class="pill warn">running…</span>';
   const acceptBtn=(run.state==="implemented"||run.state==="no_changes")?`<button class="btn sm" onclick="acceptTask('${esc(epicId)}','${esc(file)}')">Accept ✓</button>`:(run.state==="accepted"?'<span class="pill ok">accepted</span>':"");
+  const resetBtn=run.state?`<button class="btn ghost sm" onclick="resetTask('${esc(epicId)}','${esc(file)}')" title="Сбросить прогон и удалить ветку задачи — можно перезапустить начисто">Вернуть в todo</button>`:"";
   let res="";
   if(run.state==="implemented")res=`<div class="card" style="margin:12px 0"><h2>Result · ${changed.length} file(s) on <span class="mono">${esc(run.branch||"")}</span></h2>
     <div class="split"><div class="tree" id="tfiles">${changed.map(f=>`<div class="filerow" onclick="taskDiff('${esc(epicId)}','${esc(file)}','${esc(f)}',this)">${esc(f)}</div>`).join("")}</div>
     <div class="viewer" id="tdiff"><div class="vh">select a file</div></div></div></div>`;
   else if(run.state==="no_changes")res='<div class="banner-soft" style="margin:12px 0">Агент отработал, но изменений в коде не внёс. Возможно, задача уже выполнена или требует уточнения — посмотри текст задачи ниже.</div>';
   else if(run.state==="failed")res='<div class="banner-soft" style="margin:12px 0;border-color:#5a2026;color:#f3a3aa">Прогон упал: '+esc(run.error||"unknown")+'</div>';
-  box.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><button class="btn ghost sm" onclick="backToBoard()">← Board</button><div class="row">${acceptBtn}${runBtn}</div></div>
+  box.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><button class="btn ghost sm" onclick="backToBoard()">← Board</button><div class="row">${resetBtn}${acceptBtn}${runBtn}</div></div>
     <h1 style="font-size:17px">${esc((d.task&&d.task.title)||file)}</h1>
     <div class="note">${esc(epicId)} / ${esc(file)}</div>
     ${res}
     <div class="card md" style="margin-top:12px">${mdToHtml(d.content||"")}</div>`;
+}
+async function resetTask(epicId,file){
+  if(!confirm("Вернуть задачу в todo? Сбросит прогон, снимет подвисший статус и удалит её ветку — потом можно перезапустить начисто. Остальной эпик не трогается."))return;
+  const r=await api("/api/task/reset",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:epicId,task_file:file})});
+  if(r&&r.error){toast(r.error);return}
+  toast("Задача возвращена в todo"+(r.deleted_branch?" · ветка удалена":""));
+  openTask(epicId,file);
+  if(typeof loadSideEpics==="function")loadSideEpics();
 }
 async function acceptTask(epicId,file){
   const r=await api("/api/task/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:epicId,task_file:file})});
@@ -720,9 +1099,9 @@ function buildEpic(id,btn){
   runJob("/api/epic/build",{epic_id:id},"#epiclog",res=>{
     btn.disabled=false;btn.textContent="Собрать ветку эпика →";
     if(res&&res.ok)toast("Собрано на "+(res.branch||"")+" — "+(res.applied||0)+" задач");
-    else if(res&&res.conflict_task)toast("Конфликт на "+res.conflict_task+" — нужно разрулить");
+    else if(res&&res.conflict_task)toast("Конфликт на "+res.conflict_task+" — причина в логе ниже");
     else if(res&&res.error)toast(res.error);
-    setTimeout(()=>openEpic(id),300);
+    refreshExecGate(id);refreshEpicTasks();
   });
 }
 function resetEpicRuns(id){
@@ -741,7 +1120,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,loadRepoHead,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>
