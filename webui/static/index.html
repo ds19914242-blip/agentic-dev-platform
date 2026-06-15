@@ -6,9 +6,9 @@
 <title>Agentic Console</title>
 <style>
 :root{
-  --bg:#0b0e14; --panel:#11151f; --panel2:#0d1117; --line:#1e2530; --line2:#2a3340;
-  --txt:#e6edf3; --dim:#9aa7b4; --faint:#5b6675;
-  --amber:#f5a524; --teal:#2dd4bf; --red:#f0626e; --blue:#5b9dff;
+  --bg:#0b0e14;--panel:#11151f;--panel2:#0d1117;--line:#1e2530;--line2:#2a3340;
+  --txt:#e6edf3;--dim:#9aa7b4;--faint:#5b6675;
+  --amber:#f5a524;--teal:#2dd4bf;--red:#f0626e;--blue:#5b9dff;
   --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
@@ -19,13 +19,13 @@ button{font-family:var(--ui);cursor:pointer}
 .mono{font-family:var(--mono)}
 #banner{display:none;background:#3a2e0a;color:#f5d990;border-bottom:1px solid #5a4a12;padding:8px 16px;font-size:13px}
 .app{display:grid;grid-template-columns:248px 1fr;min-height:100vh}
-.side{background:var(--panel2);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:18px}
+.side{background:var(--panel2);border-right:1px solid var(--line);padding:18px 14px;display:flex;flex-direction:column;gap:16px}
 .brand{display:flex;align-items:center;gap:9px;font-weight:700;letter-spacing:.04em}
 .brand .dot{width:16px;height:16px;border-radius:4px;background:linear-gradient(135deg,var(--amber),var(--teal))}
 .brand .v{margin-left:auto;font-size:11px;color:var(--faint);font-family:var(--mono)}
 .side .lbl{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.08em;margin:0 0 6px}
 select,input,textarea{background:var(--panel);border:1px solid var(--line2);color:var(--txt);border-radius:7px;padding:9px 10px;font-size:13px;width:100%;font-family:var(--ui)}
-textarea{resize:vertical;min-height:84px;font-family:var(--ui)}
+textarea{resize:vertical;min-height:84px}
 .nav{display:flex;flex-direction:column;gap:2px}
 .nav a{display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:7px;color:var(--dim);cursor:pointer}
 .nav a:hover{background:var(--panel);color:var(--txt)}
@@ -33,9 +33,9 @@ textarea{resize:vertical;min-height:84px;font-family:var(--ui)}
 .nav a .b{width:6px;height:6px;border-radius:50%;background:var(--faint)}
 .nav a.on .b{background:var(--amber)}
 .side .foot{margin-top:auto;font-size:11px;color:var(--faint);font-family:var(--mono)}
-.main{padding:26px 30px;overflow:auto}
+.main{padding:24px 30px;overflow:auto}
 .eyebrow{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.1em;margin-bottom:6px}
-h1{font-size:23px;margin:0 0 18px}
+h1{font-size:22px;margin:0 0 16px}
 h2{font-size:15px;margin:0 0 10px}
 .card{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:18px}
 .tag{display:inline-block;font-family:var(--mono);font-size:11px;color:var(--dim);background:var(--panel2);border:1px solid var(--line2);border-radius:5px;padding:2px 7px;margin:0 5px 5px 0}
@@ -52,20 +52,20 @@ h2{font-size:15px;margin:0 0 10px}
 .muted{color:var(--dim)}
 .empty{color:var(--faint);padding:22px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
 .log{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12px;max-height:230px;overflow:auto}
-.log .l{white-space:pre-wrap;color:var(--dim)}
-.log .l .t{color:var(--faint);margin-right:8px}
-.log .l.ok{color:var(--teal)} .log .l.err{color:var(--red)} .log .l.skip{color:var(--amber)}
+.log .l{white-space:pre-wrap;color:var(--dim)}.log .l .t{color:var(--faint);margin-right:8px}
+.log .l.ok{color:var(--teal)}.log .l.err{color:var(--red)}.log .l.skip{color:var(--amber)}
 .repo-card{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:12px;cursor:pointer}
 .repo-card:hover{border-color:var(--line2)}
 .badge{width:40px;height:40px;border-radius:9px;background:var(--panel2);border:1px solid var(--line2);display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--amber)}
-.rn{font-weight:600} .rp{font-family:var(--mono);font-size:12px;color:var(--dim);word-break:break-all}
-.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:18px 0 16px;flex-wrap:wrap}
+.rn{font-weight:600}.rp{font-family:var(--mono);font-size:12px;color:var(--dim);word-break:break-all}
+.prodbar{border:1px solid var(--line);border-radius:11px;background:var(--panel);padding:14px 16px;margin-bottom:16px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin:0 0 16px;flex-wrap:wrap}
 .tabs button{background:none;border:none;color:var(--dim);padding:9px 13px;font-size:13px;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tabs button.on{color:var(--txt);border-bottom-color:var(--amber)}
 .split{display:grid;grid-template-columns:300px 1fr;gap:14px}
 .tree{border:1px solid var(--line);border-radius:9px;background:var(--panel2);max-height:560px;overflow:auto;padding:6px}
 .trow{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:5px;font-family:var(--mono);font-size:12.5px;color:var(--dim);cursor:pointer;white-space:nowrap}
-.trow:hover{background:var(--panel)} .trow.on{background:var(--panel);color:var(--txt)}
+.trow:hover{background:var(--panel)}.trow.on{background:var(--panel);color:var(--txt)}
 .trow .ic{width:13px;color:var(--faint);text-align:center}
 .viewer{border:1px solid var(--line);border-radius:9px;background:var(--panel2);min-height:200px;overflow:auto}
 .viewer .vh{padding:8px 12px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:12px;color:var(--dim)}
@@ -75,28 +75,42 @@ h2{font-size:15px;margin:0 0 10px}
 .diff .del{background:rgba(240,98,110,.12);color:#f3a3aa;display:block}
 .diff .hdr{color:var(--faint);display:block}
 .md{padding:16px;line-height:1.65}
-.md h1,.md h2,.md h3{margin:16px 0 8px} .md h1{font-size:19px}.md h2{font-size:16px}.md h3{font-size:14px}
+.md h1,.md h2,.md h3{margin:16px 0 8px}.md h1{font-size:19px}.md h2{font-size:16px}.md h3{font-size:14px}
 .md code{font-family:var(--mono);background:var(--panel);padding:1px 5px;border-radius:4px;font-size:12.5px}
 .md pre{background:var(--panel);padding:12px;border-radius:7px;overflow:auto}
-.md ul{padding-left:20px} .md li{margin:3px 0}
-.cat{margin-bottom:14px} .cat h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--amber);margin:0 0 6px}
-.fl{font-family:var(--mono);font-size:12px;color:var(--dim);padding:2px 0;cursor:pointer} .fl:hover{color:var(--txt)}
+.md ul{padding-left:20px}.md li{margin:3px 0}
+.cat{margin-bottom:14px}.cat h3{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--amber);margin:0 0 6px}
+.fl{font-family:var(--mono);font-size:12px;color:var(--dim);padding:2px 0;cursor:pointer}.fl:hover{color:var(--txt)}
 .rail{display:flex;gap:0;margin-bottom:18px;flex-wrap:wrap}
 .station{flex:1;min-width:120px;padding:10px;border:1px solid var(--line);border-right:none;background:var(--panel2)}
-.station:last-child{border-right:1px solid var(--line);border-radius:0 9px 9px 0}
-.station:first-child{border-radius:9px 0 0 9px}
+.station:last-child{border-right:1px solid var(--line);border-radius:0 9px 9px 0}.station:first-child{border-radius:9px 0 0 9px}
 .station .s-st{font-size:10px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint)}
 .station .s-lb{font-size:13px;margin-top:3px}
-.station.done{border-top:2px solid var(--teal)} .station.done .s-st{color:var(--teal)}
-.station.current{border-top:2px solid var(--amber)} .station.current .s-st{color:var(--amber)}
+.station.done{border-top:2px solid var(--teal)}.station.done .s-st{color:var(--teal)}
+.station.current{border-top:2px solid var(--amber)}.station.current .s-st{color:var(--amber)}
 .epic-row{display:flex;gap:10px;align-items:center;padding:11px 13px;border:1px solid var(--line);border-radius:9px;background:var(--panel);margin-bottom:8px;cursor:pointer}
 .epic-row:hover{border-color:var(--line2)}
 .epic-row .er-t{flex:1;min-width:0;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.art{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:12px;color:var(--dim);border:1px solid var(--line2);border-radius:6px;padding:4px 8px;margin:0 6px 6px 0;cursor:pointer;background:var(--panel2)}
-.art:hover{color:var(--txt);border-color:var(--amber)}
+.stat{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.stat .s{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:14px 18px;min-width:120px}
+.stat .s .n{font-size:24px;font-weight:700}.stat .s .k{font-size:11px;color:var(--faint);text-transform:uppercase;letter-spacing:.06em}
 .note{font-size:12px;color:var(--faint);font-family:var(--mono);margin-bottom:12px}
 .banner-soft{background:var(--panel2);border:1px solid var(--line2);border-radius:9px;padding:14px;color:var(--dim)}
-@media(max-width:760px){.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap;align-items:center}.side .foot{display:none}.split{grid-template-columns:1fr}}
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px}
+.col{flex:0 0 270px;min-width:270px}
+.col-h{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--faint);margin:0 0 8px;display:flex;justify-content:space-between}
+.tcard{border:1px solid var(--line);border-radius:9px;background:var(--panel);padding:11px;margin-bottom:8px}
+.tcard .tt{font-size:13px;margin-bottom:6px}
+.tcard .te{font-size:11px;color:var(--faint);font-family:var(--mono);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.col.blocked .col-h{color:var(--red)}.col.ready .col-h{color:var(--teal)}.col.in_progress .col-h{color:var(--amber)}
+.runpanel{border:1px solid var(--amber);border-radius:9px;background:var(--panel);padding:12px;margin-bottom:14px}
+.runrow{border:1px solid var(--line);border-radius:7px;background:var(--panel2);padding:8px;margin-top:8px}
+.runlog{max-height:150px;overflow:auto;margin-top:6px}
+.tcard.clickable{cursor:pointer}.tcard.clickable:hover{border-color:var(--line2)}
+.tcard.running{border-color:var(--amber)}
+.tdetail .filerow{font-family:var(--mono);font-size:12px;color:var(--dim);padding:4px 6px;border-radius:5px;cursor:pointer}
+.tdetail .filerow:hover,.tdetail .filerow.on{background:var(--panel);color:var(--txt)}
+@media(max-width:760px){.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap}.side .foot{display:none}.split{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -104,371 +118,452 @@ h2{font-size:15px;margin:0 0 10px}
 <div class="app">
   <aside class="side">
     <div class="brand"><span class="dot"></span> AGENTIC <span class="v" id="pver"></span></div>
-    <div>
-      <div class="lbl">Active product</div>
-      <select id="product-sel" onchange="onProductChange()"></select>
-    </div>
-    <div>
-      <div class="lbl">Platform</div>
-      <div class="nav" id="nav">
-        <a data-v="repos" onclick="go('repos')"><span class="b"></span> Repositories</a>
-        <a data-v="workspace" onclick="go('workspace')"><span class="b"></span> Repository</a>
-      </div>
-    </div>
+    <div><div class="lbl">Active product</div><select id="product-sel" onchange="onProductChange()"></select></div>
+    <div><div class="lbl">Platform</div><div class="nav"><a data-v="repos" onclick="go('repos')"><span class="b"></span> Repositories</a></div></div>
+    <div id="prod-nav"><div class="lbl">Product</div><div class="nav">
+      <a data-v="overview" onclick="go('overview')"><span class="b"></span> Overview</a>
+      <a data-v="repository" onclick="go('repository')"><span class="b"></span> Repository</a>
+      <a data-v="planning" onclick="go('planning')"><span class="b"></span> Planning</a>
+      <a data-v="activity" onclick="go('activity')"><span class="b"></span> Activity</a>
+    </div></div>
     <div class="foot" id="foot">api —</div>
   </aside>
 
   <main class="main">
     <section id="view-repos" style="display:none">
-      <div class="eyebrow">Platform</div>
-      <h1>Repositories</h1>
+      <div class="eyebrow">Platform</div><h1>Repositories</h1>
       <div id="repos"></div>
-      <div class="card" style="margin-top:18px">
-        <h2>Connect a repository</h2>
+      <div class="card" style="margin-top:18px"><h2>Connect a repository</h2>
         <div class="lbl" style="margin-top:8px">Local repo path</div>
         <input id="c-path" placeholder="/Users/you/Projects/my-app" oninput="onPathInput()"/>
         <div class="lbl" style="margin-top:10px">Product name (used as the id)</div>
         <input id="c-name" placeholder="my-app"/>
         <div class="lbl" style="margin-top:10px">Framework</div>
         <select id="c-fw"><option>nextjs</option><option>node</option><option>python</option><option>other</option></select>
-        <div class="row" style="margin-top:13px">
-          <button class="btn" onclick="connectRepo(this)">Connect repository</button>
-          <span class="muted" style="font-size:12px">Writes products/&lt;name&gt;/config.yaml with default validators.</span>
-        </div>
+        <div class="row" style="margin-top:13px"><button class="btn" onclick="connectRepo(this)">Connect repository</button>
+          <span class="muted" style="font-size:12px">Writes products/&lt;name&gt;/config.yaml with default validators.</span></div>
         <div class="log" id="connect-log" style="display:none;margin-top:12px"></div>
       </div>
     </section>
 
-    <section id="view-workspace" style="display:none">
-      <div class="eyebrow">Workspace</div>
-      <div id="ws-head"></div>
-      <div class="tabs" id="ws-tabs">
-        <button data-t="files" onclick="tab('files')">Files</button>
-        <button data-t="structure" onclick="tab('structure')">Structure</button>
-        <button data-t="analysis" onclick="tab('analysis')">Analysis</button>
-        <button data-t="changes" onclick="tab('changes')">Changes</button>
-        <button data-t="history" onclick="tab('history')">History</button>
-        <button data-t="planning" onclick="tab('planning')">Planning</button>
-      </div>
-      <div id="pane-files" class="pane" style="display:none"></div>
-      <div id="pane-structure" class="pane" style="display:none"></div>
-      <div id="pane-analysis" class="pane" style="display:none"></div>
-      <div id="pane-changes" class="pane" style="display:none"></div>
-      <div id="pane-history" class="pane" style="display:none"></div>
-      <div id="pane-planning" class="pane" style="display:none"></div>
+    <div id="prod-bar" class="prodbar" style="display:none"></div>
+
+    <section id="view-overview" style="display:none"><div id="pane-overview"></div></section>
+
+    <section id="view-repository" style="display:none">
+      <div class="tabs"><button data-st="files" onclick="sub('repository','files')">Files</button>
+        <button data-st="structure" onclick="sub('repository','structure')">Structure</button>
+        <button data-st="analysis" onclick="sub('repository','analysis')">Analysis</button></div>
+      <div id="pane-files" style="display:none"></div>
+      <div id="pane-structure" style="display:none"></div>
+      <div id="pane-analysis" style="display:none"></div>
+    </section>
+
+    <section id="view-planning" style="display:none">
+      <div class="tabs"><button data-st="epics" onclick="sub('planning','epics')">Epics</button>
+        <button data-st="backlog" onclick="sub('planning','backlog')">Board</button></div>
+      <div id="pane-epics" style="display:none"></div>
+      <div id="pane-backlog" style="display:none"></div>
+    </section>
+
+    <section id="view-activity" style="display:none">
+      <div class="tabs"><button data-st="changes" onclick="sub('activity','changes')">Changes</button>
+        <button data-st="history" onclick="sub('activity','history')">History</button></div>
+      <div id="pane-changes" style="display:none"></div>
+      <div id="pane-history" style="display:none"></div>
     </section>
   </main>
 </div>
 
 <script>
-const FE_VERSION = "workspace-4";
+const FE_VERSION="workspace-10";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
-let STATE={products:[]}, CUR="", VIEW="repos", TAB="files", EPIC=null;
+let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
+const SUBS={repository:["files","structure","analysis"],planning:["epics","backlog"],activity:["changes","history"]};
+const SUBSTATE={repository:"files",planning:"epics",activity:"changes"};
+const LOADERS={overview:loadOverview,files:loadFiles,structure:loadStructure,analysis:loadAnalysis,epics:loadEpics,backlog:loadBacklog,changes:loadChanges,history:loadHistory};
 
-async function api(p,opt){const r=await fetch(p,opt);const t=await r.text();try{return JSON.parse(t)}catch(e){return {error:t||("HTTP "+r.status)}}}
+async function api(p,opt){const r=await fetch(p,opt);const t=await r.text();try{return JSON.parse(t)}catch(e){return{error:t||("HTTP "+r.status)}}}
 function toast(m){const b=$("#banner");if(b.dataset.sticky==="1")return;b.style.display="";b.textContent=m;setTimeout(()=>{b.style.display="none"},4000)}
 function logLine(id,ts,msg,cls){const d=document.createElement("div");d.className="l "+(cls||"");d.innerHTML='<span class="t">'+esc(ts||"")+'</span>'+esc(msg);$(id).appendChild(d);$(id).scrollTop=$(id).scrollHeight}
-
-function mdToHtml(md){
-  md=esc(md||"");
-  const lines=md.split("\n");let out=[],inUl=false,inPre=false;
+function mdToHtml(md){md=esc(md||"");const lines=md.split("\n");let out=[],ul=false,pre=false;
   for(let ln of lines){
-    if(ln.trim().startsWith("```")){inPre=!inPre;out.push(inPre?"<pre><code>":"</code></pre>");continue}
-    if(inPre){out.push(ln);continue}
+    if(ln.trim().startsWith("```")){pre=!pre;out.push(pre?"<pre><code>":"</code></pre>");continue}
+    if(pre){out.push(ln);continue}
     if(/^### /.test(ln)){out.push("<h3>"+ln.slice(4)+"</h3>");continue}
     if(/^## /.test(ln)){out.push("<h2>"+ln.slice(3)+"</h2>");continue}
     if(/^# /.test(ln)){out.push("<h1>"+ln.slice(2)+"</h1>");continue}
-    if(/^[-*] /.test(ln)){if(!inUl){out.push("<ul>");inUl=true}out.push("<li>"+inline(ln.slice(2))+"</li>");continue}
-    if(inUl){out.push("</ul>");inUl=false}
-    if(ln.trim()==="")out.push("<br>");else out.push("<div>"+inline(ln)+"</div>");
+    if(/^[-*] /.test(ln)){if(!ul){out.push("<ul>");ul=true}out.push("<li>"+il(ln.slice(2))+"</li>");continue}
+    if(ul){out.push("</ul>");ul=false}
+    out.push(ln.trim()===""?"<br>":"<div>"+il(ln)+"</div>");
   }
-  if(inUl)out.push("</ul>");if(inPre)out.push("</code></pre>");
-  return out.join("");
-  function inline(s){return s.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")}
-}
-function codeBlock(text){
-  const lines=(text||"").split("\n").slice(0,6000);
-  return '<pre class="code">'+lines.map((l,i)=>'<span class="ln">'+(i+1)+'</span>'+esc(l)).join("\n")+'</pre>';
-}
-function diffBlock(diff){
-  return '<pre class="code diff">'+(diff||"").split("\n").map(l=>{
-    let c="";if(l.startsWith("+")&&!l.startsWith("+++"))c="add";else if(l.startsWith("-")&&!l.startsWith("---"))c="del";else if(l.startsWith("@@")||l.startsWith("diff ")||l.startsWith("index "))c="hdr";
-    return '<span class="'+c+'">'+esc(l||" ")+'</span>';
-  }).join("")+'</pre>';
+  if(ul)out.push("</ul>");if(pre)out.push("</code></pre>");return out.join("");
+  function il(s){return s.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")}}
+function codeBlock(t){return '<pre class="code">'+(t||"").split("\n").slice(0,6000).map((l,i)=>'<span class="ln">'+(i+1)+'</span>'+esc(l)).join("\n")+'</pre>'}
+function diffBlock(d){return '<pre class="code diff">'+(d||"").split("\n").map(l=>{let c="";if(l.startsWith("+")&&!l.startsWith("+++"))c="add";else if(l.startsWith("-")&&!l.startsWith("---"))c="del";else if(l.startsWith("@@")||l.startsWith("diff ")||l.startsWith("index "))c="hdr";return '<span class="'+c+'">'+esc(l||" ")+'</span>'}).join("")+'</pre>'}
+function statusCls(s){return /done|merged|release_confirmed|pr_created|accepted|passed|verified/.test(s||"")?"ok":/fail|block/.test(s||"")?"bad":/progress|running|pending|planned|todo/.test(s||"")?"warn":""}
+
+const ART_LABELS={
+  "epic.md":"эпик: запрос + контекст продукта",
+  "product-spec.md":"Product Agent: проблема, цели, scope (без кода)",
+  "feature-spec.md":"Product Analyst: детальная спека фичи (поведение)",
+  "acceptance-scenarios.md":"критерии приёмки / сценарии проверки",
+  "decomposition.md":"как работа разбита на задачи",
+  "dag.json":"граф зависимостей задач",
+  "outcome.json":"состояние эпика (planned → … → accepted)",
+  "product-status.txt":"маркер гейта product (pending/approved)",
+  "spec-status.txt":"маркер гейта spec (pending/approved)",
+  "product.txt":"к какому продукту относится эпик",
+};
+function artLabel(n){if(ART_LABELS[n])return ART_LABELS[n];if(/^task-\d+\.md$/.test(n))return "отдельная задача";return ""}
+
+// stream a job's progress via SSE into a log element; call onDone(result) at end
+function runJob(endpoint,payload,logSel,onDone){
+  $(logSel).style.display="";$(logSel).innerHTML="";
+  logLine(logSel,"","Dispatching…");
+  return api(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
+    .then(r=>{
+      if(r.error){logLine(logSel,"",r.error,"err");if(onDone)onDone({ok:false});return}
+      if(r.started===false)logLine(logSel,"","(attaching to a run already in progress)","skip");
+      const es=new EventSource("/api/job/stream?id="+encodeURIComponent(r.job_id));
+      es.onmessage=e=>{try{const l=JSON.parse(e.data);logLine(logSel,l.ts,l.msg,l.level)}catch(_){}};
+      es.addEventListener("done",e=>{es.close();let res={};try{res=JSON.parse(e.data)}catch(_){}if(onDone)onDone(res)});
+      es.onerror=()=>{es.close();if(onDone)onDone({ok:false,error:"stream lost"})};
+    });
 }
 
 async function boot(){
   STATE=await api("/api/state");
-  $("#pver").textContent=STATE.version||"";
-  $("#foot").textContent="api "+(STATE.api_version||"?");
-  if(STATE.api_version && STATE.api_version!==FE_VERSION){
-    const b=$("#banner");b.dataset.sticky="1";b.style.display="";
-    b.textContent="⚠ API version mismatch: frontend "+FE_VERSION+", backend "+STATE.api_version+". Обнови server.py или index.html.";
-  }
-  const sel=$("#product-sel");
-  sel.innerHTML=(STATE.products||[]).map(p=>'<option>'+esc(p.name)+'</option>').join("");
+  $("#pver").textContent=STATE.version||"";$("#foot").textContent="api "+(STATE.api_version||"?");
+  if(STATE.api_version&&STATE.api_version!==FE_VERSION){const b=$("#banner");b.dataset.sticky="1";b.style.display="";b.textContent="⚠ API version mismatch: frontend "+FE_VERSION+", backend "+STATE.api_version+". Обнови server.py или index.html.";}
+  $("#product-sel").innerHTML=(STATE.products||[]).map(p=>'<option>'+esc(p.name)+'</option>').join("");
   CUR=(STATE.products[0]||{}).name||"";
-  go(STATE.products.length?"workspace":"repos");
+  go(STATE.products.length?"overview":"repos");
 }
 function curProduct(){return (STATE.products||[]).find(p=>p.name===CUR)||{}}
-function onProductChange(){CUR=$("#product-sel").value;if(VIEW==="workspace")renderWorkspace()}
+function onProductChange(){CUR=$("#product-sel").value;go(VIEW==="repos"?"overview":VIEW)}
 function go(v){VIEW=v;
   document.querySelectorAll(".nav a").forEach(a=>a.classList.toggle("on",a.dataset.v===v));
-  $("#view-repos").style.display=v==="repos"?"":"none";
-  $("#view-workspace").style.display=v==="workspace"?"":"none";
-  if(v==="repos")renderRepos();else renderWorkspace();
+  ["repos","overview","repository","planning","activity"].forEach(x=>{const el=$("#view-"+x);if(el)el.style.display=x===v?"":"none"});
+  const isProd=v!=="repos";
+  $("#prod-nav").style.display=STATE.products.length?"":"none";
+  $("#prod-bar").style.display=isProd?"":"none";
+  if(v==="repos"){renderRepos();return}
+  renderProdBar();
+  if(SUBS[v])sub(v,SUBSTATE[v]);else LOADERS[v]();
+}
+function sub(view,t){SUBSTATE[view]=t;
+  document.querySelectorAll("#view-"+view+" .tabs button").forEach(b=>b.classList.toggle("on",b.dataset.st===t));
+  SUBS[view].forEach(x=>{$("#pane-"+x).style.display=x===t?"":"none"});
+  LOADERS[t]();
+}
+
+function renderProdBar(){
+  const p=curProduct();
+  $("#prod-bar").innerHTML=`<div class="row" style="justify-content:space-between">
+    <div><div class="rn" style="font-size:16px">${esc(p.name)}</div><div class="rp">${esc(p.repo_path||"—")}</div></div>
+    <div class="row">
+      <span class="tag">${esc(p.framework||"—")}</span>
+      <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
+      <button class="btn sm" onclick="runAnalyze(this)">${p.has_analysis?"Re-analyze":"Analyze"}</button>
+      <button class="btn ghost sm" onclick="runBaseline(this)">Baseline</button>
+    </div></div>
+    <div class="log" id="ws-log" style="display:none;margin-top:10px"></div>`;
 }
 
 function renderRepos(){
   $("#repos").innerHTML=(STATE.products||[]).map(p=>`<div class="repo-card" onclick="openProduct('${esc(p.name)}')">
     <div class="badge">${esc((p.name[0]||"?").toUpperCase())}</div>
-    <div style="min-width:0;flex:1">
-      <div class="rn">${esc(p.name)}</div>
-      <div class="rp">${esc(p.repo_path||"—")}</div>
-      <div style="margin-top:9px">
-        <span class="tag">${esc(p.framework||"—")}</span>
-        ${(p.validators||[]).map(v=>`<span class="tag">✓ ${esc(v)}</span>`).join("")}
-        <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
-      </div>
-    </div></div>`).join("")||'<div class="empty">No repositories connected yet — add one below.</div>';
+    <div style="min-width:0;flex:1"><div class="rn">${esc(p.name)}</div><div class="rp">${esc(p.repo_path||"—")}</div>
+    <div style="margin-top:9px"><span class="tag">${esc(p.framework||"—")}</span>
+    ${(p.validators||[]).map(v=>`<span class="tag">✓ ${esc(v)}</span>`).join("")}
+    <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span></div></div></div>`).join("")
+    ||'<div class="empty">No repositories connected yet — add one below.</div>';
 }
-function openProduct(name){CUR=name;$("#product-sel").value=name;go("workspace")}
-function onPathInput(){const p=$("#c-path").value.trim().replace(/\/+$/,"");const seg=p.split("/").pop();if(seg&&!$("#c-name").value)$("#c-name").value=seg}
-async function connectRepo(btn){
-  const path=$("#c-path").value.trim(),name=$("#c-name").value.trim(),fw=$("#c-fw").value;
+function openProduct(n){CUR=n;$("#product-sel").value=n;go("overview")}
+function onPathInput(){const p=$("#c-path").value.trim().replace(/\/+$/,"");const s=p.split("/").pop();if(s&&!$("#c-name").value)$("#c-name").value=s}
+async function connectRepo(btn){const path=$("#c-path").value.trim(),name=$("#c-name").value.trim(),fw=$("#c-fw").value;
   if(!path||!name){toast("Path and name required");return}
   $("#connect-log").style.display="";$("#connect-log").innerHTML="";btn.disabled=true;
   const r=await api("/api/connect-repo",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({path,name,framework:fw,force:true})});
   (r.log||[]).forEach(l=>logLine("#connect-log",l.ts,l.msg,l.level));
-  if(r.error){logLine("#connect-log","",r.error,"err")}
+  if(r.error)logLine("#connect-log","",r.error,"err");
   else{toast("Connected "+name);STATE=await api("/api/state");$("#product-sel").innerHTML=(STATE.products||[]).map(p=>'<option>'+esc(p.name)+'</option>').join("");$("#product-sel").value=name;CUR=name;renderRepos()}
   btn.disabled=false;
 }
-
-function renderWorkspace(){
-  const p=curProduct();
-  if(!p.name){$("#ws-head").innerHTML='<div class="empty">No product selected.</div>';return}
-  $("#ws-head").innerHTML=`<h1 style="margin-bottom:6px">${esc(p.name)}</h1>
-    <div class="rp" style="margin-bottom:10px">${esc(p.repo_path||"—")}</div>
-    <div class="row">
-      <span class="tag">${esc(p.framework||"—")}</span>
-      ${(p.validators||[]).map(v=>`<span class="tag">✓ ${esc(v)}</span>`).join("")}
-      <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
-      <button class="btn sm" onclick="runAnalyze(this)">${p.has_analysis?"Re-analyze":"Analyze repository"}</button>
-      <button class="btn ghost sm" onclick="runBaseline(this)">Run baseline check</button>
-    </div>
-    <div id="ws-op" style="margin-top:12px"></div>
-    <div class="log" id="ws-log" style="display:none;margin-top:10px"></div>`;
-  loadOperational();
-  tab(TAB);
-}
-function tab(t){TAB=t;
-  document.querySelectorAll("#ws-tabs button").forEach(b=>b.classList.toggle("on",b.dataset.t===t));
-  document.querySelectorAll(".pane").forEach(x=>x.style.display="none");
-  $("#pane-"+t).style.display="";
-  ({files:loadFiles,structure:loadStructure,analysis:loadAnalysis,changes:loadChanges,history:loadHistory,planning:loadPlanning}[t])();
-}
-async function runAnalyze(btn){
-  btn.disabled=true;btn.textContent="Analyzing…";$("#ws-log").style.display="";$("#ws-log").innerHTML="";
+async function runAnalyze(btn){btn.disabled=true;btn.textContent="Analyzing…";$("#ws-log").style.display="";$("#ws-log").innerHTML="";
   const r=await api("/api/analyze",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR})});
-  (r.log||[]).forEach(l=>logLine("#ws-log",l.ts,l.msg,l.level));
-  if(r.error)logLine("#ws-log","",r.error,"err");
-  STATE=await api("/api/state");renderWorkspace();
-}
-async function runBaseline(btn){
-  btn.disabled=true;btn.textContent="Running…";$("#ws-log").style.display="";$("#ws-log").innerHTML="";
-  logLine("#ws-log","","Baseline: dispatched (tsc/build may take a minute)…");
+  (r.log||[]).forEach(l=>logLine("#ws-log",l.ts,l.msg,l.level));if(r.error)logLine("#ws-log","",r.error,"err");
+  STATE=await api("/api/state");renderProdBar();}
+async function runBaseline(btn){btn.disabled=true;btn.textContent="Running…";$("#ws-log").style.display="";$("#ws-log").innerHTML="";
+  logLine("#ws-log","","Baseline dispatched (tsc/build, ~1 min)…");
   const r=await api("/api/baseline",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR})});
-  (r.log||[]).forEach(l=>logLine("#ws-log",l.ts,l.msg,l.level));
-  if(r.error)logLine("#ws-log","",r.error,"err");
-  btn.disabled=false;btn.textContent="Run baseline check";loadOperational();
-}
-async function loadOperational(){
+  (r.log||[]).forEach(l=>logLine("#ws-log",l.ts,l.msg,l.level));if(r.error)logLine("#ws-log","",r.error,"err");
+  btn.disabled=false;btn.textContent="Baseline";}
+
+/* Overview */
+async function loadOverview(){
+  $("#pane-overview").innerHTML='<div class="muted">Loading…</div>';
+  const o=await api("/api/overview?product="+encodeURIComponent(CUR));
   const op=await api("/api/repo/operational?product="+encodeURIComponent(CUR));
-  const bl=await api("/api/repo/baseline?product="+encodeURIComponent(CUR));
-  if(op.error){$("#ws-op").innerHTML="";return}
-  let blHtml="";
-  if(bl.exists){const cls=bl.overall==="passed"?"ok":bl.overall==="failed"?"bad":"";blHtml=`<span class="pill ${cls}">baseline: ${esc(bl.overall||"—")}</span>`;}
-  const dep=op.deployment||{};
-  $("#ws-op").innerHTML=`<div class="row">
-    ${blHtml}
-    ${dep.provider?`<span class="tag">deploy: ${esc(dep.provider)}</span>`:""}
-    ${dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank">${esc(dep.production_url)}</a>`:""}
-    ${(op.validators||[]).map(v=>`<span class="tag">${esc(v.name)}${v.required?"":" (opt)"}</span>`).join("")}
-  </div>`;
+  if(o.error){$("#pane-overview").innerHTML='<div class="empty">'+esc(o.error)+'</div>';return}
+  const blCls=o.baseline==="passed"?"ok":o.baseline==="failed"?"bad":"";
+  const dep=(op&&op.deployment)||{};
+  let h='<div class="stat">'+
+    `<div class="s"><div class="n">${o.epics_total}</div><div class="k">epics</div></div>`+
+    `<div class="s"><div class="n">${o.tasks_total}</div><div class="k">tasks</div></div>`+
+    `<div class="s"><div class="n">${o.runs}</div><div class="k">runs</div></div>`+
+    `<div class="s"><div class="n" style="color:var(--${blCls==='ok'?'teal':blCls==='bad'?'red':'dim'})">${o.baseline||"—"}</div><div class="k">baseline</div></div>`+
+    `<div class="s"><div class="n">${o.analysis_exists?"✓":"—"}</div><div class="k">analyzed</div></div>`+'</div>';
+  h+='<div class="card" style="margin-bottom:14px"><h2>Epics by status</h2><div class="row">'+Object.entries(o.epics_by_status||{}).map(([k,v])=>`<span class="pill ${statusCls(k)}">${esc(k)} · ${v}</span>`).join("")+'</div></div>';
+  h+='<div class="card" style="margin-bottom:14px"><h2>Tasks by status</h2><div class="row">'+Object.entries(o.tasks_by_status||{}).map(([k,v])=>`<span class="pill ${statusCls(k)}">${esc(k)} · ${v}</span>`).join("")+'</div></div>';
+  if(dep.provider||dep.production_url){h+='<div class="card"><h2>Operational</h2><div class="row">'+(dep.provider?`<span class="tag">deploy: ${esc(dep.provider)}</span>`:"")+(dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank">${esc(dep.production_url)}</a>`:"")+(op.validators||[]).map(v=>`<span class="tag">${esc(v.name)}</span>`).join("")+'</div></div>';}
+  $("#pane-overview").innerHTML=h;
 }
 
-function loadFiles(){
-  $("#pane-files").innerHTML=`<div class="split">
-    <div class="tree" id="ftree"><div class="muted" style="padding:8px">Loading…</div></div>
-    <div class="viewer" id="fview"><div class="vh">select a file</div></div></div>`;
-  renderTreeLevel("ftree","");
-}
-async function renderTreeLevel(container,path,depth){
-  depth=depth||0;
+/* Files */
+function loadFiles(){$("#pane-files").innerHTML=`<div class="split"><div class="tree" id="ftree"><div class="muted" style="padding:8px">Loading…</div></div><div class="viewer" id="fview"><div class="vh">select a file</div></div></div>`;renderTree("ftree","",0)}
+async function renderTree(container,path,depth){
   const r=await api("/api/repo/tree?product="+encodeURIComponent(CUR)+"&path="+encodeURIComponent(path));
   const box=(typeof container==="string")?$("#"+container):container;
-  if(r.error||!r.entries){if(depth===0)box.innerHTML=`<div class="empty">${esc(r.error||"Repository not found on this machine.")}</div>`;return}
+  if(r.error||!r.entries){if(depth===0)box.innerHTML='<div class="empty">'+esc(r.error||"Repository not found on this machine.")+'</div>';return}
   if(depth===0)box.innerHTML="";
-  r.entries.forEach(e=>{
-    const row=document.createElement("div");row.className="trow";row.style.paddingLeft=(6+depth*14)+"px";
-    row.innerHTML='<span class="ic">'+(e.type==="dir"?"▸":"·")+'</span>'+esc(e.name);
-    box.appendChild(row);
-    if(e.type==="dir"){
-      const kids=document.createElement("div");box.appendChild(kids);let open=false;
-      row.onclick=()=>{open=!open;row.querySelector(".ic").textContent=open?"▾":"▸";if(open&&!kids.dataset.loaded){kids.dataset.loaded="1";renderTreeLevel(kids,e.path,depth+1)}kids.style.display=open?"":"none"};
-    }else{row.onclick=()=>openFile(e.path,row)}
-  });
+  r.entries.forEach(e=>{const row=document.createElement("div");row.className="trow";row.style.paddingLeft=(6+depth*14)+"px";
+    row.innerHTML='<span class="ic">'+(e.type==="dir"?"▸":"·")+'</span>'+esc(e.name);box.appendChild(row);
+    if(e.type==="dir"){const kids=document.createElement("div");box.appendChild(kids);let open=false;
+      row.onclick=()=>{open=!open;row.querySelector(".ic").textContent=open?"▾":"▸";if(open&&!kids.dataset.loaded){kids.dataset.loaded="1";renderTree(kids,e.path,depth+1)}kids.style.display=open?"":"none"}}
+    else row.onclick=()=>openFile(e.path,row)});
 }
-async function openFile(path,row){
-  document.querySelectorAll("#ftree .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
+async function openFile(path,row){document.querySelectorAll("#ftree .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   $("#fview").innerHTML='<div class="vh">'+esc(path)+'</div><div class="muted" style="padding:12px">Loading…</div>';
   const r=await api("/api/repo/file?product="+encodeURIComponent(CUR)+"&path="+encodeURIComponent(path));
-  let body;
-  if(r.binary)body='<div class="muted" style="padding:12px">Binary file ('+r.size+' bytes)</div>';
-  else if(r.error)body='<div class="muted" style="padding:12px">'+esc(r.error)+'</div>';
-  else body=codeBlock(r.content)+(r.truncated?'<div class="muted" style="padding:8px">… truncated</div>':"");
-  $("#fview").innerHTML='<div class="vh">'+esc(path)+'</div>'+body;
-}
+  let b;if(r.binary)b='<div class="muted" style="padding:12px">Binary file ('+r.size+' bytes)</div>';else if(r.error)b='<div class="muted" style="padding:12px">'+esc(r.error)+'</div>';else b=codeBlock(r.content)+(r.truncated?'<div class="muted" style="padding:8px">… truncated</div>':"");
+  $("#fview").innerHTML='<div class="vh">'+esc(path)+'</div>'+b;}
 
-async function loadStructure(){
-  $("#pane-structure").innerHTML='<div class="muted">Loading…</div>';
+/* Structure */
+async function loadStructure(){$("#pane-structure").innerHTML='<div class="muted">Loading…</div>';
   const s=await api("/api/repo/structure?product="+encodeURIComponent(CUR));
   if(s.error){$("#pane-structure").innerHTML='<div class="empty">'+esc(s.error)+'</div>';return}
-  if(s.exists===false){$("#pane-structure").innerHTML='<div class="banner-soft">Repository path not found on this machine: <span class="mono">'+esc(s.repo)+'</span>. Проверь путь в Repositories → Connect.</div>';return}
-  if(s.is_empty){$("#pane-structure").innerHTML='<div class="banner-soft">This repository has no recognizable app structure yet (пусто или нестандартная раскладка). Дерево файлов доступно во вкладке Files.</div>';return}
-  let h='<div class="note">'+s.file_count+' files · '+(s.analysis_exists?"analyzed":"not analyzed")+'</div>';
-  const cats=s.categories||{};
-  h+='<div class="card" style="margin-bottom:14px"><h2>Categories</h2>';
-  for(const k of Object.keys(cats)){h+='<div class="cat"><h3>'+esc(k)+' ('+cats[k].length+')</h3>'+cats[k].slice(0,40).map(f=>'<div class="fl" onclick="tab(\'files\')">'+esc(f)+'</div>').join("")+'</div>';}
-  h+='</div>';
-  const hot=s.hot_modules||[];
-  h+='<div class="card"><h2>Hot modules</h2><div class="muted" style="font-size:12px;margin-bottom:8px">Most-imported internal modules</div>';
-  h+=hot.length?hot.map(m=>'<div class="fl">'+esc(m.module)+' <span class="muted">· '+m.count+'</span></div>').join(""):'<div class="muted">No internal imports detected.</div>';
-  h+='</div>';
-  $("#pane-structure").innerHTML=h;
-}
+  if(s.exists===false){$("#pane-structure").innerHTML='<div class="banner-soft">Repository path not found: <span class="mono">'+esc(s.repo)+'</span>. Проверь путь в Repositories → Connect.</div>';return}
+  if(s.is_empty){$("#pane-structure").innerHTML='<div class="banner-soft">No recognizable app structure yet. Дерево файлов доступно во вкладке Files.</div>';return}
+  let h='<div class="note">'+s.file_count+' files · '+(s.analysis_exists?"analyzed":"not analyzed")+'</div><div class="card" style="margin-bottom:14px"><h2>Categories</h2>';
+  const c=s.categories||{};for(const k of Object.keys(c))h+='<div class="cat"><h3>'+esc(k)+' ('+c[k].length+')</h3>'+c[k].slice(0,40).map(f=>'<div class="fl">'+esc(f)+'</div>').join("")+'</div>';
+  h+='</div><div class="card"><h2>Hot modules</h2><div class="muted" style="font-size:12px;margin-bottom:8px">Most-imported internal modules</div>';
+  const hot=s.hot_modules||[];h+=hot.length?hot.map(m=>'<div class="fl">'+esc(m.module)+' <span class="muted">· '+m.count+'</span></div>').join(""):'<div class="muted">No internal imports detected.</div>';
+  $("#pane-structure").innerHTML=h+'</div>';}
 
-async function loadAnalysis(){
-  $("#pane-analysis").innerHTML='<div class="muted">Loading…</div>';
+/* Analysis */
+async function loadAnalysis(){$("#pane-analysis").innerHTML='<div class="muted">Loading…</div>';
   const r=await api("/api/analysis?product="+encodeURIComponent(CUR));
-  if(!r.exists){$("#pane-analysis").innerHTML='<div class="banner-soft">Not analyzed yet — нажми «Analyze repository» вверху.</div>';return}
-  $("#pane-analysis").innerHTML='<div class="card md">'+mdToHtml(r.content)+'</div>';
-}
+  $("#pane-analysis").innerHTML=r.exists?'<div class="card md">'+mdToHtml(r.content)+'</div>':'<div class="banner-soft">Not analyzed yet — нажми «Analyze» в шапке.</div>';}
 
-async function loadChanges(){
-  $("#pane-changes").innerHTML='<div class="muted">Loading…</div>';
+/* Changes */
+async function loadChanges(){$("#pane-changes").innerHTML='<div class="muted">Loading…</div>';
   const c=await api("/api/repo/changes?product="+encodeURIComponent(CUR));
-  if(c.exists===false){$("#pane-changes").innerHTML='<div class="banner-soft">Repository path not found on this machine. Проверь путь в Repositories → Connect.</div>';return}
-  if(c.is_git===false){$("#pane-changes").innerHTML='<div class="banner-soft">This repository is not a git repo — no changes to track.</div>';return}
+  if(c.exists===false){$("#pane-changes").innerHTML='<div class="banner-soft">Repository path not found on this machine.</div>';return}
+  if(c.is_git===false){$("#pane-changes").innerHTML='<div class="banner-soft">Not a git repo — no changes to track.</div>';return}
   const head='<div class="row" style="margin-bottom:12px"><span class="tag">branch: '+esc(c.branch||"—")+'</span><span class="tag">'+c.count+' changes</span><button class="btn ghost sm" onclick="loadChanges()">Refresh</button></div>';
-  if(!c.count){$("#pane-changes").innerHTML=head+'<div class="banner-soft">Working tree clean — no changes. Изменения появятся здесь, когда агенты начнут править код на ветке.</div>';return}
-  const stCls={modified:"warn",added:"ok",untracked:"ok",deleted:"bad",renamed:""};
-  $("#pane-changes").innerHTML=head+`<div class="split">
-    <div class="tree" id="chlist">${c.files.map(f=>`<div class="trow" onclick="openDiff('${esc(f.path)}',this)"><span class="pill ${stCls[f.status]||""}" style="font-size:10px">${esc((f.status[0]||"?").toUpperCase())}</span> ${esc(f.path)}</div>`).join("")}</div>
-    <div class="viewer" id="chview"><div class="vh">select a file</div></div></div>`;
-}
-async function openDiff(path,row){
-  document.querySelectorAll("#chlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
+  if(!c.count){$("#pane-changes").innerHTML=head+'<div class="banner-soft">Working tree clean. Изменения появятся, когда агенты начнут править код на ветке.</div>';return}
+  const cls={modified:"warn",added:"ok",untracked:"ok",deleted:"bad",renamed:""};
+  $("#pane-changes").innerHTML=head+'<div class="split"><div class="tree" id="chlist">'+c.files.map(f=>`<div class="trow" onclick="openDiff('${esc(f.path)}',this)"><span class="pill ${cls[f.status]||""}" style="font-size:10px">${esc((f.status[0]||"?").toUpperCase())}</span> ${esc(f.path)}</div>`).join("")+'</div><div class="viewer" id="chview"><div class="vh">select a file</div></div></div>';}
+async function openDiff(path,row){document.querySelectorAll("#chlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   $("#chview").innerHTML='<div class="vh">'+esc(path)+'</div><div class="muted" style="padding:12px">Loading…</div>';
   const r=await api("/api/repo/diff?product="+encodeURIComponent(CUR)+"&path="+encodeURIComponent(path));
-  let body;
-  if(r.binary)body='<div class="muted" style="padding:12px">Binary file</div>';
-  else if(r.untracked)body=diffBlock((r.content||"").split("\n").map(l=>"+"+l).join("\n"));
-  else if(r.empty)body='<div class="muted" style="padding:12px">No textual changes</div>';
-  else body=diffBlock(r.diff);
-  $("#chview").innerHTML='<div class="vh">'+esc(path)+'</div>'+body;
-}
+  let b;if(r.binary)b='<div class="muted" style="padding:12px">Binary file</div>';else if(r.untracked)b=diffBlock((r.content||"").split("\n").map(l=>"+"+l).join("\n"));else if(r.empty)b='<div class="muted" style="padding:12px">No textual changes</div>';else b=diffBlock(r.diff);
+  $("#chview").innerHTML='<div class="vh">'+esc(path)+'</div>'+b;}
 
-async function loadHistory(){
-  $("#pane-history").innerHTML='<div class="muted">Loading…</div>';
+/* History */
+async function loadHistory(){$("#pane-history").innerHTML='<div class="muted">Loading…</div>';
   const h=await api("/api/repo/history?product="+encodeURIComponent(CUR));
   if(h.error){$("#pane-history").innerHTML='<div class="empty">'+esc(h.error)+'</div>';return}
-  let out='<div class="card" style="margin-bottom:12px"><h2>Recent runs ('+(h.runs||[]).length+')</h2>';
-  out+=(h.runs&&h.runs.length)?h.runs.map(r=>`<div class="epic-row"><div class="er-t">${esc(r.request||r.run_id||"—")}</div><span class="pill">${esc(r.status||"—")}</span>${r.validation?`<span class="pill ${r.validation==="passed"?"ok":"bad"}">${esc(r.validation)}</span>`:""}</div>`).join(""):'<div class="muted">No prior runs for this product yet.</div>';
-  out+='</div>';
-  if((h.failures||[]).length){out+='<div class="card" style="margin-bottom:12px"><h2>Failures</h2>'+h.failures.map(f=>`<div class="epic-row"><div class="er-t">${esc(f.request||f.run_id)}</div><span class="pill bad">${esc(f.type||"fail")}</span></div>`).join("")+'</div>';}
-  out+='<div class="note">architecture notes: '+(h.architecture_count||0)+'</div>';
-  $("#pane-history").innerHTML=out;
-}
+  let o='<div class="card" style="margin-bottom:12px"><h2>Recent runs ('+(h.runs||[]).length+')</h2>';
+  o+=(h.runs&&h.runs.length)?h.runs.map(r=>`<div class="epic-row" style="cursor:default"><div class="er-t">${esc(r.request||r.run_id||"—")}</div><span class="pill ${statusCls(r.status)}">${esc(r.status||"—")}</span>${r.validation?`<span class="pill ${r.validation==="passed"?"ok":"bad"}">${esc(r.validation)}</span>`:""}</div>`).join(""):'<div class="muted">No prior runs for this product yet.</div>';
+  o+='</div>';
+  if((h.failures||[]).length)o+='<div class="card" style="margin-bottom:12px"><h2>Failures</h2>'+h.failures.map(f=>`<div class="epic-row" style="cursor:default"><div class="er-t">${esc(f.request||f.run_id)}</div><span class="pill bad">${esc(f.type||"fail")}</span></div>`).join("")+'</div>';
+  o+='<div class="note">architecture notes: '+(h.architecture_count||0)+'</div>';$("#pane-history").innerHTML=o;}
 
-async function loadPlanning(){
-  EPIC=null;
-  $("#pane-planning").innerHTML='<div class="muted">Loading…</div>';
-  const r=await api("/api/epics?product="+encodeURIComponent(CUR));
-  const epics=r.epics||[];
-  let h='<div class="note">Planning artifacts live on the platform side (backlog/), не в коде продукта. No code is written here.</div>';
-  h+=`<div class="card" style="margin-bottom:16px"><h2>Start a new epic</h2>
-    <textarea id="req" placeholder="Опиши, что нужно сделать в продукте — обычным языком."></textarea>
-    <div class="row" style="margin-top:10px"><button class="btn" onclick="decompose(this)">Decompose →</button>
-    <span class="muted" style="font-size:12px">Runs the Product Agent. Пишет epic.md + product-spec.md, код не трогается.</span></div>
+/* Planning · Epics */
+let EPICS=[];
+async function loadEpics(){EPIC=null;$("#pane-epics").innerHTML='<div class="muted">Loading…</div>';
+  const r=await api("/api/epics?product="+encodeURIComponent(CUR));EPICS=r.epics||[];
+  let h='<div class="note">Planning artifacts live on the platform side (backlog/), не в коде продукта.</div>';
+  h+=`<div class="card" style="margin-bottom:16px"><h2>Start a new epic</h2><textarea id="req" placeholder="Опиши, что нужно сделать — обычным языком."></textarea>
+    <div class="row" style="margin-top:10px"><button class="btn" onclick="decompose(this)">Decompose →</button><span class="muted" style="font-size:12px">Runs the Product Agent. Код не трогается.</span></div>
     <div class="log" id="dlog" style="display:none;margin-top:10px"></div></div>`;
-  h+='<h2>Epics · '+epics.length+'</h2>';
-  h+=epics.length?epics.map(e=>`<div class="epic-row" onclick="openEpic('${esc(e.id)}')">
-      <div class="er-t">${esc(e.request||e.id)}</div>
-      <span class="pill">${esc(e.status||"—")}</span>
-      <span class="muted mono" style="font-size:11px">${e.task_count} tasks</span></div>`).join(""):'<div class="empty">No epics yet — опиши изменение выше, чтобы начать планирование.</div>';
-  $("#pane-planning").innerHTML='<div id="plan-list">'+h+'</div><div id="plan-detail" style="display:none"></div>';
+  h+=`<div class="row" style="justify-content:space-between;margin-bottom:8px"><div class="row">
+    <input id="ef" placeholder="filter…" style="width:180px" oninput="renderEpicList()"/>
+    <select id="efs" style="width:150px" onchange="renderEpicList()"><option value="">all statuses</option>${[...new Set(EPICS.map(e=>e.status))].map(s=>`<option>${esc(s)}</option>`).join("")}</select></div>
+    <button class="btn ghost sm" onclick="toggleArchived(this)">Show archived</button></div>`;
+  h+='<div id="epic-list"></div><div id="archived-list" style="display:none;margin-top:8px"></div>';
+  $("#pane-epics").innerHTML='<div id="plan-list">'+h+'</div><div id="plan-detail" style="display:none"></div>';
+  renderEpicList();
 }
-async function decompose(btn){
-  const req=$("#req").value.trim();if(!req){toast("Опиши запрос");return}
-  btn.disabled=true;btn.textContent="Running…";$("#dlog").style.display="";$("#dlog").innerHTML="";
-  logLine("#dlog","","Product Agent dispatched (~30–60s)…");
-  const r=await api("/api/decompose",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({product:CUR,request:req})});
-  (r.log||[]).forEach(l=>logLine("#dlog",l.ts,l.msg,l.level||(/SKIP|FAIL/.test(l.msg)?"skip":"")));
-  if(r.error){logLine("#dlog","",r.error,"err");btn.disabled=false;btn.textContent="Decompose →";return}
-  if(r.agent_ran===false)logLine("#dlog","","Product Agent skipped (no claude CLI) — scaffold only","skip");
-  setTimeout(()=>openEpic(r.epic_id),600);
+function renderEpicList(){
+  const q=($("#ef")?.value||"").toLowerCase(),st=$("#efs")?.value||"";
+  const list=EPICS.filter(e=>(!st||e.status===st)&&(!q||(e.request||e.id).toLowerCase().includes(q)));
+  $("#epic-list").innerHTML='<div class="note">'+list.length+' / '+EPICS.length+' epics</div>'+(list.length?list.map(e=>`<div class="epic-row" onclick="openEpic('${esc(e.id)}')">
+    <div class="er-t">${esc(e.request||e.id)}</div><span class="pill ${statusCls(e.status)}">${esc(e.status||"—")}</span>
+    <span class="muted mono" style="font-size:11px">${e.task_count} tasks</span>
+    <button class="btn ghost sm" onclick="event.stopPropagation();archiveEpic('${esc(e.id)}')">Archive</button></div>`).join(""):'<div class="empty">No epics match.</div>');
 }
-async function openEpic(id){
-  const d=await api("/api/epic?id="+encodeURIComponent(id));
-  if(d.error||!d.summary){toast("Epic not found");return}
-  EPIC=id;
-  $("#plan-list").style.display="none";const box=$("#plan-detail");box.style.display="";
-  const s=d.summary,na=d.next_action||{};
+async function toggleArchived(btn){const box=$("#archived-list");
+  if(box.style.display!=="none"){box.style.display="none";btn.textContent="Show archived";return}
+  btn.textContent="Hide archived";box.style.display="";box.innerHTML='<div class="muted">Loading…</div>';
+  const r=await api("/api/epics/archived?product="+encodeURIComponent(CUR));const ep=r.epics||[];
+  box.innerHTML='<div class="note" style="margin-top:6px">Archived ('+ep.length+')</div>'+(ep.length?ep.map(e=>`<div class="epic-row" style="opacity:.7;cursor:default"><div class="er-t">${esc(e.request||e.id)}</div><span class="pill">${esc(e.status||"—")}</span><button class="btn ghost sm" onclick="restoreEpic('${esc(e.id)}')">Restore</button><button class="btn ghost sm" onclick="deleteEpic('${esc(e.id)}')">Delete</button></div>`).join(""):'<div class="muted">Nothing archived.</div>');
+}
+async function archiveEpic(id){const r=await api("/api/epic/archive",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Archived");loadEpics();}
+async function restoreEpic(id){const r=await api("/api/epic/restore",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Restored");loadEpics();}
+async function deleteEpic(id){if(!confirm("Delete this epic permanently?"))return;const r=await api("/api/epic/delete",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});if(r.error){toast(r.error);return}toast("Deleted");loadEpics();}
+async function decompose(btn){const req=$("#req").value.trim();if(!req){toast("Опиши запрос");return}
+  btn.disabled=true;btn.textContent="Running…";
+  runJob("/api/decompose",{product:CUR,request:req},"#dlog",res=>{
+    btn.disabled=false;btn.textContent="Decompose →";
+    if(res&&res.epic_id)setTimeout(()=>openEpic(res.epic_id),300);
+  });}
+async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent(id));if(d.error||!d.summary){toast("Epic not found");return}EPIC=id;
+  $("#plan-list").style.display="none";const box=$("#plan-detail");box.style.display="";const s=d.summary,na=d.next_action||{};
   const rail=(d.stations||[]).map(st=>`<div class="station ${st.status||""}"><div class="s-st">${esc(st.status||"")}</div><div class="s-lb">${esc(st.label)}</div></div>`).join("");
-  const byStage={};(d.artifacts||[]).forEach(a=>{(byStage[a.stage||"other"]=byStage[a.stage||"other"]||[]).push(a)});
-  let arts="";for(const k of Object.keys(byStage)){arts+='<div class="cat"><h3>'+esc(k)+'</h3>'+byStage[k].map(a=>`<span class="art" onclick="viewArtifact('${esc(id)}','${esc(a.name)}')">${esc(a.name)}</span>`).join("")+'</div>';}
   let action="";
-  if(na.id==="approve_product")action=`<button class="btn" onclick="approve('product','${esc(id)}',this)">Approve → Feature spec</button> <span class="muted" style="font-size:12px">agent: ${esc(na.agent||"")}, ~30–60s</span>`;
-  else if(na.id==="approve_spec")action=`<button class="btn" onclick="approve('spec','${esc(id)}',this)">Approve → Backlog tasks</button> <span class="muted" style="font-size:12px">agent: ${esc(na.agent||"")}, ~30–60s</span>`;
+  if(na.id==="approve_product")action=`<button class="btn" onclick="approve('product','${esc(id)}',this)">Approve → Feature spec</button> <span class="muted" style="font-size:12px">${esc(na.agent||"")}, ~30–60s</span>`;
+  else if(na.id==="approve_spec")action=`<button class="btn" onclick="approve('spec','${esc(id)}',this)">Approve → Backlog tasks</button> <span class="muted" style="font-size:12px">${esc(na.agent||"")}, ~30–60s</span>`;
   else if(na.id==="decompose")action=`<button class="btn" onclick="approve('product','${esc(id)}',this)">Run Product Agent</button>`;
-  else if(na.id==="execute")action=`<div class="banner-soft">Planning complete — эпик готов к имплементации. Этап имплементации появится в следующем заходе (код не трогаем сейчас).</div>`;
-  const tasks=(d.tasks||[]).length?'<div class="card" style="margin-bottom:14px"><h2>Tasks ('+d.tasks.length+')</h2>'+d.tasks.map(t=>`<div class="epic-row"><div class="er-t">${esc(t.title||t.file)}</div><span class="pill">${esc(t.status||"—")}</span></div>`).join("")+'</div>':"";
-  box.innerHTML=`<div class="row" style="margin-bottom:12px"><button class="btn ghost sm" onclick="loadPlanning()">← Epics</button><span class="pill">${esc(s.status||"—")}</span></div>
-    <h1 style="font-size:18px;margin-bottom:6px">${esc(s.request||id)}</h1>
-    <div class="note">${esc(id)}</div>
+  else if(na.id==="execute")action=`<div class="banner-soft">Planning complete — эпик готов к имплементации (этап появится позже, код не трогаем).</div>`;
+  const tasks=(d.tasks||[]).length?'<div class="card" style="margin-bottom:14px"><h2>Tasks ('+d.tasks.length+')</h2>'+d.tasks.map(t=>`<div class="epic-row" style="cursor:default"><div class="er-t">${esc(t.title||t.file)}</div><span class="pill ${statusCls(t.status)}">${esc(t.status||"—")}</span>${t.run?`<span class="muted mono" style="font-size:11px">${esc(t.run)}</span>`:""}${t.pr?`<a class="btn ghost sm" href="${esc(t.pr)}" target="_blank">PR ↗</a>`:""}</div>`).join("")+'</div>':"";
+  const order=["product-spec.md","feature-spec.md","decomposition.md","acceptance-scenarios.md","epic.md"];
+  const rank=n=>{const i=order.indexOf(n);if(i>=0)return i;if(/^task-\d+\.md$/.test(n))return 50;return 80};
+  const arts=(d.artifacts||[]).slice().filter(a=>!/^task-\d+\.md$/.test(a.name)).sort((a,b)=>rank(a.name)-rank(b.name)||a.name.localeCompare(b.name));
+  const artList=arts.length?arts.map(a=>`<div class="trow" id="art-${esc(a.name)}" onclick="viewArtifact('${esc(id)}','${esc(a.name)}',this)" style="flex-direction:column;align-items:flex-start;gap:1px"><span>${esc(a.name)}</span>${artLabel(a.name)?`<span class="muted" style="font-size:10.5px;font-family:var(--ui)">${esc(artLabel(a.name))}</span>`:""}</div>`).join(""):'<div class="muted" style="padding:8px">Not produced yet.</div>';
+  box.innerHTML=`<div class="row" style="margin-bottom:12px;justify-content:space-between"><div class="row"><button class="btn ghost sm" onclick="loadEpics()">← Epics</button><span class="pill ${statusCls(s.status)}">${esc(s.status||"—")}</span></div>
+    <div class="row"><button class="btn ghost sm" onclick="archiveEpic('${esc(id)}')">Archive</button><button class="btn ghost sm" onclick="deleteEpic('${esc(id)}')">Delete</button></div></div>
+    <h1 style="font-size:18px;margin-bottom:6px">${esc(s.request||id)}</h1><div class="note">${esc(id)}</div>
     <div class="rail">${rail}</div>
     <div class="card" style="margin-bottom:14px"><h2>Next</h2>${action||'<div class="muted">—</div>'}<div class="log" id="alog" style="display:none;margin-top:10px"></div></div>
-    <div class="card" style="margin-bottom:14px"><h2>Artifacts</h2>${arts||'<div class="muted">Not produced yet — run the step above.</div>'}<div class="viewer" id="aview" style="display:none;margin-top:12px"></div></div>
-    ${tasks}`;
+    ${tasks}
+    <div class="card"><h2>Artifacts</h2><div class="split"><div class="tree" id="artlist">${artList}</div><div class="viewer" id="aview"><div class="vh">select an artifact</div></div></div></div>`;
+  if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));}
+async function viewArtifact(id,name,row){document.querySelectorAll("#artlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
+  const v=$("#aview");v.innerHTML='<div class="vh">'+esc(name)+'</div><div class="muted" style="padding:12px">Loading…</div>';
+  const r=await api("/api/file?path="+encodeURIComponent("backlog/"+id+"/"+name));let b;const txt=r.content||r.text||"";
+  if(r.error)b='<div class="muted" style="padding:12px">'+esc(r.error)+'</div>';else if(name.endsWith(".md"))b='<div class="md">'+mdToHtml(txt)+'</div>';else b=codeBlock(txt);
+  v.innerHTML='<div class="vh">'+esc(name)+'</div>'+b;}
+async function approve(kind,id,btn){btn.disabled=true;btn.textContent="Running…";
+  runJob(kind==="product"?"/api/approve-product":"/api/approve-spec",{epic_id:id},"#alog",()=>{
+    setTimeout(()=>openEpic(id),300);
+  });}
+
+/* Planning · Board (kanban) */
+let BL=[];
+const COLS=[["blocked","Blocked"],["ready","Ready"],["in_progress","In progress"],["in_review","In review"],["done","Done"]];
+const RUNS={};
+const cssId=s=>s.replace(/[^a-zA-Z0-9]/g,"_");
+const runKey=(e,f)=>e+"::"+f;
+async function loadBacklog(){$("#pane-backlog").innerHTML='<div class="muted">Loading…</div>';
+  const r=await api("/api/backlog?product="+encodeURIComponent(CUR));BL=r.tasks||[];
+  $("#pane-backlog").innerHTML=`<div class="note">Run исполняет задачу в изолированном worktree на ветке <span class="mono">agentic/…</span> — main чистый, без PR/merge. Можно запускать несколько Ready сразу.</div>
+    <div class="row" style="margin-bottom:10px"><input id="bf" placeholder="filter tasks…" style="width:240px" oninput="renderBoard()"/>
+    <button class="btn sm" onclick="runAllReady(this)">Run all ready</button>
+    <span class="muted" style="font-size:12px">${BL.length} tasks · ${BL.filter(t=>t.column==="ready").length} ready · ${BL.filter(t=>t.done).length} done</span></div>
+    <div id="runpanel" class="runpanel" style="display:none"></div>
+    <div id="board" class="board"></div>
+    <div id="task-detail" class="tdetail" style="display:none"></div>`;
+  renderRunsPanel();renderBoard();
 }
-async function viewArtifact(id,name){
-  const v=$("#aview");v.style.display="";v.innerHTML='<div class="vh">'+esc(name)+'</div><div class="muted" style="padding:12px">Loading…</div>';
-  const r=await api("/api/file?path="+encodeURIComponent("backlog/"+id+"/"+name));
-  let body;const txt=r.content||r.text||"";
-  if(r.error)body='<div class="muted" style="padding:12px">'+esc(r.error)+'</div>';
-  else if(name.endsWith(".md"))body='<div class="md">'+mdToHtml(txt)+'</div>';
-  else body=codeBlock(txt);
-  v.innerHTML='<div class="vh">'+esc(name)+'</div>'+body;v.scrollIntoView({behavior:"smooth",block:"nearest"});
+function renderBoard(){const q=($("#bf")?.value||"").toLowerCase();
+  const list=BL.filter(t=>!q||(t.title+" "+t.epic).toLowerCase().includes(q));
+  $("#board").innerHTML=COLS.map(([key,label])=>{
+    const items=list.filter(t=>t.column===key);
+    return `<div class="col ${key}"><div class="col-h"><span>${label}</span><span>${items.length}</span></div>`+
+      (items.length?items.map(t=>tcard(t)).join(""):'<div class="muted" style="font-size:12px;padding:6px">—</div>')+`</div>`;
+  }).join("");
 }
-async function approve(kind,id,btn){
-  btn.disabled=true;btn.textContent="Running…";$("#alog").style.display="";$("#alog").innerHTML="";
-  const ep=kind==="product"?"/api/approve-product":"/api/approve-spec";
-  logLine("#alog","","Agent dispatched (~30–60s)…");
-  const r=await api(ep,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
-  (r.log||[]).forEach(l=>logLine("#alog",l.ts,l.msg,l.level));
-  if(r.error)logLine("#alog","",r.error,"err");
-  if(r.agent_ran===false)logLine("#alog","","LLM step skipped (no claude CLI)","skip");
-  setTimeout(()=>openEpic(id),700);
+function tcard(t){
+  const blk=(t.blocked_by||[]).length?`<div class="te" style="color:var(--red)">blocked by: ${t.blocked_by.map(n=>"#"+n).join(", ")}</div>`:"";
+  const pr=t.pr?`<a class="btn ghost sm" href="${esc(t.pr)}" target="_blank" onclick="event.stopPropagation()">PR ↗</a>`:"";
+  let foot="";
+  if(t.column==="ready")foot=`<button class="btn sm" onclick="event.stopPropagation();runTask('${esc(t.epic_id)}','${esc(t.file)}')">Run →</button>`;
+  else if(t.run_state==="running")foot='<span class="pill warn" style="font-size:10px">running…</span>';
+  else if(t.run_state==="implemented")foot=`<span class="pill ok" style="font-size:10px">✓ ${t.run_changed} file(s)</span><button class="btn sm" onclick="event.stopPropagation();acceptTask('${esc(t.epic_id)}','${esc(t.file)}')">Accept</button>`;
+  else if(t.run_state==="no_changes")foot=`<span class="pill" style="font-size:10px">no changes</span><button class="btn ghost sm" onclick="event.stopPropagation();acceptTask('${esc(t.epic_id)}','${esc(t.file)}')">Accept</button>`;
+  const runningCls=t.run_state==="running"?" running":"";
+  return `<div class="tcard clickable${runningCls}" onclick="openTask('${esc(t.epic_id)}','${esc(t.file)}')"><div class="tt">${esc(t.title||t.file)}</div>
+    <div class="te">${esc((t.epic||t.epic_id).slice(0,38))}</div>${blk}
+    <div class="row"><span class="pill ${statusCls(t.status)}" style="font-size:10px">${esc(t.status||"todo")}</span>${pr}${foot}</div></div>`;
+}
+/* multi-run streaming panel: fixed height, coalesced heartbeats */
+function renderRunsPanel(){const keys=Object.keys(RUNS);const p=$("#runpanel");if(!p)return;
+  if(!keys.length){p.style.display="none";p.innerHTML="";return}
+  p.style.display="";
+  p.innerHTML='<div class="row" style="justify-content:space-between"><b>Active runs · '+keys.length+'</b>'+
+    (keys.every(k=>RUNS[k].done)?'<button class="btn ghost sm" onclick="clearRuns()">Clear</button>':'')+'</div>'+
+    keys.map(k=>`<div class="runrow"><div class="row" style="justify-content:space-between"><span class="mono" style="font-size:12px">${esc(RUNS[k].file)}</span><span class="pill ${RUNS[k].done?(RUNS[k].ok?'ok':'bad'):'warn'}" style="font-size:10px">${RUNS[k].done?(RUNS[k].ok?'done':'failed'):'running'}</span></div><div class="log runlog" id="rl-${cssId(k)}"></div></div>`).join("");
+  keys.forEach(k=>{const el=$("#rl-"+cssId(k));if(el){el.innerHTML=RUNS[k].lines.map(l=>'<div class="l '+(l.level||"")+'"><span class="t">'+esc(l.ts||"")+'</span>'+esc(l.msg)+'</div>').join("");el.scrollTop=el.scrollHeight}});
+}
+function clearRuns(){Object.keys(RUNS).forEach(k=>{if(RUNS[k].done)delete RUNS[k]});renderRunsPanel()}
+function runTask(epicId,file){
+  const k=runKey(epicId,file);
+  if(RUNS[k]&&!RUNS[k].done){toast("Уже выполняется");return}
+  const bt=BL.find(x=>x.epic_id===epicId&&x.file===file);
+  if(bt){bt.run_state="running";bt.column="in_progress";renderBoard();}
+  RUNS[k]={file,epicId,lines:[],done:false,ok:false,hb:-1};renderRunsPanel();
+  const push=(ts,msg,level)=>{const r=RUNS[k];if(/still working/.test(msg)){if(r.hb>=0){r.lines[r.hb]={ts,msg,level};} else {r.hb=r.lines.length;r.lines.push({ts,msg,level});}}else{r.lines.push({ts,msg,level})}renderRunsPanel()};
+  push("","Dispatching…","");
+  api("/api/task/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:epicId,task_file:file})})
+    .then(r=>{
+      if(r.error){push("",r.error,"err");RUNS[k].done=true;renderRunsPanel();return}
+      const es=new EventSource("/api/job/stream?id="+encodeURIComponent(r.job_id));
+      es.onmessage=e=>{try{const l=JSON.parse(e.data);push(l.ts,l.msg,l.level)}catch(_){}};
+      es.addEventListener("done",e=>{es.close();let res={};try{res=JSON.parse(e.data)}catch(_){}RUNS[k].done=true;RUNS[k].ok=!!res.ok;renderRunsPanel();loadBacklogQuiet();});
+      es.onerror=()=>{es.close();RUNS[k].done=true;renderRunsPanel()};
+    });
+}
+function runAllReady(btn){const ready=BL.filter(t=>t.column==="ready");if(!ready.length){toast("Нет готовых задач");return}
+  if(!confirm("Запустить все Ready ("+ready.length+") параллельно? Каждая — свой worktree и ветка, main не трогается."))return;
+  ready.forEach((t,i)=>setTimeout(()=>runTask(t.epic_id,t.file),i*250));
+}
+async function loadBacklogQuiet(){const r=await api("/api/backlog?product="+encodeURIComponent(CUR));BL=r.tasks||[];renderBoard();}
+/* task drill-in */
+async function openTask(epicId,file){
+  const d=await api("/api/task?epic_id="+encodeURIComponent(epicId)+"&task_file="+encodeURIComponent(file));
+  if(d.error){toast(d.error);return}
+  $("#board").style.display="none";$("#runpanel").style.display="none";
+  const box=$("#task-detail");box.style.display="";
+  const run=d.run||{};const changed=run.changed||[];
+  const canRun=!run.state||run.state==="failed"||run.state==="no_changes"||run.state==="implemented";
+  const runBtn=canRun?`<button class="btn ghost sm" onclick="runTask('${esc(epicId)}','${esc(file)}');setTimeout(()=>openTask('${esc(epicId)}','${esc(file)}'),400)">${run.state?"Re-run":"Run"} →</button>`:'<span class="pill warn">running…</span>';
+  const acceptBtn=(run.state==="implemented"||run.state==="no_changes")?`<button class="btn sm" onclick="acceptTask('${esc(epicId)}','${esc(file)}')">Accept ✓</button>`:(run.state==="accepted"?'<span class="pill ok">accepted</span>':"");
+  let res="";
+  if(run.state==="implemented")res=`<div class="card" style="margin:12px 0"><h2>Result · ${changed.length} file(s) on <span class="mono">${esc(run.branch||"")}</span></h2>
+    <div class="split"><div class="tree" id="tfiles">${changed.map(f=>`<div class="filerow" onclick="taskDiff('${esc(epicId)}','${esc(file)}','${esc(f)}',this)">${esc(f)}</div>`).join("")}</div>
+    <div class="viewer" id="tdiff"><div class="vh">select a file</div></div></div></div>`;
+  else if(run.state==="no_changes")res='<div class="banner-soft" style="margin:12px 0">Агент отработал, но изменений в коде не внёс. Возможно, задача уже выполнена или требует уточнения — посмотри текст задачи ниже.</div>';
+  else if(run.state==="failed")res='<div class="banner-soft" style="margin:12px 0;border-color:#5a2026;color:#f3a3aa">Прогон упал: '+esc(run.error||"unknown")+'</div>';
+  box.innerHTML=`<div class="row" style="justify-content:space-between;margin-bottom:12px"><button class="btn ghost sm" onclick="backToBoard()">← Board</button><div class="row">${acceptBtn}${runBtn}</div></div>
+    <h1 style="font-size:17px">${esc((d.task&&d.task.title)||file)}</h1>
+    <div class="note">${esc(epicId)} / ${esc(file)}</div>
+    ${res}
+    <div class="card md" style="margin-top:12px">${mdToHtml(d.content||"")}</div>`;
+}
+async function acceptTask(epicId,file){
+  const r=await api("/api/task/accept",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:epicId,task_file:file})});
+  if(r.error){toast(r.error);return}
+  toast("Accepted — зависимые разблокированы");
+  if($("#task-detail")&&$("#task-detail").style.display!=="none")openTask(epicId,file);
+  loadBacklogQuiet();
+}
+function backToBoard(){$("#task-detail").style.display="none";$("#board").style.display="";renderRunsPanel();loadBacklogQuiet();}
+async function taskDiff(epicId,file,path,row){
+  document.querySelectorAll("#tfiles .filerow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
+  $("#tdiff").innerHTML='<div class="vh">'+esc(path)+'</div><div class="muted" style="padding:12px">Loading…</div>';
+  const r=await api("/api/task/diff?epic_id="+encodeURIComponent(epicId)+"&task_file="+encodeURIComponent(file)+"&path="+encodeURIComponent(path));
+  $("#tdiff").innerHTML='<div class="vh">'+esc(path)+'</div>'+(r.error?'<div class="muted" style="padding:12px">'+esc(r.error)+'</div>':diffBlock(r.diff));
 }
 
 boot();
-window.go=go;window.tab=tab;window.openProduct=openProduct;window.onProductChange=onProductChange;window.onPathInput=onPathInput;
-window.connectRepo=connectRepo;window.runAnalyze=runAnalyze;window.runBaseline=runBaseline;
-window.loadChanges=loadChanges;window.openDiff=openDiff;window.loadPlanning=loadPlanning;
-window.decompose=decompose;window.openEpic=openEpic;window.viewArtifact=viewArtifact;window.approve=approve;
+Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
+  loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask});
 </script>
 </body>
 </html>

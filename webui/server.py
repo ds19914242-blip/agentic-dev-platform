@@ -19,9 +19,13 @@ Stage 1 scope:
 import argparse
 import json
 import os
+import re
+import shutil
 import sys
 import threading
+import time
 import traceback
+import uuid
 from datetime import datetime
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -40,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-4"
+API_VERSION = "workspace-10"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -246,6 +250,8 @@ def list_epics(product=""):
         return []
     epics = []
     for d in sorted(BACKLOG_DIR.iterdir(), reverse=True):
+        if d.name.startswith("_") or d.name.startswith("."):
+            continue
         if d.is_dir() and (d / "epic.md").exists():
             try:
                 summary = epic_summary(d)
@@ -255,6 +261,323 @@ def list_epics(product=""):
                 continue
             epics.append(summary)
     return epics
+
+
+ARCHIVE_DIR = BACKLOG_DIR / "_archive"
+
+
+def list_archived_epics(product=""):
+    if not ARCHIVE_DIR.exists():
+        return []
+    out = []
+    for d in sorted(ARCHIVE_DIR.iterdir(), reverse=True):
+        if d.is_dir() and (d / "epic.md").exists():
+            try:
+                s = epic_summary(d)
+            except Exception:
+                continue
+            if product and s.get("product") and s["product"] != product:
+                continue
+            out.append(s)
+    return out
+
+
+def _safe_epic_id(epic_id):
+    epic_id = (epic_id or "").strip()
+    if not epic_id or "/" in epic_id or "\\" in epic_id or ".." in epic_id:
+        return None
+    return epic_id
+
+
+def archive_epic(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    src = BACKLOG_DIR / eid
+    if not src.is_dir():
+        return {"ok": False, "error": "epic not found"}
+    ARCHIVE_DIR.mkdir(exist_ok=True)
+    dst = ARCHIVE_DIR / eid
+    if dst.exists():
+        shutil.rmtree(dst)
+    shutil.move(str(src), str(dst))
+    return {"ok": True, "epic_id": eid, "archived": True}
+
+
+def restore_epic(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    src = ARCHIVE_DIR / eid
+    if not src.is_dir():
+        return {"ok": False, "error": "archived epic not found"}
+    dst = BACKLOG_DIR / eid
+    if dst.exists():
+        return {"ok": False, "error": "epic already exists in backlog"}
+    shutil.move(str(src), str(dst))
+    return {"ok": True, "epic_id": eid, "restored": True}
+
+
+def delete_epic(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    for base in (BACKLOG_DIR, ARCHIVE_DIR):
+        p = base / eid
+        if p.is_dir():
+            shutil.rmtree(p)
+            return {"ok": True, "epic_id": eid, "deleted": True}
+    return {"ok": False, "error": "epic not found"}
+
+
+_DONE_STATUSES = {
+    "done", "done_no_pr", "merged", "release_confirmed", "pr_created",
+    "already_satisfied", "no_changes_needed", "manual_verification_passed",
+}
+
+
+def _parse_task_file(path):
+    text = path.read_text(errors="ignore")
+    fields, deps, title, in_deps = {}, [], path.name, False
+    for line in text.splitlines():
+        ls = line.strip()
+        if ls.startswith("### ") and title == path.name:
+            title = ls.lstrip("# ").strip()
+        if ":" in line and not line.startswith("#") and not line.startswith("**"):
+            k, _, v = line.partition(":")
+            k = k.strip().lower()
+            if k in {"status", "type", "pipeline", "risk", "pr", "run"}:
+                fields.setdefault(k, v.strip())
+        if ls.lower().startswith("## depends"):
+            in_deps = True
+            continue
+        if in_deps:
+            if ls.startswith("## "):
+                in_deps = False
+            elif ls and ls != "_None_" and not ls.startswith("_"):
+                deps.append(ls.lstrip("- ").strip())
+    return {"file": path.name, "title": title, "status": fields.get("status", ""),
+            "pr": fields.get("pr", ""), "run": fields.get("run", ""), "depends_on": deps}
+
+
+def _task_num(name):
+    m = re.search(r"task-(\d+)", name or "")
+    return int(m.group(1)) if m else None
+
+
+def _runstate_path(epic_id):
+    return BACKLOG_DIR / epic_id / ".console_runs.json"
+
+
+def load_runstate(epic_id):
+    p = _runstate_path(epic_id)
+    if p.exists():
+        try:
+            return json.loads(p.read_text())
+        except Exception:
+            return {}
+    return {}
+
+
+def set_runstate(epic_id, task_file, **fields):
+    d = load_runstate(epic_id)
+    cur = d.get(task_file, {})
+    cur.update(fields)
+    cur["ts"] = datetime.now().strftime("%H:%M:%S")
+    d[task_file] = cur
+    try:
+        _runstate_path(epic_id).write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
+    return cur
+
+
+def product_backlog(product_name):
+    out = []
+    for e in list_epics(product_name):
+        ed = BACKLOG_DIR / e["id"]
+        files = sorted(ed.glob("task-*.md"))
+        parsed = [(f, _parse_task_file(f)) for f in files]
+        rs = load_runstate(e["id"])
+        def _is_done(fname, status):
+            return status in _DONE_STATUSES or rs.get(fname, {}).get("state") == "accepted"
+        donemap = {_task_num(f.name): _is_done(f.name, t["status"]) for f, t in parsed}
+        for f, t in parsed:
+            st = t["status"] or ""
+            dep_nums = []
+            for d in t["depends_on"]:
+                m = re.search(r"(\d+)", d)
+                if m:
+                    dep_nums.append(int(m.group(1)))
+            unmet = [n for n in dep_nums if not donemap.get(n, False)]
+            run = rs.get(f.name, {})
+            run_state = run.get("state")
+            done = st in _DONE_STATUSES or run_state == "accepted"
+            # console run-state overrides column so the board reflects live work
+            if done:
+                col = "done"
+            elif run_state == "running":
+                col = "in_progress"
+            elif run_state in ("implemented", "no_changes"):
+                col = "in_review"
+            elif st == "pr_created" or st.startswith("manual_verification"):
+                col = "in_review"
+            elif st == "in_progress" or st.endswith("_running"):
+                col = "in_progress"
+            elif unmet:
+                col = "blocked"
+            else:
+                col = "ready"
+            t.update({"epic_id": e["id"], "epic": e.get("request", ""), "num": _task_num(f.name),
+                      "blocked_by": unmet, "ready": col == "ready", "done": done, "column": col,
+                      "run_state": run_state, "run_branch": run.get("branch"),
+                      "run_changed": len(run.get("changed", [])) if run.get("changed") else 0})
+            out.append(t)
+    return {"tasks": out, "count": len(out)}
+
+
+# --- task execution: implement one task in an isolated git worktree -----------
+# Safety: each task gets its own worktree + agentic/ branch from the base; the
+# agent writes only there; changes are committed on that branch; NO push / PR /
+# merge, and the product's main working tree is never touched. Worktrees isolate
+# concurrent runs, so several Ready tasks can run in parallel without colliding.
+def _git_run(repo, args, timeout=1200):
+    import subprocess
+    try:
+        return subprocess.run(["git", "-C", str(repo)] + args, capture_output=True, text=True, timeout=timeout)
+    except Exception as exc:
+        class R:
+            returncode = 1
+            stdout = ""
+            stderr = str(exc)
+        return R()
+
+
+def run_task_implementation(epic_id, task_file):
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid or "/" in (task_file or "") or ".." in (task_file or ""):
+            return {"ok": False, "error": "invalid task reference"}
+        task_path = BACKLOG_DIR / eid / task_file
+        if not task_path.is_file():
+            return {"ok": False, "error": "task not found"}
+        product = _epic_product(BACKLOG_DIR / eid) or ""
+        try:
+            from orchestrator.product_registry import load_product_config
+            cfg = load_product_config(product)
+        except Exception as exc:
+            return {"ok": False, "error": f"product config: {exc}"}
+        repo = cfg.get("repo_path", "")
+        if not repo or not Path(repo).exists():
+            set_runstate(eid, task_file, state="failed", error="repo path not found on this machine")
+            return {"ok": False, "error": "repo path not found on this machine"}
+
+        set_runstate(eid, task_file, state="running", branch=None, changed=[], error=None)
+        base = (_git_run(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).stdout or "").strip() or "HEAD"
+        stem = task_path.stem
+        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
+        branch = f"agentic/{stem}-{ts}"
+        wt_root = Path(repo).parent / ".agentic-worktrees"
+        wt = wt_root / f"{stem}-{ts}"
+        job.emit(f"Creating isolated worktree on {branch} from {base} (main stays clean)")
+        r = _git_run(repo, ["worktree", "add", "-b", branch, str(wt), base])
+        if r.returncode != 0:
+            set_runstate(eid, task_file, state="failed", error=(r.stderr or "").strip())
+            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+
+        try:
+            job.emit("Running implementation agent (Architect → lanes → Implementation → Validation → Review)…")
+            try:
+                from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
+                task = task_path.read_text(errors="ignore")
+                out_dir = f"runs/webui-task-{stem}-{datetime.now().strftime('%H%M%S')}"
+                run_runtime_orchestrator(
+                    task=task, product=product, repo_path=str(wt), output_dir=out_dir,
+                    dry_run=False,
+                    inputs={"task_path": str(task_path), "epic_dir": str(task_path.parent),
+                            "execute_writes": True})
+                job.emit("Implementation agent finished", "ok")
+            except FileNotFoundError:
+                set_runstate(eid, task_file, state="failed", error="claude CLI not found")
+                return {"ok": False, "error": "claude CLI not found — no code written", "branch": branch}
+            except Exception as exc:
+                set_runstate(eid, task_file, state="failed", error=str(exc), branch=branch)
+                return {"ok": False, "error": str(exc), "branch": branch}
+
+            # commit whatever the agent wrote, so the branch durably holds the diff
+            _git_run(wt, ["add", "-A"])
+            commit = _git_run(wt, ["commit", "-m", f"agentic: {stem}"])
+            ns = _git_run(repo, ["diff", "--name-only", f"{base}..{branch}"])
+            changed = [l for l in ns.stdout.splitlines() if l.strip()]
+            if changed:
+                set_runstate(eid, task_file, state="implemented", branch=branch, base=base, changed=changed)
+                job.emit(f"{len(changed)} file(s) committed on {branch}.", "ok")
+                job.emit("No push / PR / merge — open the task to review the diff.", "ok")
+                return {"ok": True, "branch": branch, "base": base, "changed": changed, "state": "implemented"}
+            else:
+                set_runstate(eid, task_file, state="no_changes", branch=branch, base=base, changed=[])
+                job.emit("Agent produced NO file changes for this task.", "skip")
+                return {"ok": True, "branch": branch, "base": base, "changed": [], "state": "no_changes"}
+        finally:
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+    return target
+
+
+def task_detail(epic_id, task_file):
+    eid = _safe_epic_id(epic_id)
+    if not eid or "/" in (task_file or "") or ".." in (task_file or ""):
+        return {"error": "invalid task reference"}
+    p = BACKLOG_DIR / eid / task_file
+    if not p.is_file():
+        return {"error": "task not found"}
+    run = load_runstate(eid).get(task_file, {})
+    return {"content": p.read_text(errors="ignore"), "run": run,
+            "task": _parse_task_file(p)}
+
+
+def task_diff(epic_id, task_file, path):
+    eid = _safe_epic_id(epic_id)
+    run = load_runstate(eid).get(task_file, {})
+    branch, base = run.get("branch"), run.get("base")
+    if not branch or not base:
+        return {"error": "no run diff available"}
+    product = _epic_product(BACKLOG_DIR / eid) or ""
+    try:
+        from orchestrator.product_registry import load_product_config
+        repo = load_product_config(product).get("repo_path", "")
+    except Exception as exc:
+        return {"error": str(exc)}
+    if not repo or not Path(repo).exists():
+        return {"error": "repo path not found on this machine"}
+    args = ["diff", f"{base}..{branch}"]
+    if path:
+        args += ["--", path]
+    r = _git_run(repo, args)
+    return {"diff": r.stdout, "branch": branch, "base": base}
+
+
+def product_overview(product_name):
+    epics = list_epics(product_name)
+    estatus = {}
+    tstatus = {}
+    total_tasks = 0
+    for e in epics:
+        estatus[e.get("status", "—")] = estatus.get(e.get("status", "—"), 0) + 1
+        ed = BACKLOG_DIR / e["id"]
+        for tf in sorted(ed.glob("task-*.md")):
+            t = _parse_task_file(tf)
+            total_tasks += 1
+            st = t["status"] or "—"
+            tstatus[st] = tstatus.get(st, 0) + 1
+    bl = read_baseline(product_name)
+    hist = repo_history(product_name)
+    return {
+        "epics_total": len(epics), "epics_by_status": estatus,
+        "tasks_total": total_tasks, "tasks_by_status": tstatus,
+        "baseline": bl.get("overall") if bl.get("exists") else None,
+        "runs": len(hist.get("runs", [])),
+        "analysis_exists": (MEMORY_DIR / f"{product_name}-analysis.md").exists(),
+    }
 
 
 def epic_detail(epic_id):
@@ -997,10 +1320,110 @@ def repo_diff(product_name, rel):
     return {"path": rel, "diff": out, "empty": not out.strip()}
 
 
+# --- background jobs: stream agent progress, block double-runs ----------------
+JOBS = {}
+INFLIGHT = {}
+JOBS_LOCK = threading.Lock()
+
+
+class Job:
+    def __init__(self, kind, key):
+        self.id = uuid.uuid4().hex[:12]
+        self.kind = kind
+        self.key = key
+        self.log = []
+        self.done = False
+        self.result = None
+        self._lock = threading.Lock()
+
+    def emit(self, msg, level=""):
+        with self._lock:
+            self.log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": msg, "level": level})
+
+    def snapshot(self, frm):
+        with self._lock:
+            return self.log[frm:], self.done, self.result
+
+
+def start_job(kind, key, target):
+    """Start target(job) in a thread. Returns (job, started_new)."""
+    with JOBS_LOCK:
+        existing = INFLIGHT.get(key)
+        if existing and existing in JOBS and not JOBS[existing].done:
+            return JOBS[existing], False
+        job = Job(kind, key)
+        JOBS[job.id] = job
+        INFLIGHT[key] = job.id
+
+    def run():
+        stop = threading.Event()
+
+        def heartbeat():
+            t0 = time.time()
+            while not stop.wait(3):
+                job.emit(f"…still working ({int(time.time() - t0)}s)")
+
+        hb = threading.Thread(target=heartbeat, daemon=True)
+        job.emit(f"{kind}: dispatched")
+        hb.start()
+        try:
+            job.result = target(job) or {"ok": True}
+        except Exception as exc:
+            job.emit(f"error: {exc}", "err")
+            job.result = {"ok": False, "error": str(exc)}
+        finally:
+            stop.set()
+            with JOBS_LOCK:
+                if INFLIGHT.get(key) == job.id:
+                    del INFLIGHT[key]
+            job.emit("done", "ok")
+            job.done = True
+
+    threading.Thread(target=run, daemon=True).start()
+    return job, True
+
+
+def _forward(fn, *args):
+    """Wrap a synchronous webui action so its returned log streams to the job."""
+    def target(job):
+        r = fn(*args) or {}
+        for l in r.get("log", []):
+            job.emit(l.get("msg", ""), l.get("level", ""))
+        return {k: v for k, v in r.items() if k != "log"}
+    return target
+
+
 # --- HTTP layer ---------------------------------------------------------------
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # quiet
+
+    def _stream_job(self, job_id):
+        job = JOBS.get(job_id)
+        if not job:
+            return self._send(404, {"error": "job not found"})
+        self.send_response(200)
+        self.send_header("Content-Type", "text/event-stream; charset=utf-8")
+        self.send_header("Cache-Control", "no-cache")
+        self.send_header("Connection", "keep-alive")
+        self.send_header("X-Accel-Buffering", "no")
+        self.end_headers()
+        sent = 0
+        try:
+            while True:
+                lines, done, result = job.snapshot(sent)
+                for ln in lines:
+                    self.wfile.write(("data: " + json.dumps(ln, ensure_ascii=False) + "\n\n").encode("utf-8"))
+                sent += len(lines)
+                if lines:
+                    self.wfile.flush()
+                if done:
+                    self.wfile.write(("event: done\ndata: " + json.dumps(result or {}, ensure_ascii=False) + "\n\n").encode("utf-8"))
+                    self.wfile.flush()
+                    return
+                time.sleep(0.5)
+        except (BrokenPipeError, ConnectionResetError, OSError):
+            return
 
     def _send(self, code, body, ctype="application/json"):
         if isinstance(body, (dict, list)):
@@ -1045,6 +1468,21 @@ class Handler(BaseHTTPRequestHandler):
                 })
             if path == "/api/epics":
                 return self._send(200, {"epics": list_epics(q.get("product", [""])[0])})
+            if path == "/api/epics/archived":
+                return self._send(200, {"epics": list_archived_epics(q.get("product", [""])[0])})
+            if path == "/api/overview":
+                return self._send(200, product_overview(q.get("product", [""])[0]))
+            if path == "/api/backlog":
+                return self._send(200, product_backlog(q.get("product", [""])[0]))
+            if path == "/api/task":
+                return self._send(200, task_detail(q.get("epic_id", [""])[0], q.get("task_file", [""])[0]))
+            if path == "/api/task/diff":
+                return self._send(200, task_diff(q.get("epic_id", [""])[0], q.get("task_file", [""])[0], q.get("path", [""])[0]))
+            if path == "/api/jobs/active":
+                with JOBS_LOCK:
+                    active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
+                              for j in JOBS.values() if not j.done and j.kind == "task_run"]
+                return self._send(200, {"active": active})
             if path == "/api/epic":
                 d = epic_detail(q.get("id", [""])[0])
                 return self._send(200, d) if d else self._send(404, {"error": "epic not found"})
@@ -1052,6 +1490,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, {"runs": list_runs()})
             if path == "/api/version":
                 return self._send(200, {"api_version": API_VERSION})
+            if path == "/api/job":
+                job = JOBS.get(q.get("id", [""])[0])
+                if not job:
+                    return self._send(404, {"error": "job not found"})
+                lines, done, result = job.snapshot(0)
+                return self._send(200, {"id": job.id, "log": lines, "done": done, "result": result})
+            if path == "/api/job/stream":
+                return self._stream_job(q.get("id", [""])[0])
             if path == "/api/repo/tree":
                 return self._send(200, repo_tree(q.get("product", [""])[0], q.get("path", [""])[0]))
             if path == "/api/repo/file":
@@ -1098,7 +1544,9 @@ class Handler(BaseHTTPRequestHandler):
                 request = (payload.get("request") or "").strip()
                 if not product or not request:
                     return self._send(400, {"error": "product and request are required"})
-                return self._send(200, run_decompose(product, request))
+                job, started = start_job("decompose", ("decompose", product, request),
+                                         _forward(run_decompose, product, request))
+                return self._send(200, {"job_id": job.id, "started": started})
             if u.path == "/api/connect-repo":
                 return self._send(200, connect_repo(
                     payload.get("path", ""), payload.get("name", ""),
@@ -1114,9 +1562,36 @@ class Handler(BaseHTTPRequestHandler):
                     return self._send(400, {"error": "product is required"})
                 return self._send(200, run_baseline(product))
             if u.path == "/api/approve-product":
-                return self._send(200, approve_product_spec((payload.get("epic_id") or "").strip()))
+                eid = (payload.get("epic_id") or "").strip()
+                job, started = start_job("approve_product", ("approve_product", eid),
+                                         _forward(approve_product_spec, eid))
+                return self._send(200, {"job_id": job.id, "started": started})
             if u.path == "/api/approve-spec":
-                return self._send(200, approve_feature_spec((payload.get("epic_id") or "").strip()))
+                eid = (payload.get("epic_id") or "").strip()
+                job, started = start_job("approve_spec", ("approve_spec", eid),
+                                         _forward(approve_feature_spec, eid))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/task/accept":
+                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
+                tf = (payload.get("task_file") or "").strip()
+                if not eid or not tf:
+                    return self._send(400, {"error": "epic_id and task_file required"})
+                set_runstate(eid, tf, state="accepted")
+                return self._send(200, {"ok": True, "epic_id": eid, "task_file": tf, "state": "accepted"})
+            if u.path == "/api/task/run":
+                eid = (payload.get("epic_id") or "").strip()
+                tf = (payload.get("task_file") or "").strip()
+                if not eid or not tf:
+                    return self._send(400, {"error": "epic_id and task_file required"})
+                job, started = start_job("task_run", ("task_run", eid, tf),
+                                         run_task_implementation(eid, tf))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/archive":
+                return self._send(200, archive_epic((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/restore":
+                return self._send(200, restore_epic((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/delete":
+                return self._send(200, delete_epic((payload.get("epic_id") or "").strip()))
             if u.path == "/api/commit-epic":
                 return self._send(200, commit_epic((payload.get("epic_id") or "").strip(),
                                                    payload.get("message")))
