@@ -47,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-35"
+API_VERSION = "workspace-36"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -2188,76 +2188,15 @@ def repo_diff(product_name, rel):
 
 
 # --- background jobs: stream agent progress, block double-runs ----------------
-JOBS = {}
-INFLIGHT = {}
-JOBS_LOCK = threading.Lock()
-
-
-class Job:
-    def __init__(self, kind, key):
-        self.id = uuid.uuid4().hex[:12]
-        self.kind = kind
-        self.key = key
-        self.log = []
-        self.done = False
-        self.result = None
-        self._lock = threading.Lock()
-
-    def emit(self, msg, level=""):
-        with self._lock:
-            self.log.append({"ts": datetime.now().strftime("%H:%M:%S"), "msg": msg, "level": level})
-
-    def snapshot(self, frm):
-        with self._lock:
-            return self.log[frm:], self.done, self.result
-
-
-def start_job(kind, key, target):
-    """Start target(job) in a thread. Returns (job, started_new)."""
-    with JOBS_LOCK:
-        existing = INFLIGHT.get(key)
-        if existing and existing in JOBS and not JOBS[existing].done:
-            return JOBS[existing], False
-        job = Job(kind, key)
-        JOBS[job.id] = job
-        INFLIGHT[key] = job.id
-
-    def run():
-        stop = threading.Event()
-
-        def heartbeat():
-            t0 = time.time()
-            while not stop.wait(3):
-                job.emit(f"…still working ({int(time.time() - t0)}s)")
-
-        hb = threading.Thread(target=heartbeat, daemon=True)
-        job.emit(f"{kind}: dispatched")
-        hb.start()
-        try:
-            job.result = target(job) or {"ok": True}
-        except Exception as exc:
-            job.emit(f"error: {exc}", "err")
-            job.result = {"ok": False, "error": str(exc)}
-        finally:
-            stop.set()
-            with JOBS_LOCK:
-                if INFLIGHT.get(key) == job.id:
-                    del INFLIGHT[key]
-            job.emit("done", "ok")
-            job.done = True
-
-    threading.Thread(target=run, daemon=True).start()
-    return job, True
-
-
-def _forward(fn, *args):
-    """Wrap a synchronous webui action so its returned log streams to the job."""
-    def target(job):
-        r = fn(*args) or {}
-        for l in r.get("log", []):
-            job.emit(l.get("msg", ""), l.get("level", ""))
-        return {k: v for k, v in r.items() if k != "log"}
-    return target
+# Machinery lives in console.jobs; re-bind the SAME objects so existing call
+# sites (start_job / _forward / JOBS / INFLIGHT) and the SSE handler are unchanged.
+from console import jobs as _jobs
+JOBS = _jobs.JOBS
+INFLIGHT = _jobs.INFLIGHT
+JOBS_LOCK = _jobs.JOBS_LOCK
+Job = _jobs.Job
+start_job = _jobs.start_job
+_forward = _jobs._forward
 
 
 # --- HTTP layer ---------------------------------------------------------------
