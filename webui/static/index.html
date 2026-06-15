@@ -176,7 +176,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-11";
+const FE_VERSION="workspace-13";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -440,9 +440,28 @@ async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent
     <h1 style="font-size:18px;margin-bottom:6px">${esc(s.request||id)}</h1><div class="note">${esc(id)}</div>
     <div class="rail">${rail}</div>
     <div class="card" style="margin-bottom:14px"><h2>Next</h2>${action||'<div class="muted">—</div>'}<div class="log" id="alog" style="display:none;margin-top:10px"></div></div>
+    <div class="card" style="margin-bottom:14px"><h2>Execution · <span class="mono" style="font-size:12px">${esc(epicBranch(id))}</span></h2>
+      <div id="exec-gate" style="margin-bottom:8px"><span class="muted">checking…</span></div>
+      <div class="row"><span id="exec-build"></span>
+      <button class="btn ghost sm" onclick="resetEpicRuns('${esc(id)}')">Restart by DAG</button>
+      <span class="muted" style="font-size:12px">Сборка = cherry-pick принятых задач по DAG. Без агента, main не трогается, без PR.</span></div>
+      <div class="log" id="epiclog" style="display:none;margin-top:10px"></div></div>
     ${tasks}
     <div class="card"><h2>Artifacts</h2><div class="split"><div class="tree" id="artlist">${artList}</div><div class="viewer" id="aview"><div class="vh">select an artifact</div></div></div></div>`;
-  if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));}
+  if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));
+  refreshExecGate(id);}
+async function refreshExecGate(id){
+  const bs=await api("/api/epic/build-status?epic_id="+encodeURIComponent(id));
+  const g=$("#exec-gate"),b=$("#exec-build");if(!g||!b)return;
+  if(bs.error){g.innerHTML='<span class="muted">'+esc(bs.error)+'</span>';return}
+  if(bs.buildable){
+    g.innerHTML=`<span class="pill ok">все ${bs.total} задач приняты — готово к сборке</span>`;
+    b.innerHTML=`<button class="btn" onclick="buildEpic('${esc(id)}',this)">Собрать ветку эпика →</button>`;
+  }else{
+    g.innerHTML=`<span class="pill warn">принято ${bs.accepted.length} из ${bs.total} · ждут: ${bs.pending.map(n=>"#"+n).join(", ")||"—"}</span>`;
+    b.innerHTML=`<button class="btn" disabled title="Сначала прими все задачи на доске">Собрать ветку эпика →</button>`;
+  }
+}
 async function viewArtifact(id,name,row){document.querySelectorAll("#artlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   const v=$("#aview");v.innerHTML='<div class="vh">'+esc(name)+'</div><div class="muted" style="padding:12px">Loading…</div>';
   const r=await api("/api/file?path="+encodeURIComponent("backlog/"+id+"/"+name));let b;const txt=r.content||r.text||"";
@@ -461,7 +480,7 @@ const cssId=s=>s.replace(/[^a-zA-Z0-9]/g,"_");
 const runKey=(e,f)=>e+"::"+f;
 async function loadBacklog(){$("#pane-backlog").innerHTML='<div class="muted">Loading…</div>';
   const r=await api("/api/backlog?product="+encodeURIComponent(CUR));BL=r.tasks||[];
-  $("#pane-backlog").innerHTML=`<div class="note">Run исполняет задачу в изолированном worktree на ветке <span class="mono">agentic/…</span> — main чистый, без PR/merge. Можно запускать несколько Ready сразу.</div>
+  $("#pane-backlog").innerHTML=`<div class="note">Задачи собираются на одну ветку эпика <span class="mono">agentic/epic-…</span> по DAG (последовательно). main не трогается, без PR/merge. Полную сборку — в Epics → открой эпик → Build epic by DAG.</div>
     <div class="row" style="margin-bottom:10px"><input id="bf" placeholder="filter tasks…" style="width:240px" oninput="renderBoard()"/>
     <button class="btn sm" onclick="runAllReady(this)">Run all ready</button>
     <span class="muted" style="font-size:12px">${BL.length} tasks · ${BL.filter(t=>t.column==="ready").length} ready · ${BL.filter(t=>t.done).length} done</span></div>
@@ -553,6 +572,24 @@ async function acceptTask(epicId,file){
   loadBacklogQuiet();
 }
 function backToBoard(){$("#task-detail").style.display="none";$("#board").style.display="";renderRunsPanel();loadBacklogQuiet();}
+function epicBranch(id){const m=(id||"").match(/^(\d{8}-\d{6})/);return "agentic/epic-"+(m?m[1]:(id||"epic").replace(/[^a-zA-Z0-9]+/g,"-").slice(0,24));}
+function buildEpic(id,btn){
+  if(!confirm("Собрать ветку эпика?\n\nCherry-pick принятых задач по DAG на чистую ветку agentic/epic-…. Без агента (быстро), main не трогается, без PR/merge."))return;
+  btn.disabled=true;btn.textContent="Assembling…";
+  runJob("/api/epic/build",{epic_id:id},"#epiclog",res=>{
+    btn.disabled=false;btn.textContent="Собрать ветку эпика →";
+    if(res&&res.ok)toast("Собрано на "+(res.branch||"")+" — "+(res.applied||0)+" задач");
+    else if(res&&res.conflict_task)toast("Конфликт на "+res.conflict_task+" — нужно разрулить");
+    else if(res&&res.error)toast(res.error);
+    setTimeout(()=>openEpic(id),300);
+  });
+}
+function resetEpicRuns(id){
+  if(!confirm("Перезапустить эпик по DAG?\n\nСбросит состояние прогонов (.console_runs.json) и удалит ЛОКАЛЬНЫЕ ветки agentic/* этого эпика. main и origin не трогаются."))return;
+  api("/api/epic/reset-runs",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})}).then(r=>{
+    if(r.error){toast(r.error);return}toast("Reset — ветка эпика пересоберётся с чистого base");setTimeout(()=>openEpic(id),200);
+  });
+}
 async function taskDiff(epicId,file,path,row){
   document.querySelectorAll("#tfiles .filerow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   $("#tdiff").innerHTML='<div class="vh">'+esc(path)+'</div><div class="muted" style="padding:12px">Loading…</div>';
@@ -563,7 +600,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate});
 </script>
 </body>
 </html>

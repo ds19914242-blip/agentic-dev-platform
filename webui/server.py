@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-11"
+API_VERSION = "workspace-13"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -474,12 +474,13 @@ def product_backlog(product_name):
     return {"tasks": out, "count": len(out)}
 
 
-# --- task execution: implement one task in an isolated git worktree -----------
-# Safety: each task gets its own worktree + agentic/ branch from the base; the
-# agent writes only there; changes are committed on that branch; NO push / PR /
-# merge, and the product's main working tree is never touched. Worktrees isolate
-# concurrent runs, so several Ready tasks can run in parallel without colliding.
-def _git_run(repo, args, timeout=1200):
+# --- task execution: build a single epic branch in dependency order ----------
+# Model: each epic accumulates code on ONE branch `agentic/epic-<ts>`. A task
+# runs in a worktree checked out on that branch (so it sees predecessors' code),
+# the agent writes, the change is committed, and the branch advances linearly —
+# no merges, no conflicts, main untouched, no push / PR. Per-epic lock serializes
+# runs so the linear history stays clean.
+def _git_run(repo, args, timeout=1800):
     import subprocess
     try:
         return subprocess.run(["git", "-C", str(repo)] + args, capture_output=True, text=True, timeout=timeout)
@@ -491,74 +492,234 @@ def _git_run(repo, args, timeout=1200):
         return R()
 
 
+_EPIC_LOCKS = {}
+_EPIC_LOCKS_GUARD = threading.Lock()
+
+
+def _epic_lock(epic_id):
+    with _EPIC_LOCKS_GUARD:
+        if epic_id not in _EPIC_LOCKS:
+            _EPIC_LOCKS[epic_id] = threading.Lock()
+        return _EPIC_LOCKS[epic_id]
+
+
+def _epic_branch(epic_id):
+    m = re.match(r"(\d{8}-\d{6})", epic_id or "")
+    tag = m.group(1) if m else re.sub(r"[^a-zA-Z0-9]+", "-", epic_id or "epic")[:24].strip("-")
+    return f"agentic/epic-{tag}"
+
+
+def _base_ref(repo):
+    for ref in ("origin/main", "main", "origin/master", "master"):
+        if _git_run(repo, ["rev-parse", "--verify", ref]).returncode == 0:
+            return ref
+    return (_git_run(repo, ["symbolic-ref", "--short", "HEAD"]).stdout or "HEAD").strip() or "HEAD"
+
+
+def _resolve_repo(epic_id):
+    product = _epic_product(BACKLOG_DIR / epic_id) or ""
+    try:
+        from orchestrator.product_registry import load_product_config
+        repo = load_product_config(product).get("repo_path", "")
+    except Exception as exc:
+        return None, None, str(exc)
+    if not repo or not Path(repo).exists():
+        return product, None, "repo path not found on this machine"
+    return product, repo, None
+
+
+def _task_branch(epic_id, stem):
+    return f"agentic/task-{_epic_branch(epic_id).split('-', 1)[-1]}-{stem}"
+
+
+def _run_task(epic_id, task_file, product, repo, job):
+    """Implement ONE task in a worktree from base; commit it on its OWN reusable
+    branch agentic/task-… so the epic build can later cherry-pick it. Runs the
+    agent (LLM) — this is the only place the agent is invoked."""
+    task_path = BACKLOG_DIR / epic_id / task_file
+    if not task_path.is_file():
+        return {"ok": False, "error": "task not found"}
+    stem = task_path.stem
+    base = _base_ref(repo)
+    tb = _task_branch(epic_id, stem)
+    wt = Path(repo).parent / ".agentic-worktrees" / f"{stem}-{datetime.now().strftime('%H%M%S')}"
+    job.emit(f"Creating worktree on {tb} from {base} (main untouched)")
+    r = _git_run(repo, ["worktree", "add", "-B", tb, str(wt), base])
+    if r.returncode != 0:
+        set_runstate(epic_id, task_file, state="failed", error=(r.stderr or "").strip())
+        return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+    try:
+        before = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+        job.emit("Running implementation agent (Architect → lanes → Implementation → Validation → Review)…")
+        try:
+            from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
+            out_dir = f"runs/webui-task-{stem}-{datetime.now().strftime('%H%M%S')}"
+            run_runtime_orchestrator(
+                task=task_path.read_text(errors="ignore"), product=product, repo_path=str(wt),
+                output_dir=out_dir, dry_run=False,
+                inputs={"task_path": str(task_path), "epic_dir": str(task_path.parent),
+                        "execute_writes": True})
+        except FileNotFoundError:
+            set_runstate(epic_id, task_file, state="failed", error="claude CLI not found")
+            return {"ok": False, "error": "claude CLI not found — no code written"}
+        except Exception as exc:
+            set_runstate(epic_id, task_file, state="failed", error=str(exc))
+            return {"ok": False, "error": str(exc)}
+        _git_run(wt, ["add", "-A"])
+        _git_run(wt, ["commit", "-m", f"agentic: {stem}"])
+        after = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+        if after and after != before:
+            changed = [l for l in _git_run(wt, ["diff", "--name-only", f"{before}..{after}"]).stdout.splitlines() if l.strip()]
+            set_runstate(epic_id, task_file, state="implemented", branch=tb, base=before, head=after, changed=changed)
+            job.emit(f"{stem}: {len(changed)} file(s) committed on {tb}", "ok")
+            return {"ok": True, "branch": tb, "changed": changed, "state": "implemented"}
+        set_runstate(epic_id, task_file, state="no_changes", branch=tb, base=before, head=before, changed=[])
+        job.emit(f"{stem}: agent produced NO file changes", "skip")
+        return {"ok": True, "branch": tb, "changed": [], "state": "no_changes"}
+    finally:
+        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+        _git_run(repo, ["worktree", "prune"])
+
+
 def run_task_implementation(epic_id, task_file):
     def target(job):
         eid = _safe_epic_id(epic_id)
         if not eid or "/" in (task_file or "") or ".." in (task_file or ""):
             return {"ok": False, "error": "invalid task reference"}
-        task_path = BACKLOG_DIR / eid / task_file
-        if not task_path.is_file():
-            return {"ok": False, "error": "task not found"}
-        product = _epic_product(BACKLOG_DIR / eid) or ""
-        try:
-            from orchestrator.product_registry import load_product_config
-            cfg = load_product_config(product)
-        except Exception as exc:
-            return {"ok": False, "error": f"product config: {exc}"}
-        repo = cfg.get("repo_path", "")
-        if not repo or not Path(repo).exists():
-            set_runstate(eid, task_file, state="failed", error="repo path not found on this machine")
-            return {"ok": False, "error": "repo path not found on this machine"}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            set_runstate(eid, task_file, state="failed", error=err)
+            return {"ok": False, "error": err}
+        set_runstate(eid, task_file, state="running")
+        with _epic_lock(eid):
+            return _run_task(eid, task_file, product, repo, job)
+    return target
 
-        set_runstate(eid, task_file, state="running", branch=None, changed=[], error=None)
-        base = (_git_run(repo, ["rev-parse", "--abbrev-ref", "HEAD"]).stdout or "").strip() or "HEAD"
-        stem = task_path.stem
-        ts = datetime.now().strftime("%Y%m%d-%H%M%S")
-        branch = f"agentic/{stem}-{ts}"
-        wt_root = Path(repo).parent / ".agentic-worktrees"
-        wt = wt_root / f"{stem}-{ts}"
-        job.emit(f"Creating isolated worktree on {branch} from {base} (main stays clean)")
-        r = _git_run(repo, ["worktree", "add", "-b", branch, str(wt), base])
+
+def _topo_order(nums, depmap):
+    """Kahn topological sort over task numbers; stable by number on ties."""
+    nums = sorted(nums)
+    indeg = {n: len([d for d in depmap.get(n, set()) if d in nums]) for n in nums}
+    out, ready = [], sorted([n for n in nums if indeg[n] == 0])
+    seen = set()
+    while ready:
+        n = ready.pop(0)
+        if n in seen:
+            continue
+        seen.add(n)
+        out.append(n)
+        for m in nums:
+            if n in depmap.get(m, set()) and m not in seen:
+                indeg[m] -= 1
+                if indeg[m] <= 0 and m not in ready:
+                    ready.append(m)
+        ready.sort()
+    for n in nums:  # append any left over (cycles) deterministically
+        if n not in seen:
+            out.append(n)
+    return out
+
+
+def epic_build_status(epic_id):
+    """Gate info for assembling an epic: build is allowed only when every task is
+    accepted (reviewed). Returns counts + which task numbers are still pending."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"error": "invalid epic id"}
+    files = sorted((BACKLOG_DIR / eid).glob("task-*.md"))
+    rs = load_runstate(eid)
+    accepted, pending = [], []
+    for f in files:
+        n = _task_num(f.name)
+        if rs.get(f.name, {}).get("state") == "accepted":
+            accepted.append(n)
+        else:
+            pending.append(n)
+    return {"total": len(files), "accepted": sorted(accepted), "pending": sorted(pending),
+            "buildable": len(files) > 0 and not pending, "branch": _epic_branch(eid)}
+
+
+def build_epic(epic_id):
+    """Assemble the epic branch by CHERRY-PICKING each accepted task's commit in
+    DAG order. No agent / LLM is invoked here — pure git integration of work that
+    was already implemented and accepted. Gated on all tasks being accepted."""
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        status = epic_build_status(eid)
+        if not status.get("buildable"):
+            msg = "Not all tasks accepted — pending: " + ", ".join("#" + str(n) for n in status.get("pending", []))
+            job.emit(msg, "err")
+            return {"ok": False, "error": msg, "pending": status.get("pending", [])}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        files = sorted((BACKLOG_DIR / eid).glob("task-*.md"))
+        depmap = epic_dep_nums(eid, files)
+        byname = {_task_num(f.name): f.name for f in files}
+        order = _topo_order([_task_num(f.name) for f in files], depmap)
+        rs = load_runstate(eid)
+        eb = _epic_branch(eid)
+        base = _base_ref(repo)
+        wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-assemble-{datetime.now().strftime('%H%M%S')}"
+        job.emit(f"Assembling {eb} from {base} by cherry-pick (no agent) — order: " +
+                 ", ".join("#" + str(n) for n in order))
+        r = _git_run(repo, ["worktree", "add", "-B", eb, str(wt), base])
         if r.returncode != 0:
-            set_runstate(eid, task_file, state="failed", error=(r.stderr or "").strip())
             return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
-
         try:
-            job.emit("Running implementation agent (Architect → lanes → Implementation → Validation → Review)…")
-            try:
-                from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
-                task = task_path.read_text(errors="ignore")
-                out_dir = f"runs/webui-task-{stem}-{datetime.now().strftime('%H%M%S')}"
-                run_runtime_orchestrator(
-                    task=task, product=product, repo_path=str(wt), output_dir=out_dir,
-                    dry_run=False,
-                    inputs={"task_path": str(task_path), "epic_dir": str(task_path.parent),
-                            "execute_writes": True})
-                job.emit("Implementation agent finished", "ok")
-            except FileNotFoundError:
-                set_runstate(eid, task_file, state="failed", error="claude CLI not found")
-                return {"ok": False, "error": "claude CLI not found — no code written", "branch": branch}
-            except Exception as exc:
-                set_runstate(eid, task_file, state="failed", error=str(exc), branch=branch)
-                return {"ok": False, "error": str(exc), "branch": branch}
-
-            # commit whatever the agent wrote, so the branch durably holds the diff
-            _git_run(wt, ["add", "-A"])
-            commit = _git_run(wt, ["commit", "-m", f"agentic: {stem}"])
-            ns = _git_run(repo, ["diff", "--name-only", f"{base}..{branch}"])
-            changed = [l for l in ns.stdout.splitlines() if l.strip()]
-            if changed:
-                set_runstate(eid, task_file, state="implemented", branch=branch, base=base, changed=changed)
-                job.emit(f"{len(changed)} file(s) committed on {branch}.", "ok")
-                job.emit("No push / PR / merge — open the task to review the diff.", "ok")
-                return {"ok": True, "branch": branch, "base": base, "changed": changed, "state": "implemented"}
-            else:
-                set_runstate(eid, task_file, state="no_changes", branch=branch, base=base, changed=[])
-                job.emit("Agent produced NO file changes for this task.", "skip")
-                return {"ok": True, "branch": branch, "base": base, "changed": [], "state": "no_changes"}
+            picked, skipped = 0, 0
+            for n in order:
+                tf = byname.get(n)
+                if not tf:
+                    continue
+                run = rs.get(tf, {})
+                head = run.get("head")
+                if not run.get("changed") or not head or head == run.get("base"):
+                    job.emit(f"#{n} {tf}: no code change — skipped", "skip")
+                    skipped += 1
+                    continue
+                cp = _git_run(wt, ["cherry-pick", head])
+                if cp.returncode != 0:
+                    confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines()
+                             if l.startswith(("UU", "AA", "DD"))]
+                    _git_run(wt, ["cherry-pick", "--abort"])
+                    job.emit(f"#{n} {tf}: CONFLICT on {', '.join(confl) or 'files'} — assembly stopped", "err")
+                    return {"ok": False, "error": "merge conflict at #" + str(n),
+                            "conflict_task": tf, "conflict_files": confl, "branch": eb}
+                job.emit(f"#{n} {tf}: applied", "ok")
+                picked += 1
+            job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
+            return {"ok": True, "branch": eb, "applied": picked, "skipped": skipped}
         finally:
             _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
     return target
+
+
+def reset_epic_runs(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    p = _runstate_path(eid)
+    if p.exists():
+        try:
+            p.unlink()
+        except Exception:
+            pass
+    product, repo, err = _resolve_repo(eid)
+    deleted = None
+    if not err and repo:
+        _git_run(repo, ["worktree", "prune"])
+        eb = _epic_branch(eid)
+        tag = eb.split("-", 1)[-1]
+        for b in (_git_run(repo, ["branch", "--list", "agentic/*"]).stdout or "").splitlines():
+            name = b.strip().lstrip("* ").strip()
+            if name and (name == eb or name.startswith(f"agentic/task-{tag}-") or name.startswith("agentic/task-")):
+                _git_run(repo, ["branch", "-D", name])
+        deleted = eb
+    return {"ok": True, "epic_id": eid, "reset_branch": deleted}
 
 
 def task_detail(epic_id, task_file):
@@ -576,22 +737,17 @@ def task_detail(epic_id, task_file):
 def task_diff(epic_id, task_file, path):
     eid = _safe_epic_id(epic_id)
     run = load_runstate(eid).get(task_file, {})
-    branch, base = run.get("branch"), run.get("base")
-    if not branch or not base:
+    base, head = run.get("base"), run.get("head")
+    if not base or not head:
         return {"error": "no run diff available"}
-    product = _epic_product(BACKLOG_DIR / eid) or ""
-    try:
-        from orchestrator.product_registry import load_product_config
-        repo = load_product_config(product).get("repo_path", "")
-    except Exception as exc:
-        return {"error": str(exc)}
-    if not repo or not Path(repo).exists():
-        return {"error": "repo path not found on this machine"}
-    args = ["diff", f"{base}..{branch}"]
+    product, repo, err = _resolve_repo(eid)
+    if err:
+        return {"error": err}
+    args = ["diff", f"{base}..{head}"]
     if path:
         args += ["--", path]
     r = _git_run(repo, args)
-    return {"diff": r.stdout, "branch": branch, "base": base}
+    return {"diff": r.stdout, "base": base, "head": head}
 
 
 def product_overview(product_name):
@@ -1516,6 +1672,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, task_detail(q.get("epic_id", [""])[0], q.get("task_file", [""])[0]))
             if path == "/api/task/diff":
                 return self._send(200, task_diff(q.get("epic_id", [""])[0], q.get("task_file", [""])[0], q.get("path", [""])[0]))
+            if path == "/api/epic/build-status":
+                return self._send(200, epic_build_status(q.get("epic_id", [""])[0]))
             if path == "/api/jobs/active":
                 with JOBS_LOCK:
                     active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
@@ -1609,6 +1767,14 @@ class Handler(BaseHTTPRequestHandler):
                 job, started = start_job("approve_spec", ("approve_spec", eid),
                                          _forward(approve_feature_spec, eid))
                 return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/build":
+                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
+                if not eid:
+                    return self._send(400, {"error": "epic_id required"})
+                job, started = start_job("epic_build", ("epic_build", eid), build_epic(eid))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/reset-runs":
+                return self._send(200, reset_epic_runs((payload.get("epic_id") or "").strip()))
             if u.path == "/api/task/accept":
                 eid = _safe_epic_id((payload.get("epic_id") or "").strip())
                 tf = (payload.get("task_file") or "").strip()
