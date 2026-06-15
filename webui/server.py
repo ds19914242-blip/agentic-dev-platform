@@ -47,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-39"
+API_VERSION = "workspace-40"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -2303,6 +2303,143 @@ GET_ROUTES = {
 }
 
 
+# --- POST route table --------------------------------------------------------
+# Same convention as GET: a handler takes the parsed JSON body (payload) and returns
+# either a body (sent with 200) or a (status, body) tuple. Body reading + JSON parse
+# (and the 400 on invalid JSON) stay in do_POST; there are no streaming POST routes,
+# so every POST endpoint lives in this table.
+
+def _pp(payload, key):
+    """Stripped string body field, matching the old (payload.get(key) or '').strip()."""
+    return (payload.get(key) or "").strip()
+
+
+def _post_decompose(p):
+    product, request = _pp(p, "product"), _pp(p, "request")
+    if not product or not request:
+        return (400, {"error": "product and request are required"})
+    job, started = start_job("decompose", ("decompose", product, request),
+                             _forward(run_decompose, product, request))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_quick_task(p):
+    product, request = _pp(p, "product"), _pp(p, "request")
+    kind = (p.get("kind") or "task").strip()
+    if not product or not request:
+        return (400, {"error": "product and request are required"})
+    return run_quick_task(product, request, kind)
+
+
+def _post_analyze(p):
+    product = _pp(p, "product")
+    if not product:
+        return (400, {"error": "product is required"})
+    return analyze_product(product)
+
+
+def _post_baseline(p):
+    product = _pp(p, "product")
+    if not product:
+        return (400, {"error": "product is required"})
+    return run_baseline(product)
+
+
+def _post_approve_product(p):
+    eid = _pp(p, "epic_id")
+    job, started = start_job("approve_product", ("approve_product", eid),
+                             _forward(approve_product_spec, eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_approve_spec(p):
+    eid = _pp(p, "epic_id")
+    job, started = start_job("approve_spec", ("approve_spec", eid),
+                             _forward(approve_feature_spec, eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_epic_build(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_build", ("epic_build", eid), build_epic(eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_epic_push(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_push", ("epic_push", eid), push_epic(eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_epic_fix(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_fix", ("epic_fix", eid), fix_epic_build(eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_epic_validate(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_validate", ("epic_validate", eid), validate_epic(eid))
+    return {"job_id": job.id, "started": started}
+
+
+def _post_task_accept(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    tf = _pp(p, "task_file")
+    if not eid or not tf:
+        return (400, {"error": "epic_id and task_file required"})
+    set_runstate(eid, tf, state="accepted")
+    return {"ok": True, "epic_id": eid, "task_file": tf, "state": "accepted"}
+
+
+def _post_task_run(p):
+    eid = _pp(p, "epic_id")
+    tf = _pp(p, "task_file")
+    if not eid or not tf:
+        return (400, {"error": "epic_id and task_file required"})
+    job, started = start_job("task_run", ("task_run", eid, tf),
+                             run_task_implementation(eid, tf))
+    return {"job_id": job.id, "started": started}
+
+
+POST_ROUTES = {
+    "/api/decompose": _post_decompose,
+    "/api/quick-task": _post_quick_task,
+    "/api/inbox/add": lambda p: inbox_add(_pp(p, "product"), (p.get("type") or "task").strip(), _pp(p, "text")),
+    "/api/inbox/delete": lambda p: inbox_delete(_pp(p, "id")),
+    "/api/connect-repo": lambda p: connect_repo(p.get("path", ""), p.get("name", ""),
+                                                p.get("framework", "other"), bool(p.get("force"))),
+    "/api/analyze": _post_analyze,
+    "/api/baseline": _post_baseline,
+    "/api/approve-product": _post_approve_product,
+    "/api/approve-spec": _post_approve_spec,
+    "/api/epic/build": _post_epic_build,
+    "/api/epic/preview-start": lambda p: preview_start(_pp(p, "epic_id")),
+    "/api/epic/preview-stop": lambda p: preview_stop(_pp(p, "epic_id")),
+    "/api/epic/preview-mark": lambda p: preview_mark(_pp(p, "epic_id")),
+    "/api/epic/push": _post_epic_push,
+    "/api/epic/rollback": lambda p: rollback_epic(_pp(p, "epic_id")),
+    "/api/epic/fix-build": _post_epic_fix,
+    "/api/epic/validate": _post_epic_validate,
+    "/api/epic/reset-runs": lambda p: reset_epic_runs(_pp(p, "epic_id")),
+    "/api/task/reset": lambda p: reset_task_run(_pp(p, "epic_id"), _pp(p, "task_file")),
+    "/api/task/accept": _post_task_accept,
+    "/api/task/run": _post_task_run,
+    "/api/epic/archive": lambda p: archive_epic(_pp(p, "epic_id")),
+    "/api/epic/restore": lambda p: restore_epic(_pp(p, "epic_id")),
+    "/api/epic/delete": lambda p: delete_epic(_pp(p, "epic_id")),
+    "/api/commit-epic": lambda p: commit_epic(_pp(p, "epic_id"), p.get("message")),
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # quiet
@@ -2391,113 +2528,14 @@ class Handler(BaseHTTPRequestHandler):
         except Exception:
             return self._send(400, {"error": "invalid JSON body"})
         try:
-            if u.path == "/api/decompose":
-                product = (payload.get("product") or "").strip()
-                request = (payload.get("request") or "").strip()
-                if not product or not request:
-                    return self._send(400, {"error": "product and request are required"})
-                job, started = start_job("decompose", ("decompose", product, request),
-                                         _forward(run_decompose, product, request))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/quick-task":
-                product = (payload.get("product") or "").strip()
-                request = (payload.get("request") or "").strip()
-                kind = (payload.get("kind") or "task").strip()
-                if not product or not request:
-                    return self._send(400, {"error": "product and request are required"})
-                return self._send(200, run_quick_task(product, request, kind))
-            if u.path == "/api/inbox/add":
-                return self._send(200, inbox_add((payload.get("product") or "").strip(),
-                                                 (payload.get("type") or "task").strip(),
-                                                 (payload.get("text") or "").strip()))
-            if u.path == "/api/inbox/delete":
-                return self._send(200, inbox_delete((payload.get("id") or "").strip()))
-            if u.path == "/api/connect-repo":
-                return self._send(200, connect_repo(
-                    payload.get("path", ""), payload.get("name", ""),
-                    payload.get("framework", "other"), bool(payload.get("force"))))
-            if u.path == "/api/analyze":
-                product = (payload.get("product") or "").strip()
-                if not product:
-                    return self._send(400, {"error": "product is required"})
-                return self._send(200, analyze_product(product))
-            if u.path == "/api/baseline":
-                product = (payload.get("product") or "").strip()
-                if not product:
-                    return self._send(400, {"error": "product is required"})
-                return self._send(200, run_baseline(product))
-            if u.path == "/api/approve-product":
-                eid = (payload.get("epic_id") or "").strip()
-                job, started = start_job("approve_product", ("approve_product", eid),
-                                         _forward(approve_product_spec, eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/approve-spec":
-                eid = (payload.get("epic_id") or "").strip()
-                job, started = start_job("approve_spec", ("approve_spec", eid),
-                                         _forward(approve_feature_spec, eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/build":
-                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
-                if not eid:
-                    return self._send(400, {"error": "epic_id required"})
-                job, started = start_job("epic_build", ("epic_build", eid), build_epic(eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/preview-start":
-                return self._send(200, preview_start((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/preview-stop":
-                return self._send(200, preview_stop((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/preview-mark":
-                return self._send(200, preview_mark((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/push":
-                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
-                if not eid:
-                    return self._send(400, {"error": "epic_id required"})
-                job, started = start_job("epic_push", ("epic_push", eid), push_epic(eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/rollback":
-                return self._send(200, rollback_epic((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/fix-build":
-                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
-                if not eid:
-                    return self._send(400, {"error": "epic_id required"})
-                job, started = start_job("epic_fix", ("epic_fix", eid), fix_epic_build(eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/validate":
-                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
-                if not eid:
-                    return self._send(400, {"error": "epic_id required"})
-                job, started = start_job("epic_validate", ("epic_validate", eid), validate_epic(eid))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/reset-runs":
-                return self._send(200, reset_epic_runs((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/task/reset":
-                return self._send(200, reset_task_run((payload.get("epic_id") or "").strip(),
-                                                      (payload.get("task_file") or "").strip()))
-            if u.path == "/api/task/accept":
-                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
-                tf = (payload.get("task_file") or "").strip()
-                if not eid or not tf:
-                    return self._send(400, {"error": "epic_id and task_file required"})
-                set_runstate(eid, tf, state="accepted")
-                return self._send(200, {"ok": True, "epic_id": eid, "task_file": tf, "state": "accepted"})
-            if u.path == "/api/task/run":
-                eid = (payload.get("epic_id") or "").strip()
-                tf = (payload.get("task_file") or "").strip()
-                if not eid or not tf:
-                    return self._send(400, {"error": "epic_id and task_file required"})
-                job, started = start_job("task_run", ("task_run", eid, tf),
-                                         run_task_implementation(eid, tf))
-                return self._send(200, {"job_id": job.id, "started": started})
-            if u.path == "/api/epic/archive":
-                return self._send(200, archive_epic((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/restore":
-                return self._send(200, restore_epic((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/epic/delete":
-                return self._send(200, delete_epic((payload.get("epic_id") or "").strip()))
-            if u.path == "/api/commit-epic":
-                return self._send(200, commit_epic((payload.get("epic_id") or "").strip(),
-                                                   payload.get("message")))
-            return self._send(404, {"error": "unknown endpoint"})
+            handler = POST_ROUTES.get(u.path)
+            if handler is None:
+                return self._send(404, {"error": "unknown endpoint"})
+            result = handler(payload)
+            if isinstance(result, tuple):
+                status, body = result
+                return self._send(status, body)
+            return self._send(200, result)
         except Exception as exc:
             traceback.print_exc()
             return self._send(500, {"error": str(exc)})

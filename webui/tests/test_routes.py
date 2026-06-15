@@ -40,22 +40,38 @@ EXPECTED_GET = {
 
 SPECIAL_GET = {"/", "/index.html", "/api/job/stream"}  # plus the /static/ prefix
 
+# The complete set of POST endpoints (all table-dispatched; none stream).
+EXPECTED_POST = {
+    "/api/decompose", "/api/quick-task", "/api/inbox/add", "/api/inbox/delete",
+    "/api/connect-repo", "/api/analyze", "/api/baseline", "/api/approve-product",
+    "/api/approve-spec", "/api/epic/build", "/api/epic/preview-start", "/api/epic/preview-stop",
+    "/api/epic/preview-mark", "/api/epic/push", "/api/epic/rollback", "/api/epic/fix-build",
+    "/api/epic/validate", "/api/epic/reset-runs", "/api/task/reset", "/api/task/accept",
+    "/api/task/run", "/api/epic/archive", "/api/epic/restore", "/api/epic/delete",
+    "/api/commit-epic",
+}
+
 
 def test_registry_shape():
-    routes = server.GET_ROUTES
-    check("GET_ROUTES is a non-empty dict", isinstance(routes, dict) and len(routes) > 0)
-    check("every handler is callable", all(callable(h) for h in routes.values()))
-    # dict keys are unique by construction; assert the count matches the golden set
-    check("no route count drift", len(routes) == len(EXPECTED_GET),
-          f"have {len(routes)}, expected {len(EXPECTED_GET)}")
+    for name, routes, expected in (("GET", server.GET_ROUTES, EXPECTED_GET),
+                                   ("POST", server.POST_ROUTES, EXPECTED_POST)):
+        check(f"{name}_ROUTES is a non-empty dict", isinstance(routes, dict) and len(routes) > 0)
+        check(f"{name}: every handler is callable", all(callable(h) for h in routes.values()))
+        check(f"{name}: no route count drift", len(routes) == len(expected),
+              f"have {len(routes)}, expected {len(expected)}")
 
 
 def test_golden_paths():
     have = set(server.GET_ROUTES)
     missing = EXPECTED_GET - have
     extra = have - EXPECTED_GET
-    check("no endpoint lost", not missing, "missing: " + ", ".join(sorted(missing)))
-    check("no unexpected endpoint", not extra, "extra: " + ", ".join(sorted(extra)))
+    check("GET: no endpoint lost", not missing, "missing: " + ", ".join(sorted(missing)))
+    check("GET: no unexpected endpoint", not extra, "extra: " + ", ".join(sorted(extra)))
+    have_p = set(server.POST_ROUTES)
+    miss_p = EXPECTED_POST - have_p
+    extra_p = have_p - EXPECTED_POST
+    check("POST: no endpoint lost", not miss_p, "missing: " + ", ".join(sorted(miss_p)))
+    check("POST: no unexpected endpoint", not extra_p, "extra: " + ", ".join(sorted(extra_p)))
 
 
 def test_special_paths_not_in_table():
@@ -83,9 +99,33 @@ def test_handler_return_convention():
           isinstance(job_out, tuple) and job_out[0] == 404, str(job_out))
 
 
+def test_post_validation_convention():
+    # missing required fields -> (400, body), without side effects or server state
+    d = server.POST_ROUTES["/api/decompose"]({})
+    check("/api/decompose -> (400, ...) when empty",
+          isinstance(d, tuple) and d[0] == 400, str(d))
+    a = server.POST_ROUTES["/api/analyze"]({})
+    check("/api/analyze -> (400, ...) without product",
+          isinstance(a, tuple) and a[0] == 400, str(a))
+    b = server.POST_ROUTES["/api/epic/build"]({"epic_id": "../bad"})
+    check("/api/epic/build -> (400, ...) on invalid epic_id",
+          isinstance(b, tuple) and b[0] == 400, str(b))
+    t = server.POST_ROUTES["/api/task/accept"]({"epic_id": "x"})
+    check("/api/task/accept -> (400, ...) without task_file",
+          isinstance(t, tuple) and t[0] == 400, str(t))
+
+
+def test_pp_helper():
+    pp = server._pp
+    check("_pp strips", pp({"epic_id": "  e1 "}, "epic_id") == "e1")
+    check("_pp empty on missing", pp({}, "epic_id") == "")
+    check("_pp handles None value", pp({"epic_id": None}, "epic_id") == "")
+
+
 def main():
     for t in (test_registry_shape, test_golden_paths, test_special_paths_not_in_table,
-              test_qp_helper, test_handler_return_convention):
+              test_qp_helper, test_handler_return_convention,
+              test_post_validation_convention, test_pp_helper):
         print(t.__name__ + ":")
         try:
             t()
