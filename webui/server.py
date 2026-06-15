@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-14a"
+API_VERSION = "workspace-20"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -764,20 +764,458 @@ def validate_epic(epic_id):
                 job.emit(f"{rr.get('name')}: {'passed' if passed else 'FAILED'}"
                          + (" (timed out)" if rr.get("timed_out") else ""),
                          "ok" if passed else "err")
-                out.append({"name": rr.get("name"), "passed": passed, "required": rr.get("required", True)})
+                if not passed:
+                    tail = ((rr.get("stdout", "") or "") + "\n" + (rr.get("stderr", "") or "")).strip().splitlines()
+                    for line in tail[-25:]:
+                        job.emit("  " + line, "err")
+                out.append({"name": rr.get("name"), "passed": passed, "required": rr.get("required", True),
+                            "stdout": rr.get("stdout", ""), "stderr": rr.get("stderr", "")})
             required = [r for r in out if r["required"]]
             overall = "passed" if required and all(r["passed"] for r in required) else "failed"
+            _write_validation_report(eid, eb, out, overall)
             set_epic_state(eid, validated=(overall == "passed"), validation=overall)
-            job.emit(f"Validation {overall}." + ("" if overall == "passed" else " Fix and re-validate before preview/PR."),
+            job.emit(f"Validation {overall}." + ("" if overall == "passed"
+                     else " Errors saved to validation-report.md — use Fix build or fix manually, then re-validate."),
                      "ok" if overall == "passed" else "err")
-            return {"ok": True, "overall": overall, "validators": out}
+            return {"ok": True, "overall": overall,
+                    "validators": [{"name": r["name"], "passed": r["passed"]} for r in out]}
         finally:
             _git_run(repo, ["worktree", "remove", "--force", str(wt)])
             _git_run(repo, ["worktree", "prune"])
     return target
 
 
-_EPIC_STAGES = ["implementing", "assembled", "validated", "previewed", "released"]
+def _write_validation_report(epic_id, branch, validators, overall):
+    lines = [f"# Validation report — {branch}", "",
+             f"Overall: **{overall}** · {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}", ""]
+    for v in validators:
+        lines.append(f"## {v['name']}: {'passed' if v['passed'] else 'FAILED'}")
+        body = ((v.get("stdout", "") or "") + "\n" + (v.get("stderr", "") or "")).strip()
+        if not v["passed"] and body:
+            lines.append("```")
+            lines.append(body[-8000:])
+            lines.append("```")
+        lines.append("")
+    try:
+        (BACKLOG_DIR / epic_id / "validation-report.md").write_text("\n".join(lines), encoding="utf-8")
+    except Exception:
+        pass
+
+
+def _read_spec_excerpt(epic_id):
+    parts = []
+    for name in ("product-spec.md", "feature-spec.md"):
+        p = BACKLOG_DIR / epic_id / name
+        if p.exists():
+            parts.append(f"### {name}\n" + p.read_text(errors="ignore")[:1500])
+    return "\n\n".join(parts)
+
+
+def _parse_tsc_errors(text):
+    """Parse `file(line,col): error TSxxxx: msg` lines into {file:[errs]} and
+    {symbol:count} for symbols that are undefined/removed but still referenced."""
+    files, symbols = {}, {}
+    for line in (text or "").splitlines():
+        m = re.match(r"^\s*(\S.*?)\((\d+),(\d+)\):\s*error\s+(TS\d+):\s*(.*)$", line)
+        if not m:
+            continue
+        f, ln, _col, code, msg = m.groups()
+        files.setdefault(f, []).append(f"L{ln} {code}: {msg}")
+        sm = re.search(r"'([^']+)'", msg)
+        if sm and code in ("TS2304", "TS2305", "TS2307", "TS2552", "TS2614", "TS2724", "TS2339"):
+            symbols[sm.group(1)] = symbols.get(sm.group(1), 0) + 1
+    return files, symbols
+
+
+def _build_fix_prompt(epic_id):
+    report = BACKLOG_DIR / epic_id / "validation-report.md"
+    raw = report.read_text(errors="ignore") if report.exists() else ""
+    files, symbols = _parse_tsc_errors(raw)
+    lines = [
+        "The assembled epic branch fails `npx tsc --noEmit` / `npm run build`.",
+        "Fix it strictly IN LINE WITH THE EPIC INTENT below. Definitions were removed ON PURPOSE.",
+        "Do NOT restore deleted types/functions/constants. Instead, update or remove the CONSUMERS",
+        "that still reference removed symbols, so the code compiles while keeping the epic's intent.",
+        "",
+    ]
+    spec = _read_spec_excerpt(epic_id)
+    if spec:
+        lines += ["## Epic intent", spec, ""]
+    if symbols:
+        lines.append("## Removed / undefined symbols still referenced — fix the consumers:")
+        for s, c in sorted(symbols.items(), key=lambda x: -x[1])[:30]:
+            lines.append(f"- {s} ({c} use(s))")
+        lines.append("")
+    if files:
+        lines.append("## Errors by file:")
+        for f, errs in list(files.items())[:20]:
+            lines.append(f"### {f}")
+            lines += ["- " + e for e in errs[:30]]
+            lines.append("")
+    else:
+        lines += ["## Raw validator output:", raw[:6000]]
+    return "\n".join(lines)[:12000], files, symbols
+
+
+def fix_epic_build(epic_id):
+    """Semi-auto build fix with structured context: parses tsc errors (files +
+    removed symbols), feeds the agent the epic INTENT (specs) plus an explicit
+    'fix consumers, don't restore deleted defs' instruction. Commits the fix on
+    the epic branch (never main), caps at 3 attempts, stores the fix diff for
+    review, and requires a manual Re-validate afterwards."""
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        es = load_epic_state(eid)
+        if not es.get("assembled"):
+            return {"ok": False, "error": "epic not assembled"}
+        if es.get("validation") != "failed":
+            return {"ok": False, "error": "nothing to fix — validation is not failed"}
+        attempts = es.get("fix_attempts", 0)
+        if attempts >= 3:
+            return {"ok": False, "error": "fix attempt limit (3) reached — please fix manually"}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        eb = _epic_branch(eid)
+        prompt, files, symbols = _build_fix_prompt(eid)
+        wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-fix-{datetime.now().strftime('%H%M%S')}"
+        r = _git_run(repo, ["worktree", "add", str(wt), eb])
+        if r.returncode != 0:
+            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+        try:
+            base_nm = Path(repo) / "node_modules"
+            wt_nm = wt / "node_modules"
+            if base_nm.exists() and not wt_nm.exists():
+                try:
+                    wt_nm.symlink_to(base_nm, target_is_directory=True)
+                except Exception:
+                    pass
+            before = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+            job.emit(f"Fix attempt {attempts + 1}/3 — {len(files)} file(s), "
+                     f"{len(symbols)} removed symbol(s). Feeding agent the errors + epic intent…")
+            if symbols:
+                job.emit("  consumers to clean: " + ", ".join(list(symbols)[:8])
+                         + (" …" if len(symbols) > 8 else ""))
+            try:
+                from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
+                run_runtime_orchestrator(
+                    task=prompt, product=product, repo_path=str(wt),
+                    output_dir=f"runs/webui-fix-{datetime.now().strftime('%H%M%S')}", dry_run=False,
+                    inputs={"task_path": str(BACKLOG_DIR / eid / "validation-report.md"),
+                            "epic_dir": str(BACKLOG_DIR / eid), "execute_writes": True})
+            except FileNotFoundError:
+                return {"ok": False, "error": "claude CLI not found — no fix written"}
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+            _git_run(wt, ["add", "-A"])
+            _git_run(wt, ["commit", "-m", f"agentic: fix build (attempt {attempts + 1})"])
+            after = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+            changed = bool(after and after != before)
+            set_epic_state(eid, fix_attempts=attempts + 1, validated=False, validation=None,
+                           fix_base=before, fix_head=after)
+            if changed:
+                nfiles = len([l for l in _git_run(wt, ["diff", "--name-only", f"{before}..{after}"]).stdout.splitlines() if l.strip()])
+                job.emit(f"Fix committed on {eb} ({nfiles} file(s)). Review the fix diff, then Re-validate.", "ok")
+            else:
+                job.emit("Agent made no changes. Re-validate or fix manually.", "skip")
+            return {"ok": True, "branch": eb, "attempt": attempts + 1, "changed": changed}
+        finally:
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
+    return target
+
+
+def epic_fix_diff(epic_id, path=""):
+    eid = _safe_epic_id(epic_id)
+    es = load_epic_state(eid)
+    base, head = es.get("fix_base"), es.get("fix_head")
+    if not base or not head or base == head:
+        return {"error": "no fix diff available"}
+    product, repo, err = _resolve_repo(eid)
+    if err:
+        return {"error": err}
+    args = ["diff", f"{base}..{head}"]
+    if path:
+        args += ["--", path]
+    return {"diff": _git_run(repo, args).stdout, "base": base, "head": head}
+
+
+def _base_branch(repo):
+    r = _git_run(repo, ["symbolic-ref", "--short", "refs/remotes/origin/HEAD"])
+    if r.returncode == 0 and r.stdout.strip():
+        return r.stdout.strip().split("/")[-1]
+    for b in ("main", "master"):
+        if _git_run(repo, ["rev-parse", "--verify", b]).returncode == 0:
+            return b
+    return "main"
+
+
+def _epic_human_title(epic_id):
+    p = BACKLOG_DIR / epic_id / "epic.md"
+    if p.exists():
+        for line in p.read_text(errors="ignore").splitlines():
+            s = line.strip()
+            if s.startswith("# "):
+                return s[2:].strip()
+    return ""
+
+
+def _preview_path(repo, epic_id):
+    return Path(repo).parent / ".agentic-worktrees" / f"preview-{_epic_branch(epic_id).split('-', 1)[-1]}"
+
+
+PREVIEW_PROCS = {}
+PREVIEW_GUARD = threading.Lock()
+PREVIEW_PORT = 3100
+
+
+def _preview_kill(eid):
+    import os
+    import signal
+    with PREVIEW_GUARD:
+        ent = PREVIEW_PROCS.pop(eid, None)
+    if not ent:
+        return
+    proc = ent["proc"]
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+    except Exception:
+        try:
+            proc.terminate()
+        except Exception:
+            pass
+    try:
+        proc.wait(timeout=5)
+    except Exception:
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except Exception:
+            try:
+                proc.kill()
+            except Exception:
+                pass
+
+
+def _preview_state(eid):
+    with PREVIEW_GUARD:
+        ent = PREVIEW_PROCS.get(eid)
+    if not ent:
+        return None
+    alive = ent["proc"].poll() is None
+    if not alive:
+        with PREVIEW_GUARD:
+            PREVIEW_PROCS.pop(eid, None)
+    return {"running": alive, "port": ent["port"],
+            "url": f"http://localhost:{ent['port']}", "log": list(ent["log"])}
+
+
+def _ensure_worktree(repo, eb, wt):
+    """Make sure `wt` is a valid worktree checked out on `eb` with a real working
+    tree (package.json present). Cleans stale/empty leftovers and retries. Returns
+    an error string or None on success."""
+    _git_run(repo, ["worktree", "prune"])
+    if wt.exists():
+        if (wt / "package.json").exists():
+            return None
+        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+        try:
+            shutil.rmtree(wt, ignore_errors=True)
+        except Exception:
+            pass
+    r = _git_run(repo, ["worktree", "add", str(wt), eb])
+    if r.returncode != 0:
+        _git_run(repo, ["worktree", "prune"])
+        try:
+            shutil.rmtree(wt, ignore_errors=True)
+        except Exception:
+            pass
+        r = _git_run(repo, ["worktree", "add", str(wt), eb])
+        if r.returncode != 0:
+            return "git worktree failed: " + (r.stderr or "").strip()
+    if not (wt / "package.json").exists():
+        return "worktree created but package.json is missing — the epic branch may be empty"
+    return None
+
+
+def preview_start(epic_id):
+    """Managed preview: ensure a worktree on the epic branch (node_modules symlinked,
+    test .env.local written), then launch `npm run dev -p 3100` as a tracked background
+    process whose output is streamed. Console owns the process; Stop kills it."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    if not load_epic_state(eid).get("assembled"):
+        return {"ok": False, "error": "assemble the epic branch first"}
+    product, repo, err = _resolve_repo(eid)
+    if err:
+        return {"ok": False, "error": err}
+    eb = _epic_branch(eid)
+    if _git_run(repo, ["rev-parse", "--verify", eb]).returncode != 0:
+        return {"ok": False, "error": "epic branch not found — re-assemble"}
+    wt = _preview_path(repo, eid)
+    werr = _ensure_worktree(repo, eb, wt)
+    if werr:
+        return {"ok": False, "error": werr}
+    base_nm = Path(repo) / "node_modules"
+    wt_nm = wt / "node_modules"
+    if base_nm.exists() and not wt_nm.exists():
+        try:
+            wt_nm.symlink_to(base_nm, target_is_directory=True)
+        except Exception:
+            pass
+    import secrets
+    envf = wt / ".env.local"
+    if not envf.exists():
+        try:
+            envf.write_text(f"APP_USERNAME=admin\nAPP_PASSWORD=admin\nSESSION_SECRET={secrets.token_hex(32)}\n")
+        except Exception:
+            pass
+    set_epic_state(eid, preview_path=str(wt))
+    _preview_kill(eid)  # no duplicates
+    import subprocess
+    try:
+        proc = subprocess.Popen(["npm", "run", "dev", "--", "-p", str(PREVIEW_PORT)],
+                                cwd=str(wt), stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
+                                text=True, bufsize=1, start_new_session=True)
+    except FileNotFoundError:
+        return {"ok": False, "error": "npm not found on this machine"}
+    from collections import deque
+    buf = deque(maxlen=400)
+
+    def reader():
+        try:
+            for line in proc.stdout:
+                buf.append(line.rstrip("\n"))
+        except Exception:
+            pass
+    threading.Thread(target=reader, daemon=True).start()
+    with PREVIEW_GUARD:
+        PREVIEW_PROCS[eid] = {"proc": proc, "port": PREVIEW_PORT, "path": str(wt),
+                              "log": buf, "started": time.time()}
+    return {"ok": True, "port": PREVIEW_PORT, "url": f"http://localhost:{PREVIEW_PORT}",
+            "user": "admin", "password": "admin"}
+
+
+def preview_log(epic_id):
+    eid = _safe_epic_id(epic_id)
+    st = _preview_state(eid)
+    if not st:
+        return {"running": False, "log": []}
+    return st
+
+
+def preview_stop(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    _preview_kill(eid)
+    product, repo, err = _resolve_repo(eid)
+    if not err and repo:
+        wt = _preview_path(repo, eid)
+        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+        _git_run(repo, ["worktree", "prune"])
+    set_epic_state(eid, preview_path=None)
+    return {"ok": True}
+
+
+def preview_mark(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    if not load_epic_state(eid).get("validated"):
+        return {"ok": False, "error": "validate the epic first"}
+    set_epic_state(eid, previewed=True)
+    return {"ok": True, "previewed": True}
+
+
+import atexit
+
+
+@atexit.register
+def _kill_all_previews():
+    for eid in list(PREVIEW_PROCS):
+        try:
+            _preview_kill(eid)
+        except Exception:
+            pass
+
+
+def push_epic(epic_id):
+    """Push the validated+previewed epic branch to origin and open a PR — but NEVER
+    merge. Merging (and the prod deploy it triggers) stays a manual GitHub action.
+    The console never merges and never deploys."""
+    def target(job):
+        import subprocess
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        es = load_epic_state(eid)
+        if not es.get("validated"):
+            return {"ok": False, "error": "validate the epic first"}
+        if not es.get("previewed"):
+            return {"ok": False, "error": "preview the epic first"}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        eb = _epic_branch(eid)
+        if _git_run(repo, ["rev-parse", "--verify", eb]).returncode != 0:
+            return {"ok": False, "error": "epic branch not found — re-assemble"}
+        base = _base_branch(repo)
+        job.emit(f"Pushing {eb} → origin…")
+        pr = _git_run(repo, ["push", "-u", "origin", eb])
+        if pr.returncode != 0:
+            job.emit("push failed: " + (pr.stderr or "").strip(), "err")
+            return {"ok": False, "error": "git push failed: " + (pr.stderr or "").strip()}
+        title = _epic_human_title(eid) or f"Epic {eid}"
+        body = ("Assembled by the agentic console via cherry-pick of accepted tasks, "
+                "validated (tsc + build), previewed locally. NOT merged — review and merge manually.")
+        pr_url = ""
+        job.emit(f"Opening PR into {base} via gh (no merge)…")
+        try:
+            cp = subprocess.run(["gh", "pr", "create", "--head", eb, "--base", base,
+                                 "--title", title, "--body", body],
+                                cwd=repo, capture_output=True, text=True, timeout=120)
+            if cp.stdout and cp.stdout.strip():
+                pr_url = cp.stdout.strip().splitlines()[-1].strip()
+            if not pr_url:
+                vv = subprocess.run(["gh", "pr", "view", eb, "--json", "url", "-q", ".url"],
+                                    cwd=repo, capture_output=True, text=True)
+                pr_url = (vv.stdout or "").strip()
+        except FileNotFoundError:
+            job.emit("gh not found — branch pushed; open the PR manually on GitHub.", "skip")
+        set_epic_state(eid, pushed=True, pr_url=pr_url)
+        if pr_url:
+            job.emit(f"Pushed. PR opened (NOT merged): {pr_url}", "ok")
+        else:
+            job.emit(f"Pushed {eb} to origin. Open a PR on GitHub and merge it yourself.", "ok")
+        return {"ok": True, "branch": eb, "pr_url": pr_url, "merged": False}
+    return target
+
+
+def rollback_epic(epic_id):
+    """Send the epic back for rework (e.g. a problem found at preview): stop preview,
+    delete the local epic branch, and clear epic-level stage flags — but KEEP each
+    task's implemented/accepted work so you can re-run the broken task and reassemble."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    _preview_kill(eid)
+    product, repo, err = _resolve_repo(eid)
+    if not err and repo:
+        wt = _preview_path(repo, eid)
+        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+        _git_run(repo, ["worktree", "prune"])
+        eb = _epic_branch(eid)
+        _git_run(repo, ["branch", "-D", eb])
+    set_epic_state(eid, assembled=False, validated=False, validation=None, previewed=False,
+                   pushed=False, pr_url=None, preview_path=None, fix_attempts=0,
+                   fix_base=None, fix_head=None)
+    return {"ok": True, "epic_id": eid}
+
+
+_EPIC_STAGES = ["implementing", "assembled", "validated", "previewed", "pushed"]
 
 
 def epic_stage(epic_id):
@@ -786,10 +1224,8 @@ def epic_stage(epic_id):
         return {"error": "invalid epic id"}
     bs = epic_build_status(eid)
     es = load_epic_state(eid)
-    if not bs.get("buildable"):
-        stage = "implementing"
-    elif es.get("released"):
-        stage = "released"
+    if es.get("pushed"):
+        stage = "pushed"
     elif es.get("previewed"):
         stage = "previewed"
     elif es.get("validated"):
@@ -797,10 +1233,18 @@ def epic_stage(epic_id):
     elif es.get("assembled"):
         stage = "assembled"
     else:
-        stage = "implementing"  # all accepted, ready to assemble
+        stage = "implementing"  # not assembled yet (whether or not all tasks accepted)
+    pv = _preview_state(eid)
     return {"stage": stage, "stages": _EPIC_STAGES, "buildable": bs.get("buildable"),
             "assembled": bool(es.get("assembled")), "validated": bool(es.get("validated")),
-            "validation": es.get("validation"), "accepted": bs.get("accepted"),
+            "validation": es.get("validation"), "fix_attempts": es.get("fix_attempts", 0),
+            "has_fix": bool(es.get("fix_head") and es.get("fix_head") != es.get("fix_base")),
+            "previewed": bool(es.get("previewed")), "preview_path": es.get("preview_path"),
+            "preview_running": bool(pv and pv.get("running")),
+            "preview_port": (pv or {}).get("port", PREVIEW_PORT),
+            "preview_url": (pv or {}).get("url"),
+            "released": bool(es.get("pushed")), "pushed": bool(es.get("pushed")), "pr_url": es.get("pr_url"),
+            "accepted": bs.get("accepted"),
             "pending": bs.get("pending"), "total": bs.get("total"), "branch": bs.get("branch")}
 
 
@@ -1782,6 +2226,10 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, epic_build_status(q.get("epic_id", [""])[0]))
             if path == "/api/epic/stage":
                 return self._send(200, epic_stage(q.get("epic_id", [""])[0]))
+            if path == "/api/epic/fix-diff":
+                return self._send(200, epic_fix_diff(q.get("epic_id", [""])[0], q.get("path", [""])[0]))
+            if path == "/api/epic/preview-log":
+                return self._send(200, preview_log(q.get("epic_id", [""])[0]))
             if path == "/api/jobs/active":
                 with JOBS_LOCK:
                     active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
@@ -1880,6 +2328,26 @@ class Handler(BaseHTTPRequestHandler):
                 if not eid:
                     return self._send(400, {"error": "epic_id required"})
                 job, started = start_job("epic_build", ("epic_build", eid), build_epic(eid))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/preview-start":
+                return self._send(200, preview_start((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/preview-stop":
+                return self._send(200, preview_stop((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/preview-mark":
+                return self._send(200, preview_mark((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/push":
+                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
+                if not eid:
+                    return self._send(400, {"error": "epic_id required"})
+                job, started = start_job("epic_push", ("epic_push", eid), push_epic(eid))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/rollback":
+                return self._send(200, rollback_epic((payload.get("epic_id") or "").strip()))
+            if u.path == "/api/epic/fix-build":
+                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
+                if not eid:
+                    return self._send(400, {"error": "epic_id required"})
+                job, started = start_job("epic_fix", ("epic_fix", eid), fix_epic_build(eid))
                 return self._send(200, {"job_id": job.id, "started": started})
             if u.path == "/api/epic/validate":
                 eid = _safe_epic_id((payload.get("epic_id") or "").strip())

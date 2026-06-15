@@ -176,7 +176,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-14a";
+const FE_VERSION="workspace-20";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -215,6 +215,7 @@ const ART_LABELS={
   "product-status.txt":"маркер гейта product (pending/approved)",
   "spec-status.txt":"маркер гейта spec (pending/approved)",
   "product.txt":"к какому продукту относится эпик",
+  "validation-report.md":"отчёт валидации: ошибки tsc/build на ветке эпика",
 };
 function artLabel(n){if(ART_LABELS[n])return ART_LABELS[n];if(/^task-\d+\.md$/.test(n))return "отдельная задача";return ""}
 
@@ -459,18 +460,65 @@ async function refreshExecGate(id){
   let val="";
   if(st.validation==="passed")val=' <span class="pill ok">tsc+build ✓</span>';
   else if(st.validation==="failed")val=' <span class="pill bad">build FAILED</span>';
-  g.innerHTML=stageRail(st)+gate+val;
+  let previewRow="";
+  if(st.assembled){
+    const purl=st.preview_url||("http://localhost:"+st.preview_port);
+    if(st.preview_running){
+      previewRow=`<div class="row" style="margin-top:10px;gap:8px;align-items:center">`
+        +`<span class="muted" style="font-size:12px">Preview:</span>`
+        +`<span class="pill ok">running</span>`
+        +`<a class="btn ghost sm" href="${esc(purl)}" target="_blank" rel="noopener" style="font-size:13px;padding:8px 14px">Открыть ${esc(purl)}</a>`
+        +`<button class="btn ghost sm" style="font-size:13px;padding:8px 14px" onclick="stopPreview('${esc(id)}')">Stop</button>`
+        +`<span class="muted" style="font-size:12px">тест-логин <b>admin</b> / <b>admin</b></span></div>`;
+      startPreviewPoll(id);
+    }else{
+      previewRow=`<div class="row" style="margin-top:10px;gap:8px;align-items:center">`
+        +`<span class="muted" style="font-size:12px">Preview:</span>`
+        +`<button class="btn sm" style="font-size:13px;padding:8px 14px" onclick="startPreview('${esc(id)}',this)">Start preview (:3100)</button>`
+        +`<span class="muted" style="font-size:12px">поднять localhost ветки эпика — в любой момент</span></div>`;
+    }
+  }
+  let releasedInfo="";
+  if(st.pushed){
+    releasedInfo=st.pr_url
+      ?`<div style="margin-top:8px"><a class="pill ok" href="${esc(st.pr_url)}" target="_blank" rel="noopener">Pushed → открыть PR (мержишь сам)</a></div>`
+      :`<div style="margin-top:8px"><span class="pill ok">Pushed в origin</span> <span class="muted" style="font-size:12px">— открой PR на GitHub и смержи сам</span></div>`;
+  }
+  g.innerHTML=stageRail(st)+gate+val+previewRow+releasedInfo;
   const assembleBtn=st.buildable
     ?`<button class="btn" onclick="buildEpic('${esc(id)}',this)">${st.assembled?"Пересобрать ветку":"Собрать ветку эпика"} →</button>`
     :`<button class="btn" disabled title="Сначала прими все задачи на доске">Собрать ветку эпика →</button>`;
   const validateBtn=st.assembled
     ?`<button class="btn ${st.validated?'ghost ':''}sm" onclick="validateEpic('${esc(id)}',this)" style="font-size:13px;padding:10px 15px">${st.validated?"Re-validate":"Validate (tsc+build)"}</button>`
     :`<button class="btn ghost" disabled title="Сначала собери ветку эпика" style="padding:10px 15px">Validate</button>`;
-  b.innerHTML=assembleBtn+" "+validateBtn;
+  let fixBtn="";
+  if(st.validation==="failed"){
+    fixBtn=(st.fix_attempts||0)<3
+      ?` <button class="btn sm" style="font-size:13px;padding:10px 15px;background:var(--red);color:#fff" onclick="fixBuild('${esc(id)}',this)">Fix build (${st.fix_attempts||0}/3)</button>`
+      :` <span class="pill bad">лимит фиксов — почини вручную</span>`;
+  }
+  let fixDiffBtn=st.has_fix
+    ?` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="viewFixDiff('${esc(id)}')">Дифф фикса</button>`
+    :"";
+  let flow="";
+  if(st.validated&&!st.previewed&&!st.pushed){
+    flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="markPreviewed('${esc(id)}')">Отметить Previewed →</button>`;
+  }
+  if(st.previewed&&!st.pushed){
+    flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="pushEpic('${esc(id)}',this)">Push в origin (PR, без мержа) →</button>`;
+  }
+  if(st.assembled&&!st.pushed){
+    flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
+  }
+  if(st.pushed){
+    flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="closeEpic('${esc(id)}')">Закрыть эпик (в архив)</button>`
+        +` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
+  }
+  b.innerHTML=assembleBtn+" "+validateBtn+fixBtn+fixDiffBtn+flow;
 }
 function stageRail(st){
-  const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",released:"Released"};
-  const order=st.stages||["implementing","assembled","validated","previewed","released"];
+  const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",pushed:"Pushed"};
+  const order=st.stages||["implementing","assembled","validated","previewed","pushed"];
   const ci=order.indexOf(st.stage);
   return '<div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:8px">'+order.map((s,i)=>
     `<span class="pill ${i<ci?"ok":i===ci?"warn":""}" style="font-size:10px">${i<ci?"✓ ":""}${labels[s]||s}</span>`+
@@ -480,10 +528,80 @@ function validateEpic(id,btn){
   btn.disabled=true;btn.textContent="Validating…";
   runJob("/api/epic/validate",{epic_id:id},"#epiclog",res=>{
     if(res&&res.overall==="passed")toast("Validation passed ✓");
-    else if(res&&res.overall==="failed")toast("Validation FAILED — смотри лог");
+    else if(res&&res.overall==="failed")toast("Validation FAILED — смотри ошибки в логе");
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
   });
+}
+function fixBuild(id,btn){
+  if(!confirm("Запустить агента, чтобы починить билд?\n\nАгент получит структурированные ошибки tsc (файлы + удалённые символы) и намерение эпика из spec, и поправит ПОТРЕБИТЕЛЕЙ на ветке эпика (не возвращая удалённое). main не трогается. После — посмотри «Дифф фикса» и нажми Re-validate."))return;
+  btn.disabled=true;btn.textContent="Fixing…";
+  runJob("/api/epic/fix-build",{epic_id:id},"#epiclog",res=>{
+    if(res&&res.ok&&res.changed)toast("Фикс закоммичен — смотри Дифф фикса, потом Re-validate");
+    else if(res&&res.ok)toast("Агент не внёс изменений");
+    else if(res&&res.error)toast(res.error);
+    refreshExecGate(id);
+  });
+}
+async function viewFixDiff(id){
+  const log=$("#epiclog");if(log){log.style.display="block";log.innerHTML='<div class="muted">Загружаю дифф фикса…</div>';}
+  const r=await api("/api/epic/fix-diff?epic_id="+encodeURIComponent(id));
+  if(r.error){if(log)log.innerHTML='<div class="muted">'+esc(r.error)+'</div>';return}
+  if(log)log.innerHTML='<div class="vh">Дифф фикса '+esc((r.base||"").slice(0,7))+'..'+esc((r.head||"").slice(0,7))+'</div>'+diffBlock(r.diff||"");
+}
+let _prevTimer=null,_prevEpic=null;
+function startPreviewPoll(id){
+  _prevEpic=id;
+  if(_prevTimer)return;
+  _prevTimer=setInterval(async()=>{
+    const r=await api("/api/epic/preview-log?epic_id="+encodeURIComponent(_prevEpic));
+    const log=$("#epiclog");
+    if(log){log.style.display="block";
+      log.innerHTML='<div class="vh">npm run dev · localhost:3100 '+(r.running?'<span class="pill ok">running</span>':'<span class="pill bad">stopped</span>')+'</div>'
+        +(r.log||[]).map(l=>'<div class="l">'+esc(l)+'</div>').join("");
+      log.scrollTop=log.scrollHeight;}
+    if(!r.running){stopPreviewPoll();refreshExecGate(_prevEpic);}
+  },2000);
+}
+function stopPreviewPoll(){if(_prevTimer){clearInterval(_prevTimer);_prevTimer=null;}}
+async function startPreview(id,btn){
+  btn.disabled=true;btn.textContent="Starting…";
+  const r=await api("/api/epic/preview-start",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
+  if(r&&r.ok){toast("Preview запускается на :3100 — логин admin / admin");startPreviewPoll(id);}
+  else if(r&&r.error)toast(r.error);
+  refreshExecGate(id);
+}
+async function stopPreview(id){
+  stopPreviewPoll();
+  await api("/api/epic/preview-stop",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
+  toast("Preview остановлен");refreshExecGate(id);
+}
+async function markPreviewed(id){
+  const r=await api("/api/epic/preview-mark",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
+  if(r&&r.ok)toast("Отмечено: Previewed");else if(r&&r.error)toast(r.error);
+  refreshExecGate(id);
+}
+function pushEpic(id,btn){
+  if(!confirm("Запушить ветку эпика в origin и открыть PR?\n\nМорда НЕ мержит и НЕ деплоит — PR откроется, смержишь сам на GitHub, когда захочешь. В прод без твоего мержа ничего не уйдёт."))return;
+  btn.disabled=true;btn.textContent="Pushing…";
+  runJob("/api/epic/push",{epic_id:id},"#epiclog",res=>{
+    if(res&&res.ok)toast(res.pr_url?"Запушено — PR открыт (без мержа)":"Запушено в origin — открой PR сам");
+    else if(res&&res.error)toast(res.error);
+    refreshExecGate(id);
+  });
+}
+async function rollbackEpic(id){
+  if(!confirm("Вернуть эпик на доработку?\n\nБудет удалена ветка эпика и сброшены статусы (собрано/проверено/превью/push). Работа задач СОХРАНИТСЯ — сможешь перевыполнить нужную задачу на доске и пересобрать ветку заново."))return;
+  stopPreviewPoll();
+  const r=await api("/api/epic/rollback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
+  if(r&&r.ok)toast("Эпик возвращён на доработку — перевыполни задачу и пересобери");else if(r&&r.error)toast(r.error);
+  refreshExecGate(id);
+}
+async function closeEpic(id){
+  if(!confirm("Закрыть эпик и отправить в архив?\n\nДелай это после того, как смержил PR на GitHub. Эпик уедет в архив (восстановим при необходимости)."))return;
+  stopPreviewPoll();
+  await stopPreview(id);
+  archiveEpic(id);
 }
 async function viewArtifact(id,name,row){document.querySelectorAll("#artlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   const v=$("#aview");v.innerHTML='<div class="vh">'+esc(name)+'</div><div class="muted" style="padding:12px">Loading…</div>';
@@ -623,7 +741,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll});
 </script>
 </body>
 </html>
