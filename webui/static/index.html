@@ -189,7 +189,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-33";
+const FE_VERSION="workspace-34";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -375,7 +375,6 @@ async function doWork(dest,btn){
   toast((WORK_TYPE==="bug"?"Баг":"Задача")+" создана — нажми Run");
   loadSideEpics();if(r.epic_id)openEpic(r.epic_id);
 }
-function inboxBadge(t){return t==="bug"?'<span class="pill bad" style="font-size:10px">🐞 баг</span>':t==="epic"?'<span class="pill" style="font-size:10px">эпик</span>':'<span class="pill warn" style="font-size:10px">задача</span>';}
 function stageLabelRu(s){return {implementing:"в работе",assembled:"собран",validated:"проверен",previewed:"превью",pushed:"запушен"}[s]||s||"новый";}
 function inboxActiveRow(e){
   return `<div class="epic-row" style="gap:8px;cursor:pointer" onclick="openEpic('${esc(e.id)}')">
@@ -502,21 +501,6 @@ async function loadInbox(){
     <div id="inbox-archive" style="margin-top:18px"></div>`;
   loadBacklogInbox();
   loadArchive();
-}
-async function loadRepoHead(){
-  const head=$("#repo-head");if(!head)return;head.innerHTML="";
-  const p=curProduct();
-  const op=await api("/api/repo/operational?product="+encodeURIComponent(CUR));
-  const dep=(op&&op.deployment)||{};
-  const vals=(op&&op.validators)||[];
-  head.innerHTML=`<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;flex-wrap:wrap;gap:10px">
-    <div><div class="rn" style="font-size:15px">${esc(p.name)}</div><div class="rp mono" style="font-size:12px">${esc(p.repo_path||"—")}</div></div>
-    <div class="row" style="gap:6px;flex-wrap:wrap">
-      <span class="tag">${esc(p.framework||"—")}</span>
-      ${vals.map(v=>`<span class="tag">${esc(v.name)}</span>`).join("")}
-      <span class="pill ${p.has_analysis?"ok":""}">${p.has_analysis?"analyzed":"not analyzed"}</span>
-      ${dep.production_url?`<a class="tag" href="${esc(dep.production_url)}" target="_blank" rel="noopener">prod ↗</a>`:""}
-    </div></div></div>`;
 }
 async function loadOverview(){
   $("#pane-overview").innerHTML='<div class="muted">Loading…</div>';
@@ -886,14 +870,6 @@ async function refreshExecGate(id){
   b.innerHTML=assembleBtn+" "+validateBtn+fixBtn+fixDiffBtn+flow;
   loadSideEpics();
 }
-function stageRail(st){
-  const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",pushed:"Pushed"};
-  const order=st.stages||["implementing","assembled","validated","previewed","pushed"];
-  const ci=order.indexOf(st.stage);
-  return '<div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:8px">'+order.map((s,i)=>
-    `<span class="pill ${i<ci?"ok":i===ci?"warn":""}" style="font-size:10px">${i<ci?"✓ ":""}${labels[s]||s}</span>`+
-    (i<order.length-1?'<span class="muted" style="font-size:10px">→</span>':"")).join("")+'</div>';
-}
 function validateEpic(id,btn){
   btn.disabled=true;btn.textContent="Validating…";
   runJob("/api/epic/validate",{epic_id:id},"#epiclog",res=>{
@@ -1120,7 +1096,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,loadRepoHead,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>

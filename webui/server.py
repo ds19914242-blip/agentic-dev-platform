@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-33"
+API_VERSION = "workspace-34"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
