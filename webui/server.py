@@ -47,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-38"
+API_VERSION = "workspace-39"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -2200,6 +2200,109 @@ _forward = _jobs._forward
 
 
 # --- HTTP layer ---------------------------------------------------------------
+# --- GET route table ---------------------------------------------------------
+# do_GET dispatches through this dict instead of a long if/elif ladder, so routes
+# are enumerable (test_routes guards against lost/duplicate paths) and each handler
+# unpacks query params uniformly. A handler takes the parsed query dict and returns
+# either a body (sent with 200) or a (status, body) tuple for non-200 responses.
+# Special cases NOT in the table (handled directly in do_GET): "/", "/index.html",
+# "/static/*" (static files), and "/api/job/stream" (SSE, writes the socket itself).
+
+def _qp(q, key, default=""):
+    """First value of a query param, matching the old q.get(key, [""])[0] idiom."""
+    return q.get(key, [default])[0]
+
+
+def _route_state(q):
+    return {
+        "version": platform_version(),
+        "api_version": API_VERSION,
+        "products": list_products(),
+        "agents": AGENTS,
+        "pipeline": PIPELINE,
+    }
+
+
+def _route_epics_overview(q):
+    eps = list_epics(_qp(q, "product"))
+    for e in eps:
+        try:
+            stg = epic_stage(e["id"])
+            e["stage"] = stg.get("stage")
+            e["accepted"] = len(stg.get("accepted") or [])
+            e["total"] = stg.get("total")
+            e["validation"] = stg.get("validation")
+            e["pushed"] = stg.get("pushed")
+            e["pr_url"] = stg.get("pr_url")
+            e["preview_running"] = stg.get("preview_running")
+            e["kind"] = load_epic_state(e["id"]).get("kind") or ("task" if load_epic_state(e["id"]).get("quick") else "epic")
+        except Exception:
+            e["stage"] = None
+    return {"epics": eps}
+
+
+def _route_jobs_active(q):
+    with JOBS_LOCK:
+        active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
+                  for j in JOBS.values() if not j.done and j.kind == "task_run"]
+    return {"active": active}
+
+
+def _route_epic(q):
+    d = epic_detail(_qp(q, "id"))
+    return d if d else (404, {"error": "epic not found"})
+
+
+def _route_job(q):
+    job = JOBS.get(_qp(q, "id"))
+    if not job:
+        return (404, {"error": "job not found"})
+    lines, done, result = job.snapshot(0)
+    return {"id": job.id, "log": lines, "done": done, "result": result}
+
+
+def _route_file(q):
+    rel = _qp(q, "path")
+    target = resolve_artifact(rel)
+    if not target:
+        return (404, {"error": "file not found or not allowed"})
+    return {"path": rel, "content": target.read_text(errors="ignore")}
+
+
+GET_ROUTES = {
+    "/api/state": _route_state,
+    "/api/inbox": lambda q: inbox_list(_qp(q, "product")),
+    "/api/epics": lambda q: {"epics": list_epics(_qp(q, "product"))},
+    "/api/epics/overview": _route_epics_overview,
+    "/api/epics/archived": lambda q: {"epics": list_archived_epics(_qp(q, "product"))},
+    "/api/overview": lambda q: product_overview(_qp(q, "product")),
+    "/api/backlog": lambda q: product_backlog(_qp(q, "product")),
+    "/api/task": lambda q: task_detail(_qp(q, "epic_id"), _qp(q, "task_file")),
+    "/api/task/diff": lambda q: task_diff(_qp(q, "epic_id"), _qp(q, "task_file"), _qp(q, "path")),
+    "/api/epic/build-status": lambda q: epic_build_status(_qp(q, "epic_id")),
+    "/api/epic/stage": lambda q: epic_stage(_qp(q, "epic_id")),
+    "/api/epic/fix-diff": lambda q: epic_fix_diff(_qp(q, "epic_id"), _qp(q, "path")),
+    "/api/epic/preview-log": lambda q: preview_log(_qp(q, "epic_id")),
+    "/api/preview/active": lambda q: preview_active(),
+    "/api/jobs/active": _route_jobs_active,
+    "/api/epic": _route_epic,
+    "/api/runs": lambda q: {"runs": list_runs()},
+    "/api/version": lambda q: {"api_version": API_VERSION},
+    "/api/job": _route_job,
+    "/api/repo/tree": lambda q: repo_tree(_qp(q, "product"), _qp(q, "path")),
+    "/api/repo/file": lambda q: repo_file(_qp(q, "product"), _qp(q, "path")),
+    "/api/repo/structure": lambda q: repo_structure(_qp(q, "product")),
+    "/api/repo/operational": lambda q: product_operational(_qp(q, "product")),
+    "/api/repo/history": lambda q: repo_history(_qp(q, "product")),
+    "/api/repo/baseline": lambda q: read_baseline(_qp(q, "product")),
+    "/api/repo/changes": lambda q: repo_changes(_qp(q, "product")),
+    "/api/repo/diff": lambda q: repo_diff(_qp(q, "product"), _qp(q, "path")),
+    "/api/git": lambda q: git_status(),
+    "/api/analysis": lambda q: get_analysis(_qp(q, "product")),
+    "/api/file": _route_file,
+}
+
+
 class Handler(BaseHTTPRequestHandler):
     def log_message(self, *args):
         pass  # quiet
@@ -2259,107 +2362,22 @@ class Handler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         path, q = u.path, parse_qs(u.query)
         try:
+            # special cases: static files and the SSE stream write the socket directly
             if path in ("/", "/index.html"):
                 return self._static("index.html")
             if path.startswith("/static/"):
                 return self._static(path[len("/static/"):])
-
-            if path == "/api/state":
-                return self._send(200, {
-                    "version": platform_version(),
-                    "api_version": API_VERSION,
-                    "products": list_products(),
-                    "agents": AGENTS,
-                    "pipeline": PIPELINE,
-                })
-            if path == "/api/inbox":
-                return self._send(200, inbox_list(q.get("product", [""])[0]))
-            if path == "/api/epics":
-                return self._send(200, {"epics": list_epics(q.get("product", [""])[0])})
-            if path == "/api/epics/overview":
-                eps = list_epics(q.get("product", [""])[0])
-                for e in eps:
-                    try:
-                        stg = epic_stage(e["id"])
-                        e["stage"] = stg.get("stage")
-                        e["accepted"] = len(stg.get("accepted") or [])
-                        e["total"] = stg.get("total")
-                        e["validation"] = stg.get("validation")
-                        e["pushed"] = stg.get("pushed")
-                        e["pr_url"] = stg.get("pr_url")
-                        e["preview_running"] = stg.get("preview_running")
-                        e["kind"] = load_epic_state(e["id"]).get("kind") or ("task" if load_epic_state(e["id"]).get("quick") else "epic")
-                    except Exception:
-                        e["stage"] = None
-                return self._send(200, {"epics": eps})
-            if path == "/api/epics/archived":
-                return self._send(200, {"epics": list_archived_epics(q.get("product", [""])[0])})
-            if path == "/api/overview":
-                return self._send(200, product_overview(q.get("product", [""])[0]))
-            if path == "/api/backlog":
-                return self._send(200, product_backlog(q.get("product", [""])[0]))
-            if path == "/api/task":
-                return self._send(200, task_detail(q.get("epic_id", [""])[0], q.get("task_file", [""])[0]))
-            if path == "/api/task/diff":
-                return self._send(200, task_diff(q.get("epic_id", [""])[0], q.get("task_file", [""])[0], q.get("path", [""])[0]))
-            if path == "/api/epic/build-status":
-                return self._send(200, epic_build_status(q.get("epic_id", [""])[0]))
-            if path == "/api/epic/stage":
-                return self._send(200, epic_stage(q.get("epic_id", [""])[0]))
-            if path == "/api/epic/fix-diff":
-                return self._send(200, epic_fix_diff(q.get("epic_id", [""])[0], q.get("path", [""])[0]))
-            if path == "/api/epic/preview-log":
-                return self._send(200, preview_log(q.get("epic_id", [""])[0]))
-            if path == "/api/preview/active":
-                return self._send(200, preview_active())
-            if path == "/api/jobs/active":
-                with JOBS_LOCK:
-                    active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
-                              for j in JOBS.values() if not j.done and j.kind == "task_run"]
-                return self._send(200, {"active": active})
-            if path == "/api/epic":
-                d = epic_detail(q.get("id", [""])[0])
-                return self._send(200, d) if d else self._send(404, {"error": "epic not found"})
-            if path == "/api/runs":
-                return self._send(200, {"runs": list_runs()})
-            if path == "/api/version":
-                return self._send(200, {"api_version": API_VERSION})
-            if path == "/api/job":
-                job = JOBS.get(q.get("id", [""])[0])
-                if not job:
-                    return self._send(404, {"error": "job not found"})
-                lines, done, result = job.snapshot(0)
-                return self._send(200, {"id": job.id, "log": lines, "done": done, "result": result})
             if path == "/api/job/stream":
                 return self._stream_job(q.get("id", [""])[0])
-            if path == "/api/repo/tree":
-                return self._send(200, repo_tree(q.get("product", [""])[0], q.get("path", [""])[0]))
-            if path == "/api/repo/file":
-                return self._send(200, repo_file(q.get("product", [""])[0], q.get("path", [""])[0]))
-            if path == "/api/repo/structure":
-                return self._send(200, repo_structure(q.get("product", [""])[0]))
-            if path == "/api/repo/operational":
-                return self._send(200, product_operational(q.get("product", [""])[0]))
-            if path == "/api/repo/history":
-                return self._send(200, repo_history(q.get("product", [""])[0]))
-            if path == "/api/repo/baseline":
-                return self._send(200, read_baseline(q.get("product", [""])[0]))
-            if path == "/api/repo/changes":
-                return self._send(200, repo_changes(q.get("product", [""])[0]))
-            if path == "/api/repo/diff":
-                return self._send(200, repo_diff(q.get("product", [""])[0], q.get("path", [""])[0]))
-            if path == "/api/git":
-                return self._send(200, git_status())
-            if path == "/api/analysis":
-                return self._send(200, get_analysis(q.get("product", [""])[0]))
-            if path == "/api/file":
-                rel = q.get("path", [""])[0]
-                target = resolve_artifact(rel)
-                if not target:
-                    return self._send(404, {"error": "file not found or not allowed"})
-                return self._send(200, {"path": rel, "content": target.read_text(errors="ignore")})
 
-            return self._send(404, {"error": "unknown endpoint"})
+            handler = GET_ROUTES.get(path)
+            if handler is None:
+                return self._send(404, {"error": "unknown endpoint"})
+            result = handler(q)
+            if isinstance(result, tuple):
+                status, body = result
+                return self._send(status, body)
+            return self._send(200, result)
         except Exception as exc:
             traceback.print_exc()
             return self._send(500, {"error": str(exc)})
