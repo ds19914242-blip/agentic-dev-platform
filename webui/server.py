@@ -38,6 +38,7 @@ sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(Path(__file__).resolve().parent))  # webui/ — for the console package
 
 from console import git_ops
+from console import state as _state
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 BACKLOG_DIR = ROOT / "backlog"
@@ -47,7 +48,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-40"
+API_VERSION = "workspace-41"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -365,50 +366,26 @@ def _task_num(name):
 
 
 def _runstate_path(epic_id):
-    return BACKLOG_DIR / epic_id / ".console_runs.json"
+    return _state.runstate_path(BACKLOG_DIR, epic_id)
 
 
 def load_runstate(epic_id):
-    p = _runstate_path(epic_id)
-    if p.exists():
-        try:
-            return json.loads(p.read_text())
-        except Exception:
-            return {}
-    return {}
+    return _state.load_runstate(BACKLOG_DIR, epic_id)
 
 
 def set_runstate(epic_id, task_file, **fields):
-    d = load_runstate(epic_id)
-    cur = d.get(task_file, {})
-    cur.update(fields)
-    cur["ts"] = datetime.now().strftime("%H:%M:%S")
-    d[task_file] = cur
-    try:
-        _runstate_path(epic_id).write_text(json.dumps(d, ensure_ascii=False, indent=2))
-    except Exception:
-        pass
-    return cur
+    return _state.set_runstate(BACKLOG_DIR, epic_id, task_file, **fields)
 
 
-_EPIC_KEY = "__epic__"
+_EPIC_KEY = _state.EPIC_KEY
 
 
 def load_epic_state(epic_id):
-    return load_runstate(epic_id).get(_EPIC_KEY, {})
+    return _state.load_epic_state(BACKLOG_DIR, epic_id)
 
 
 def set_epic_state(epic_id, **fields):
-    d = load_runstate(epic_id)
-    cur = d.get(_EPIC_KEY, {})
-    cur.update(fields)
-    cur["ts"] = datetime.now().strftime("%H:%M:%S")
-    d[_EPIC_KEY] = cur
-    try:
-        _runstate_path(epic_id).write_text(json.dumps(d, ensure_ascii=False, indent=2))
-    except Exception:
-        pass
-    return cur
+    return _state.set_epic_state(BACKLOG_DIR, epic_id, **fields)
 
 
 def _dep_num(s):
