@@ -12,10 +12,12 @@ this module's JOBS via the re-export.
 
 Behaviour is byte-for-byte identical to the originals.
 """
+import json
 import threading
 import time
 import uuid
 from datetime import datetime
+from pathlib import Path
 
 # --- registry ---------------------------------------------------------------
 JOBS = {}
@@ -88,3 +90,43 @@ def _forward(fn, *args):
             job.emit(l.get("msg", ""), l.get("level", ""))
         return {k: v for k, v in r.items() if k != "log"}
     return target
+
+
+def reconcile_interrupted(backlog_dir, now=None):
+    """Recovery after a server restart. Jobs live only in RAM, so a process that
+    dies mid-run leaves the task's run-state stuck at state="running" forever. On
+    startup we scan every backlog/<epic>/.console_runs.json and flip task entries
+    that are still "running" to "interrupted" (with an interrupted_at stamp), so the
+    UI shows an honest "прервано" instead of a phantom running task. The human then
+    restarts it — no auto-magic, no guessing whether the agent committed.
+
+    Task-level only: the per-epic "__epic__" entry is left untouched. Pure file scan
+    (no server state), idempotent. Returns the number of task entries flipped.
+    """
+    stamp = now or datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    bd = Path(backlog_dir)
+    if not bd.exists():
+        return 0
+    flipped = 0
+    for rs_path in bd.glob("*/.console_runs.json"):
+        try:
+            data = json.loads(rs_path.read_text())
+        except Exception:
+            continue
+        if not isinstance(data, dict):
+            continue
+        changed = False
+        for key, entry in data.items():
+            if key == "__epic__" or not isinstance(entry, dict):
+                continue
+            if entry.get("state") == "running":
+                entry["state"] = "interrupted"
+                entry["interrupted_at"] = stamp
+                changed = True
+                flipped += 1
+        if changed:
+            try:
+                rs_path.write_text(json.dumps(data, ensure_ascii=False, indent=2))
+            except Exception:
+                pass
+    return flipped

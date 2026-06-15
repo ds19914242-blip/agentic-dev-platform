@@ -189,7 +189,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-36";
+const FE_VERSION="workspace-37";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -216,7 +216,7 @@ function mdToHtml(md){md=esc(md||"");const lines=md.split("\n");let out=[],ul=fa
   function il(s){return s.replace(/`([^`]+)`/g,"<code>$1</code>").replace(/\*\*([^*]+)\*\*/g,"<b>$1</b>")}}
 function codeBlock(t){return '<pre class="code">'+(t||"").split("\n").slice(0,6000).map((l,i)=>'<span class="ln">'+(i+1)+'</span>'+esc(l)).join("\n")+'</pre>'}
 function diffBlock(d){return '<pre class="code diff">'+(d||"").split("\n").map(l=>{let c="";if(l.startsWith("+")&&!l.startsWith("+++"))c="add";else if(l.startsWith("-")&&!l.startsWith("---"))c="del";else if(l.startsWith("@@")||l.startsWith("diff ")||l.startsWith("index "))c="hdr";return '<span class="'+c+'">'+esc(l||" ")+'</span>'}).join("")+'</pre>'}
-function statusCls(s){return /done|merged|release_confirmed|pr_created|accepted|passed|verified/.test(s||"")?"ok":/fail|block/.test(s||"")?"bad":/progress|running|pending|planned|todo/.test(s||"")?"warn":""}
+function statusCls(s){return /done|merged|release_confirmed|pr_created|accepted|passed|verified/.test(s||"")?"ok":/fail|block|interrupt/.test(s||"")?"bad":/progress|running|pending|planned|todo/.test(s||"")?"warn":""}
 
 const ART_LABELS={
   "epic.md":"эпик: запрос + контекст продукта",
@@ -695,7 +695,7 @@ function renderEpicTasks(view){
   el.innerHTML=EPIC_TASK_VIEW==="graph"?drawDag(t):EPIC_TASK_VIEW==="board"?epicMiniBoard(t):epicTaskList(t);
 }
 function etaskReady(t){
-  if(t.eff_status&&t.eff_status!=="todo"&&t.eff_status!=="failed")return false;
+  if(t.eff_status&&t.eff_status!=="todo"&&t.eff_status!=="failed"&&t.eff_status!=="interrupted")return false;
   const byNum={};(EPIC_TASKS||[]).forEach(x=>byNum[x.num]=x);
   return (t.depends_on||[]).every(n=>{const d=byNum[n];return d&&(d.eff_status==="accepted"||d.eff_status==="done")});
 }
@@ -709,6 +709,7 @@ function etaskActions(t){
   if(s==="running")return `<span class="pill warn" style="font-size:10px">running…</span> ${showlog} ${reset}`;
   if(s==="implemented"||s==="no_changes")return `${accept} ${run("Re-run")} ${reset}`;
   if(s==="accepted"||s==="done")return reset;
+  if(s==="interrupted")return `<span class="pill bad" style="font-size:10px">прервано</span> ${etaskReady(t)?run("Перезапустить"):runDis} ${reset}`;
   if(s==="failed")return `${etaskReady(t)?run("Re-run"):runDis} ${reset}`;
   return etaskReady(t)?run("Run"):runDis;
 }
@@ -759,7 +760,7 @@ function etaskRunReady(){
   if(!confirm("Запустить все готовые ("+ready.length+")? Каждая — свой worktree поверх зависимостей, main не трогается. Лог будет общим — следи по доске."))return;
   ready.forEach((t,i)=>setTimeout(()=>etaskRunQuiet(t.file),i*250));
 }
-function taskColor(s){return (s==="done"||s==="accepted")?"var(--teal)":s==="running"?"var(--amber)":s==="failed"?"var(--red)":s==="implemented"?"var(--blue)":"var(--faint)"}
+function taskColor(s){return (s==="done"||s==="accepted")?"var(--teal)":s==="running"?"var(--amber)":(s==="failed"||s==="interrupted")?"var(--red)":s==="implemented"?"var(--blue)":"var(--faint)"}
 function shortTitle(t){return (t.title||t.file).replace(/^Task\s*\d+\s*[—-]\s*/,"")}
 function epicTaskList(tasks){
   return tasks.map(t=>`<div class="epic-row" style="cursor:pointer;gap:8px" onclick="viewArtifact('${esc(EPIC)}','${esc(t.file)}',null)">

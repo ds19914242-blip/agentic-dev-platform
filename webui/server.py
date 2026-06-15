@@ -47,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-36"
+API_VERSION = "workspace-37"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -1393,6 +1393,8 @@ def epic_detail(epic_id):
                 eff = "running"
             elif rstate == "failed":
                 eff = "failed"
+            elif rstate == "interrupted":
+                eff = "interrupted"
             elif rstate in ("implemented", "no_changes"):
                 eff = "implemented"
             else:
@@ -2491,6 +2493,12 @@ def main():
     ap.add_argument("--host", default="127.0.0.1")
     args = ap.parse_args()
     server = ThreadingHTTPServer((args.host, args.port), Handler)
+    try:
+        _n = _jobs.reconcile_interrupted(BACKLOG_DIR)
+        if _n:
+            print(f"Recovery         ·  marked {_n} interrupted task(s) from a previous run")
+    except Exception as exc:
+        print(f"Recovery         ·  reconcile skipped ({exc})")
     print(f"Agentic Console  ·  http://{args.host}:{args.port}")
     print(f"Platform root    ·  {ROOT}")
     print(f"Version          ·  {platform_version()}")
