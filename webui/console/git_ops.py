@@ -12,8 +12,32 @@ import json
 import re
 import shutil
 import subprocess
+import threading
 from datetime import datetime
 from pathlib import Path
+
+
+# --- per-repo serialization -------------------------------------------------
+_REPO_LOCKS = {}
+_REPO_LOCKS_GUARD = threading.Lock()
+
+
+def repo_lock(repo):
+    """Return the process-wide lock for a repository path so that all git MUTATIONS
+    on one repo (worktree add/remove, cherry-pick, branch -D, push) are serialized.
+    Different repos get different locks and run in parallel. Non-reentrant — never
+    acquire it twice in the same call chain. Usage:
+
+        with git_ops.repo_lock(repo):
+            ...  # git worktree / cherry-pick / branch work
+    """
+    key = str(repo)
+    with _REPO_LOCKS_GUARD:
+        lk = _REPO_LOCKS.get(key)
+        if lk is None:
+            lk = threading.Lock()
+            _REPO_LOCKS[key] = lk
+        return lk
 
 
 # --- raw git ----------------------------------------------------------------

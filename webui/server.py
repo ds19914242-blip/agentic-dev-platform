@@ -47,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-37"
+API_VERSION = "workspace-38"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -470,17 +470,6 @@ def _git_run(repo, args, timeout=1800):
     return git_ops.git_run(repo, args, timeout)
 
 
-_EPIC_LOCKS = {}
-_EPIC_LOCKS_GUARD = threading.Lock()
-
-
-def _epic_lock(epic_id):
-    with _EPIC_LOCKS_GUARD:
-        if epic_id not in _EPIC_LOCKS:
-            _EPIC_LOCKS[epic_id] = threading.Lock()
-        return _EPIC_LOCKS[epic_id]
-
-
 def _epic_branch(epic_id):
     return git_ops.epic_branch(epic_id)
 
@@ -570,7 +559,7 @@ def run_task_implementation(epic_id, task_file):
             set_runstate(eid, task_file, state="failed", error=err)
             return {"ok": False, "error": err}
         set_runstate(eid, task_file, state="running")
-        with _epic_lock(eid):
+        with git_ops.repo_lock(repo):
             return _run_task(eid, task_file, product, repo, job)
     return target
 
@@ -624,43 +613,44 @@ def build_epic(epic_id):
         wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-assemble-{datetime.now().strftime('%H%M%S')}"
         job.emit(f"Assembling {eb} from {base} by cherry-pick (no agent) — order: " +
                  ", ".join("#" + str(n) for n in order))
-        r = _git_run(repo, ["worktree", "add", "-B", eb, str(wt), base])
-        if r.returncode != 0:
-            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
-        try:
-            picked, skipped, conflict = 0, 0, False
-            for n in order:
-                tf = byname.get(n)
-                if not tf:
-                    continue
-                run = rs.get(tf, {})
-                head = run.get("head")
-                if not run.get("changed") or not head or head == run.get("base"):
-                    job.emit(f"#{n} {tf}: no code change — skipped", "skip")
-                    skipped += 1
-                    continue
-                cp = _git_run(wt, ["cherry-pick", head])
-                if cp.returncode != 0:
-                    confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines()
-                             if l.startswith(("UU", "AA", "DD"))]
-                    _git_run(wt, ["cherry-pick", "--abort"])
-                    conflict = True
-                    job.emit(f"#{n} {tf}: CONFLICT on {', '.join(confl) or 'files'} — assembly stopped, partial branch discarded", "err")
-                    job.emit("Этот таск правит те же строки, что и его зависимости, но был выполнен от main. "
-                             "Сбрось его (Вернуть в todo) и перезапусти — он соберётся поверх зависимостей без конфликта.", "err")
-                    return {"ok": False, "error": "merge conflict at #" + str(n),
-                            "conflict_task": tf, "conflict_files": confl,
-                            "hint": "reset_and_rerun"}
-                job.emit(f"#{n} {tf}: applied", "ok")
-                picked += 1
-            job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
-            set_epic_state(eid, assembled=True, assembled_branch=eb, validated=False, validation=None)
-            return {"ok": True, "branch": eb, "applied": picked, "skipped": skipped}
-        finally:
-            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-            _git_run(repo, ["worktree", "prune"])
-            if conflict:
-                _git_run(repo, ["branch", "-D", eb])
+        with git_ops.repo_lock(repo):
+            r = _git_run(repo, ["worktree", "add", "-B", eb, str(wt), base])
+            if r.returncode != 0:
+                return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+            try:
+                picked, skipped, conflict = 0, 0, False
+                for n in order:
+                    tf = byname.get(n)
+                    if not tf:
+                        continue
+                    run = rs.get(tf, {})
+                    head = run.get("head")
+                    if not run.get("changed") or not head or head == run.get("base"):
+                        job.emit(f"#{n} {tf}: no code change — skipped", "skip")
+                        skipped += 1
+                        continue
+                    cp = _git_run(wt, ["cherry-pick", head])
+                    if cp.returncode != 0:
+                        confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines()
+                                 if l.startswith(("UU", "AA", "DD"))]
+                        _git_run(wt, ["cherry-pick", "--abort"])
+                        conflict = True
+                        job.emit(f"#{n} {tf}: CONFLICT on {', '.join(confl) or 'files'} — assembly stopped, partial branch discarded", "err")
+                        job.emit("Этот таск правит те же строки, что и его зависимости, но был выполнен от main. "
+                                 "Сбрось его (Вернуть в todo) и перезапусти — он соберётся поверх зависимостей без конфликта.", "err")
+                        return {"ok": False, "error": "merge conflict at #" + str(n),
+                                "conflict_task": tf, "conflict_files": confl,
+                                "hint": "reset_and_rerun"}
+                    job.emit(f"#{n} {tf}: applied", "ok")
+                    picked += 1
+                job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
+                set_epic_state(eid, assembled=True, assembled_branch=eb, validated=False, validation=None)
+                return {"ok": True, "branch": eb, "applied": picked, "skipped": skipped}
+            finally:
+                _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+                _git_run(repo, ["worktree", "prune"])
+                if conflict:
+                    _git_run(repo, ["branch", "-D", eb])
     return target
 
 
@@ -680,53 +670,54 @@ def validate_epic(epic_id):
         if _git_run(repo, ["rev-parse", "--verify", eb]).returncode != 0:
             return {"ok": False, "error": "epic branch not found — re-assemble"}
         wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-validate-{datetime.now().strftime('%H%M%S')}"
-        r = _git_run(repo, ["worktree", "add", str(wt), eb])
-        if r.returncode != 0:
-            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
-        try:
-            base_nm = Path(repo) / "node_modules"
-            wt_nm = wt / "node_modules"
-            if base_nm.exists() and not wt_nm.exists():
-                try:
-                    wt_nm.symlink_to(base_nm, target_is_directory=True)
-                except Exception:
-                    pass
+        with git_ops.repo_lock(repo):
+            r = _git_run(repo, ["worktree", "add", str(wt), eb])
+            if r.returncode != 0:
+                return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
             try:
-                from orchestrator.product_registry import load_product_config
-                from orchestrator.validation_runner import run_validators
-                validators = load_product_config(product).get("validators", [])
-            except Exception as exc:
-                return {"ok": False, "error": str(exc)}
-            if not validators:
-                set_epic_state(eid, validated=True, validation="none")
-                job.emit("No validators configured — nothing to check.", "skip")
-                return {"ok": True, "overall": "none", "validators": []}
-            job.emit(f"Running {len(validators)} validator(s) on {eb}…")
-            results = run_validators(str(wt), validators)
-            out = []
-            for rr in results:
-                passed = rr.get("passed", False)
-                job.emit(f"{rr.get('name')}: {'passed' if passed else 'FAILED'}"
-                         + (" (timed out)" if rr.get("timed_out") else ""),
-                         "ok" if passed else "err")
-                if not passed:
-                    tail = ((rr.get("stdout", "") or "") + "\n" + (rr.get("stderr", "") or "")).strip().splitlines()
-                    for line in tail[-25:]:
-                        job.emit("  " + line, "err")
-                out.append({"name": rr.get("name"), "passed": passed, "required": rr.get("required", True),
-                            "stdout": rr.get("stdout", ""), "stderr": rr.get("stderr", "")})
-            required = [r for r in out if r["required"]]
-            overall = "passed" if required and all(r["passed"] for r in required) else "failed"
-            _write_validation_report(eid, eb, out, overall)
-            set_epic_state(eid, validated=(overall == "passed"), validation=overall)
-            job.emit(f"Validation {overall}." + ("" if overall == "passed"
-                     else " Errors saved to validation-report.md — use Fix build or fix manually, then re-validate."),
-                     "ok" if overall == "passed" else "err")
-            return {"ok": True, "overall": overall,
-                    "validators": [{"name": r["name"], "passed": r["passed"]} for r in out]}
-        finally:
-            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-            _git_run(repo, ["worktree", "prune"])
+                base_nm = Path(repo) / "node_modules"
+                wt_nm = wt / "node_modules"
+                if base_nm.exists() and not wt_nm.exists():
+                    try:
+                        wt_nm.symlink_to(base_nm, target_is_directory=True)
+                    except Exception:
+                        pass
+                try:
+                    from orchestrator.product_registry import load_product_config
+                    from orchestrator.validation_runner import run_validators
+                    validators = load_product_config(product).get("validators", [])
+                except Exception as exc:
+                    return {"ok": False, "error": str(exc)}
+                if not validators:
+                    set_epic_state(eid, validated=True, validation="none")
+                    job.emit("No validators configured — nothing to check.", "skip")
+                    return {"ok": True, "overall": "none", "validators": []}
+                job.emit(f"Running {len(validators)} validator(s) on {eb}…")
+                results = run_validators(str(wt), validators)
+                out = []
+                for rr in results:
+                    passed = rr.get("passed", False)
+                    job.emit(f"{rr.get('name')}: {'passed' if passed else 'FAILED'}"
+                             + (" (timed out)" if rr.get("timed_out") else ""),
+                             "ok" if passed else "err")
+                    if not passed:
+                        tail = ((rr.get("stdout", "") or "") + "\n" + (rr.get("stderr", "") or "")).strip().splitlines()
+                        for line in tail[-25:]:
+                            job.emit("  " + line, "err")
+                    out.append({"name": rr.get("name"), "passed": passed, "required": rr.get("required", True),
+                                "stdout": rr.get("stdout", ""), "stderr": rr.get("stderr", "")})
+                required = [r for r in out if r["required"]]
+                overall = "passed" if required and all(r["passed"] for r in required) else "failed"
+                _write_validation_report(eid, eb, out, overall)
+                set_epic_state(eid, validated=(overall == "passed"), validation=overall)
+                job.emit(f"Validation {overall}." + ("" if overall == "passed"
+                         else " Errors saved to validation-report.md — use Fix build or fix manually, then re-validate."),
+                         "ok" if overall == "passed" else "err")
+                return {"ok": True, "overall": overall,
+                        "validators": [{"name": r["name"], "passed": r["passed"]} for r in out]}
+            finally:
+                _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+                _git_run(repo, ["worktree", "prune"])
     return target
 
 
@@ -826,49 +817,50 @@ def fix_epic_build(epic_id):
         eb = _epic_branch(eid)
         prompt, files, symbols = _build_fix_prompt(eid)
         wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-fix-{datetime.now().strftime('%H%M%S')}"
-        r = _git_run(repo, ["worktree", "add", str(wt), eb])
-        if r.returncode != 0:
-            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
-        try:
-            base_nm = Path(repo) / "node_modules"
-            wt_nm = wt / "node_modules"
-            if base_nm.exists() and not wt_nm.exists():
-                try:
-                    wt_nm.symlink_to(base_nm, target_is_directory=True)
-                except Exception:
-                    pass
-            before = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
-            job.emit(f"Fix attempt {attempts + 1}/3 — {len(files)} file(s), "
-                     f"{len(symbols)} removed symbol(s). Feeding agent the errors + epic intent…")
-            if symbols:
-                job.emit("  consumers to clean: " + ", ".join(list(symbols)[:8])
-                         + (" …" if len(symbols) > 8 else ""))
+        with git_ops.repo_lock(repo):
+            r = _git_run(repo, ["worktree", "add", str(wt), eb])
+            if r.returncode != 0:
+                return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
             try:
-                from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
-                run_runtime_orchestrator(
-                    task=prompt, product=product, repo_path=str(wt),
-                    output_dir=f"runs/webui-fix-{datetime.now().strftime('%H%M%S')}", dry_run=False,
-                    inputs={"task_path": str(BACKLOG_DIR / eid / "validation-report.md"),
-                            "epic_dir": str(BACKLOG_DIR / eid), "execute_writes": True})
-            except FileNotFoundError:
-                return {"ok": False, "error": "claude CLI not found — no fix written"}
-            except Exception as exc:
-                return {"ok": False, "error": str(exc)}
-            _git_run(wt, ["add", "-A"])
-            _git_run(wt, ["commit", "-m", f"agentic: fix build (attempt {attempts + 1})"])
-            after = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
-            changed = bool(after and after != before)
-            set_epic_state(eid, fix_attempts=attempts + 1, validated=False, validation=None,
-                           fix_base=before, fix_head=after)
-            if changed:
-                nfiles = len([l for l in _git_run(wt, ["diff", "--name-only", f"{before}..{after}"]).stdout.splitlines() if l.strip()])
-                job.emit(f"Fix committed on {eb} ({nfiles} file(s)). Review the fix diff, then Re-validate.", "ok")
-            else:
-                job.emit("Agent made no changes. Re-validate or fix manually.", "skip")
-            return {"ok": True, "branch": eb, "attempt": attempts + 1, "changed": changed}
-        finally:
-            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-            _git_run(repo, ["worktree", "prune"])
+                base_nm = Path(repo) / "node_modules"
+                wt_nm = wt / "node_modules"
+                if base_nm.exists() and not wt_nm.exists():
+                    try:
+                        wt_nm.symlink_to(base_nm, target_is_directory=True)
+                    except Exception:
+                        pass
+                before = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+                job.emit(f"Fix attempt {attempts + 1}/3 — {len(files)} file(s), "
+                         f"{len(symbols)} removed symbol(s). Feeding agent the errors + epic intent…")
+                if symbols:
+                    job.emit("  consumers to clean: " + ", ".join(list(symbols)[:8])
+                             + (" …" if len(symbols) > 8 else ""))
+                try:
+                    from orchestrator.agent_runtime.orchestrator import run_runtime_orchestrator
+                    run_runtime_orchestrator(
+                        task=prompt, product=product, repo_path=str(wt),
+                        output_dir=f"runs/webui-fix-{datetime.now().strftime('%H%M%S')}", dry_run=False,
+                        inputs={"task_path": str(BACKLOG_DIR / eid / "validation-report.md"),
+                                "epic_dir": str(BACKLOG_DIR / eid), "execute_writes": True})
+                except FileNotFoundError:
+                    return {"ok": False, "error": "claude CLI not found — no fix written"}
+                except Exception as exc:
+                    return {"ok": False, "error": str(exc)}
+                _git_run(wt, ["add", "-A"])
+                _git_run(wt, ["commit", "-m", f"agentic: fix build (attempt {attempts + 1})"])
+                after = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
+                changed = bool(after and after != before)
+                set_epic_state(eid, fix_attempts=attempts + 1, validated=False, validation=None,
+                               fix_base=before, fix_head=after)
+                if changed:
+                    nfiles = len([l for l in _git_run(wt, ["diff", "--name-only", f"{before}..{after}"]).stdout.splitlines() if l.strip()])
+                    job.emit(f"Fix committed on {eb} ({nfiles} file(s)). Review the fix diff, then Re-validate.", "ok")
+                else:
+                    job.emit("Agent made no changes. Re-validate or fix manually.", "skip")
+                return {"ok": True, "branch": eb, "attempt": attempts + 1, "changed": changed}
+            finally:
+                _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+                _git_run(repo, ["worktree", "prune"])
     return target
 
 
@@ -1000,7 +992,8 @@ def preview_start(epic_id):
     if _git_run(repo, ["rev-parse", "--verify", eb]).returncode != 0:
         return {"ok": False, "error": "epic branch not found — re-assemble"}
     wt = _preview_path(repo, eid)
-    werr = _ensure_worktree(repo, eb, wt)
+    with git_ops.repo_lock(repo):
+        werr = _ensure_worktree(repo, eb, wt)
     if werr:
         return {"ok": False, "error": werr}
     base_nm = Path(repo) / "node_modules"
@@ -1071,8 +1064,9 @@ def preview_stop(epic_id):
     product, repo, err = _resolve_repo(eid)
     if not err and repo:
         wt = _preview_path(repo, eid)
-        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-        _git_run(repo, ["worktree", "prune"])
+        with git_ops.repo_lock(repo):
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
     set_epic_state(eid, preview_path=None)
     return {"ok": True}
 
@@ -1121,7 +1115,8 @@ def push_epic(epic_id):
             return {"ok": False, "error": "epic branch not found — re-assemble"}
         base = _base_branch(repo)
         job.emit(f"Pushing {eb} → origin…")
-        pr = _git_run(repo, ["push", "-u", "origin", eb])
+        with git_ops.repo_lock(repo):
+            pr = _git_run(repo, ["push", "-u", "origin", eb])
         if pr.returncode != 0:
             job.emit("push failed: " + (pr.stderr or "").strip(), "err")
             return {"ok": False, "error": "git push failed: " + (pr.stderr or "").strip()}
@@ -1162,10 +1157,11 @@ def rollback_epic(epic_id):
     product, repo, err = _resolve_repo(eid)
     if not err and repo:
         wt = _preview_path(repo, eid)
-        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-        _git_run(repo, ["worktree", "prune"])
-        eb = _epic_branch(eid)
-        _git_run(repo, ["branch", "-D", eb])
+        with git_ops.repo_lock(repo):
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
+            eb = _epic_branch(eid)
+            _git_run(repo, ["branch", "-D", eb])
     set_epic_state(eid, assembled=False, validated=False, validation=None, previewed=False,
                    pushed=False, pr_url=None, preview_path=None, fix_attempts=0,
                    fix_base=None, fix_head=None)
@@ -1218,14 +1214,15 @@ def reset_epic_runs(epic_id):
     product, repo, err = _resolve_repo(eid)
     deleted = None
     if not err and repo:
-        _git_run(repo, ["worktree", "prune"])
-        eb = _epic_branch(eid)
-        tag = eb.split("-", 1)[-1]
-        for b in (_git_run(repo, ["branch", "--list", "agentic/*"]).stdout or "").splitlines():
-            name = b.strip().lstrip("* ").strip()
-            if name and (name == eb or name.startswith(f"agentic/task-{tag}-") or name.startswith("agentic/task-")):
-                _git_run(repo, ["branch", "-D", name])
-        deleted = eb
+        with git_ops.repo_lock(repo):
+            _git_run(repo, ["worktree", "prune"])
+            eb = _epic_branch(eid)
+            tag = eb.split("-", 1)[-1]
+            for b in (_git_run(repo, ["branch", "--list", "agentic/*"]).stdout or "").splitlines():
+                name = b.strip().lstrip("* ").strip()
+                if name and (name == eb or name.startswith(f"agentic/task-{tag}-") or name.startswith("agentic/task-")):
+                    _git_run(repo, ["branch", "-D", name])
+            deleted = eb
     return {"ok": True, "epic_id": eid, "reset_branch": deleted}
 
 
@@ -1260,9 +1257,10 @@ def reset_task_run(epic_id, task_file):
     if not err and repo:
         stem = Path(task_file).stem
         tb = _task_branch(eid, stem)
-        _git_run(repo, ["worktree", "prune"])
-        if _git_run(repo, ["branch", "-D", tb]).returncode == 0:
-            deleted = tb
+        with git_ops.repo_lock(repo):
+            _git_run(repo, ["worktree", "prune"])
+            if _git_run(repo, ["branch", "-D", tb]).returncode == 0:
+                deleted = tb
     return {"ok": True, "epic_id": eid, "task_file": task_file,
             "was": (removed or {}).get("state"), "deleted_branch": deleted}
 
