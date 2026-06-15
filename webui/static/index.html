@@ -176,7 +176,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-13";
+const FE_VERSION="workspace-14a";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -451,16 +451,39 @@ async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent
   if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));
   refreshExecGate(id);}
 async function refreshExecGate(id){
-  const bs=await api("/api/epic/build-status?epic_id="+encodeURIComponent(id));
+  const st=await api("/api/epic/stage?epic_id="+encodeURIComponent(id));
   const g=$("#exec-gate"),b=$("#exec-build");if(!g||!b)return;
-  if(bs.error){g.innerHTML='<span class="muted">'+esc(bs.error)+'</span>';return}
-  if(bs.buildable){
-    g.innerHTML=`<span class="pill ok">все ${bs.total} задач приняты — готово к сборке</span>`;
-    b.innerHTML=`<button class="btn" onclick="buildEpic('${esc(id)}',this)">Собрать ветку эпика →</button>`;
-  }else{
-    g.innerHTML=`<span class="pill warn">принято ${bs.accepted.length} из ${bs.total} · ждут: ${bs.pending.map(n=>"#"+n).join(", ")||"—"}</span>`;
-    b.innerHTML=`<button class="btn" disabled title="Сначала прими все задачи на доске">Собрать ветку эпика →</button>`;
-  }
+  if(st.error){g.innerHTML='<span class="muted">'+esc(st.error)+'</span>';return}
+  let gate=st.buildable?`<span class="pill ok">все ${st.total} задач приняты</span>`
+    :`<span class="pill warn">принято ${(st.accepted||[]).length} из ${st.total} · ждут: ${(st.pending||[]).map(n=>"#"+n).join(", ")||"—"}</span>`;
+  let val="";
+  if(st.validation==="passed")val=' <span class="pill ok">tsc+build ✓</span>';
+  else if(st.validation==="failed")val=' <span class="pill bad">build FAILED</span>';
+  g.innerHTML=stageRail(st)+gate+val;
+  const assembleBtn=st.buildable
+    ?`<button class="btn" onclick="buildEpic('${esc(id)}',this)">${st.assembled?"Пересобрать ветку":"Собрать ветку эпика"} →</button>`
+    :`<button class="btn" disabled title="Сначала прими все задачи на доске">Собрать ветку эпика →</button>`;
+  const validateBtn=st.assembled
+    ?`<button class="btn ${st.validated?'ghost ':''}sm" onclick="validateEpic('${esc(id)}',this)" style="font-size:13px;padding:10px 15px">${st.validated?"Re-validate":"Validate (tsc+build)"}</button>`
+    :`<button class="btn ghost" disabled title="Сначала собери ветку эпика" style="padding:10px 15px">Validate</button>`;
+  b.innerHTML=assembleBtn+" "+validateBtn;
+}
+function stageRail(st){
+  const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",released:"Released"};
+  const order=st.stages||["implementing","assembled","validated","previewed","released"];
+  const ci=order.indexOf(st.stage);
+  return '<div class="row" style="gap:4px;flex-wrap:wrap;margin-bottom:8px">'+order.map((s,i)=>
+    `<span class="pill ${i<ci?"ok":i===ci?"warn":""}" style="font-size:10px">${i<ci?"✓ ":""}${labels[s]||s}</span>`+
+    (i<order.length-1?'<span class="muted" style="font-size:10px">→</span>':"")).join("")+'</div>';
+}
+function validateEpic(id,btn){
+  btn.disabled=true;btn.textContent="Validating…";
+  runJob("/api/epic/validate",{epic_id:id},"#epiclog",res=>{
+    if(res&&res.overall==="passed")toast("Validation passed ✓");
+    else if(res&&res.overall==="failed")toast("Validation FAILED — смотри лог");
+    else if(res&&res.error)toast(res.error);
+    refreshExecGate(id);
+  });
 }
 async function viewArtifact(id,name,row){document.querySelectorAll("#artlist .trow").forEach(r=>r.classList.remove("on"));if(row)row.classList.add("on");
   const v=$("#aview");v.innerHTML='<div class="vh">'+esc(name)+'</div><div class="muted" style="padding:12px">Loading…</div>';
@@ -600,7 +623,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,stageRail});
 </script>
 </body>
 </html>

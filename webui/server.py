@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-13"
+API_VERSION = "workspace-14a"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -392,6 +392,26 @@ def set_runstate(epic_id, task_file, **fields):
     return cur
 
 
+_EPIC_KEY = "__epic__"
+
+
+def load_epic_state(epic_id):
+    return load_runstate(epic_id).get(_EPIC_KEY, {})
+
+
+def set_epic_state(epic_id, **fields):
+    d = load_runstate(epic_id)
+    cur = d.get(_EPIC_KEY, {})
+    cur.update(fields)
+    cur["ts"] = datetime.now().strftime("%H:%M:%S")
+    d[_EPIC_KEY] = cur
+    try:
+        _runstate_path(epic_id).write_text(json.dumps(d, ensure_ascii=False, indent=2))
+    except Exception:
+        pass
+    return cur
+
+
 def _dep_num(s):
     m = re.search(r"task-(\d+)", s or "")
     if m:
@@ -691,11 +711,97 @@ def build_epic(epic_id):
                 job.emit(f"#{n} {tf}: applied", "ok")
                 picked += 1
             job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
+            set_epic_state(eid, assembled=True, assembled_branch=eb, validated=False, validation=None)
             return {"ok": True, "branch": eb, "applied": picked, "skipped": skipped}
         finally:
             _git_run(repo, ["worktree", "remove", "--force", str(wt)])
             _git_run(repo, ["worktree", "prune"])
     return target
+
+
+def validate_epic(epic_id):
+    """Run the product validators (tsc, build) on the assembled epic branch in a
+    worktree. main untouched. Sets epic state validated true/false."""
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        if not load_epic_state(eid).get("assembled"):
+            return {"ok": False, "error": "epic not assembled yet — build the branch first"}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        eb = _epic_branch(eid)
+        if _git_run(repo, ["rev-parse", "--verify", eb]).returncode != 0:
+            return {"ok": False, "error": "epic branch not found — re-assemble"}
+        wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-validate-{datetime.now().strftime('%H%M%S')}"
+        r = _git_run(repo, ["worktree", "add", str(wt), eb])
+        if r.returncode != 0:
+            return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+        try:
+            base_nm = Path(repo) / "node_modules"
+            wt_nm = wt / "node_modules"
+            if base_nm.exists() and not wt_nm.exists():
+                try:
+                    wt_nm.symlink_to(base_nm, target_is_directory=True)
+                except Exception:
+                    pass
+            try:
+                from orchestrator.product_registry import load_product_config
+                from orchestrator.validation_runner import run_validators
+                validators = load_product_config(product).get("validators", [])
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+            if not validators:
+                set_epic_state(eid, validated=True, validation="none")
+                job.emit("No validators configured — nothing to check.", "skip")
+                return {"ok": True, "overall": "none", "validators": []}
+            job.emit(f"Running {len(validators)} validator(s) on {eb}…")
+            results = run_validators(str(wt), validators)
+            out = []
+            for rr in results:
+                passed = rr.get("passed", False)
+                job.emit(f"{rr.get('name')}: {'passed' if passed else 'FAILED'}"
+                         + (" (timed out)" if rr.get("timed_out") else ""),
+                         "ok" if passed else "err")
+                out.append({"name": rr.get("name"), "passed": passed, "required": rr.get("required", True)})
+            required = [r for r in out if r["required"]]
+            overall = "passed" if required and all(r["passed"] for r in required) else "failed"
+            set_epic_state(eid, validated=(overall == "passed"), validation=overall)
+            job.emit(f"Validation {overall}." + ("" if overall == "passed" else " Fix and re-validate before preview/PR."),
+                     "ok" if overall == "passed" else "err")
+            return {"ok": True, "overall": overall, "validators": out}
+        finally:
+            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+            _git_run(repo, ["worktree", "prune"])
+    return target
+
+
+_EPIC_STAGES = ["implementing", "assembled", "validated", "previewed", "released"]
+
+
+def epic_stage(epic_id):
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"error": "invalid epic id"}
+    bs = epic_build_status(eid)
+    es = load_epic_state(eid)
+    if not bs.get("buildable"):
+        stage = "implementing"
+    elif es.get("released"):
+        stage = "released"
+    elif es.get("previewed"):
+        stage = "previewed"
+    elif es.get("validated"):
+        stage = "validated"
+    elif es.get("assembled"):
+        stage = "assembled"
+    else:
+        stage = "implementing"  # all accepted, ready to assemble
+    return {"stage": stage, "stages": _EPIC_STAGES, "buildable": bs.get("buildable"),
+            "assembled": bool(es.get("assembled")), "validated": bool(es.get("validated")),
+            "validation": es.get("validation"), "accepted": bs.get("accepted"),
+            "pending": bs.get("pending"), "total": bs.get("total"), "branch": bs.get("branch")}
 
 
 def reset_epic_runs(epic_id):
@@ -1674,6 +1780,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._send(200, task_diff(q.get("epic_id", [""])[0], q.get("task_file", [""])[0], q.get("path", [""])[0]))
             if path == "/api/epic/build-status":
                 return self._send(200, epic_build_status(q.get("epic_id", [""])[0]))
+            if path == "/api/epic/stage":
+                return self._send(200, epic_stage(q.get("epic_id", [""])[0]))
             if path == "/api/jobs/active":
                 with JOBS_LOCK:
                     active = [{"job_id": j.id, "kind": j.kind, "key": list(j.key)}
@@ -1772,6 +1880,12 @@ class Handler(BaseHTTPRequestHandler):
                 if not eid:
                     return self._send(400, {"error": "epic_id required"})
                 job, started = start_job("epic_build", ("epic_build", eid), build_epic(eid))
+                return self._send(200, {"job_id": job.id, "started": started})
+            if u.path == "/api/epic/validate":
+                eid = _safe_epic_id((payload.get("epic_id") or "").strip())
+                if not eid:
+                    return self._send(400, {"error": "epic_id required"})
+                job, started = start_job("epic_validate", ("epic_validate", eid), validate_epic(eid))
                 return self._send(200, {"job_id": job.id, "started": started})
             if u.path == "/api/epic/reset-runs":
                 return self._send(200, reset_epic_runs((payload.get("epic_id") or "").strip()))
