@@ -44,7 +44,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-10"
+API_VERSION = "workspace-11"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -392,6 +392,47 @@ def set_runstate(epic_id, task_file, **fields):
     return cur
 
 
+def _dep_num(s):
+    m = re.search(r"task-(\d+)", s or "")
+    if m:
+        return int(m.group(1))
+    m = re.search(r"(\d+)", s or "")
+    return int(m.group(1)) if m else None
+
+
+def epic_dep_nums(epic_id, files):
+    """Return {task_num: set(dep_task_nums)} from dag.json (preferred) or the
+    platform's Depends-On parser. Always excludes a task from its own blockers."""
+    ed = BACKLOG_DIR / epic_id
+    raw = {}
+    dag = ed / "dag.json"
+    if dag.exists():
+        try:
+            for t in json.loads(dag.read_text()).get("tasks", []):
+                raw[t.get("id", "")] = t.get("depends_on", []) or []
+        except Exception:
+            raw = {}
+    if not raw:
+        try:
+            from orchestrator.backlog_dag import extract_depends_on
+            for f in files:
+                raw[f.stem] = extract_depends_on(f.read_text(errors="ignore"))
+        except Exception:
+            raw = {}
+    deps = {}
+    for tid, dlist in raw.items():
+        tn = _dep_num(tid)
+        if tn is None:
+            continue
+        s = set()
+        for d in dlist:
+            dn = _dep_num(d)
+            if dn is not None and dn != tn:
+                s.add(dn)
+        deps[tn] = s
+    return deps
+
+
 def product_backlog(product_name):
     out = []
     for e in list_epics(product_name):
@@ -402,14 +443,11 @@ def product_backlog(product_name):
         def _is_done(fname, status):
             return status in _DONE_STATUSES or rs.get(fname, {}).get("state") == "accepted"
         donemap = {_task_num(f.name): _is_done(f.name, t["status"]) for f, t in parsed}
+        depnums = epic_dep_nums(e["id"], files)
         for f, t in parsed:
             st = t["status"] or ""
-            dep_nums = []
-            for d in t["depends_on"]:
-                m = re.search(r"(\d+)", d)
-                if m:
-                    dep_nums.append(int(m.group(1)))
-            unmet = [n for n in dep_nums if not donemap.get(n, False)]
+            tn = _task_num(f.name)
+            unmet = sorted(n for n in depnums.get(tn, set()) if not donemap.get(n, False))
             run = rs.get(f.name, {})
             run_state = run.get("state")
             done = st in _DONE_STATUSES or run_state == "accepted"
@@ -428,7 +466,7 @@ def product_backlog(product_name):
                 col = "blocked"
             else:
                 col = "ready"
-            t.update({"epic_id": e["id"], "epic": e.get("request", ""), "num": _task_num(f.name),
+            t.update({"epic_id": e["id"], "epic": e.get("request", ""), "num": tn,
                       "blocked_by": unmet, "ready": col == "ready", "done": done, "column": col,
                       "run_state": run_state, "run_branch": run.get("branch"),
                       "run_changed": len(run.get("changed", [])) if run.get("changed") else 0})
