@@ -39,6 +39,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # webui/ — for the c
 
 from console import git_ops
 from console import state as _state
+from console import inbox as _inbox
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 BACKLOG_DIR = ROOT / "backlog"
@@ -48,7 +49,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-41"
+API_VERSION = "workspace-42"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -1672,52 +1673,16 @@ def get_analysis(product_name):
 
 
 # --- the one write action in stage 1: run the Product Agent (decompose) -------
-def _inbox_path():
-    return BACKLOG_DIR / "_inbox.json"
-
-
-def inbox_load():
-    p = _inbox_path()
-    if p.exists():
-        try:
-            return json.loads(p.read_text())
-        except Exception:
-            return {"items": []}
-    return {"items": []}
-
-
-def inbox_save(data):
-    try:
-        BACKLOG_DIR.mkdir(parents=True, exist_ok=True)
-        _inbox_path().write_text(json.dumps(data, ensure_ascii=False, indent=2))
-    except Exception:
-        pass
-
-
 def inbox_list(product):
-    items = [i for i in inbox_load().get("items", []) if not product or i.get("product") == product]
-    return {"items": sorted(items, key=lambda i: i.get("created", ""), reverse=True)}
+    return _inbox.list_items(BACKLOG_DIR, product)
 
 
 def inbox_add(product, itype, text):
-    itype = itype if itype in ("epic", "task", "bug") else "task"
-    if not (text or "").strip():
-        return {"ok": False, "error": "empty text"}
-    d = inbox_load()
-    item = {"id": uuid.uuid4().hex[:12], "product": product, "type": itype,
-            "text": text.strip(), "status": "new",
-            "created": datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
-    d.setdefault("items", []).append(item)
-    inbox_save(d)
-    return {"ok": True, "item": item}
+    return _inbox.add(BACKLOG_DIR, product, itype, text)
 
 
 def inbox_delete(item_id):
-    d = inbox_load()
-    before = len(d.get("items", []))
-    d["items"] = [i for i in d.get("items", []) if i.get("id") != item_id]
-    inbox_save(d)
-    return {"ok": True, "removed": before - len(d["items"])}
+    return _inbox.delete(BACKLOG_DIR, item_id)
 
 
 def run_quick_task(product_name, request, kind="task"):
