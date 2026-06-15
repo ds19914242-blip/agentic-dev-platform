@@ -35,6 +35,9 @@ from urllib.parse import urlparse, parse_qs
 ROOT = Path(__file__).resolve().parent.parent
 os.chdir(ROOT)
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(Path(__file__).resolve().parent))  # webui/ — for the console package
+
+from console import git_ops
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 BACKLOG_DIR = ROOT / "backlog"
@@ -44,7 +47,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-34"
+API_VERSION = "workspace-35"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -283,10 +286,7 @@ def list_archived_epics(product=""):
 
 
 def _safe_epic_id(epic_id):
-    epic_id = (epic_id or "").strip()
-    if not epic_id or "/" in epic_id or "\\" in epic_id or ".." in epic_id:
-        return None
-    return epic_id
+    return git_ops.safe_epic_id(epic_id)
 
 
 def archive_epic(epic_id):
@@ -361,8 +361,7 @@ def _parse_task_file(path):
 
 
 def _task_num(name):
-    m = re.search(r"task-(\d+)", name or "")
-    return int(m.group(1)) if m else None
+    return git_ops.task_num(name)
 
 
 def _runstate_path(epic_id):
@@ -413,44 +412,11 @@ def set_epic_state(epic_id, **fields):
 
 
 def _dep_num(s):
-    m = re.search(r"task-(\d+)", s or "")
-    if m:
-        return int(m.group(1))
-    m = re.search(r"(\d+)", s or "")
-    return int(m.group(1)) if m else None
+    return git_ops.dep_num(s)
 
 
 def epic_dep_nums(epic_id, files):
-    """Return {task_num: set(dep_task_nums)} from dag.json (preferred) or the
-    platform's Depends-On parser. Always excludes a task from its own blockers."""
-    ed = BACKLOG_DIR / epic_id
-    raw = {}
-    dag = ed / "dag.json"
-    if dag.exists():
-        try:
-            for t in json.loads(dag.read_text()).get("tasks", []):
-                raw[t.get("id", "")] = t.get("depends_on", []) or []
-        except Exception:
-            raw = {}
-    if not raw:
-        try:
-            from orchestrator.backlog_dag import extract_depends_on
-            for f in files:
-                raw[f.stem] = extract_depends_on(f.read_text(errors="ignore"))
-        except Exception:
-            raw = {}
-    deps = {}
-    for tid, dlist in raw.items():
-        tn = _dep_num(tid)
-        if tn is None:
-            continue
-        s = set()
-        for d in dlist:
-            dn = _dep_num(d)
-            if dn is not None and dn != tn:
-                s.add(dn)
-        deps[tn] = s
-    return deps
+    return git_ops.epic_dep_nums(BACKLOG_DIR, epic_id, files)
 
 
 def product_backlog(product_name):
@@ -501,15 +467,7 @@ def product_backlog(product_name):
 # no merges, no conflicts, main untouched, no push / PR. Per-epic lock serializes
 # runs so the linear history stays clean.
 def _git_run(repo, args, timeout=1800):
-    import subprocess
-    try:
-        return subprocess.run(["git", "-C", str(repo)] + args, capture_output=True, text=True, timeout=timeout)
-    except Exception as exc:
-        class R:
-            returncode = 1
-            stdout = ""
-            stderr = str(exc)
-        return R()
+    return git_ops.git_run(repo, args, timeout)
 
 
 _EPIC_LOCKS = {}
@@ -524,16 +482,11 @@ def _epic_lock(epic_id):
 
 
 def _epic_branch(epic_id):
-    m = re.match(r"(\d{8}-\d{6})", epic_id or "")
-    tag = m.group(1) if m else re.sub(r"[^a-zA-Z0-9]+", "-", epic_id or "epic")[:24].strip("-")
-    return f"agentic/epic-{tag}"
+    return git_ops.epic_branch(epic_id)
 
 
 def _base_ref(repo):
-    for ref in ("origin/main", "main", "origin/master", "master"):
-        if _git_run(repo, ["rev-parse", "--verify", ref]).returncode == 0:
-            return ref
-    return (_git_run(repo, ["symbolic-ref", "--short", "HEAD"]).stdout or "HEAD").strip() or "HEAD"
+    return git_ops.base_ref(repo)
 
 
 def _resolve_repo(epic_id):
@@ -549,78 +502,11 @@ def _resolve_repo(epic_id):
 
 
 def _task_branch(epic_id, stem):
-    return f"agentic/task-{_epic_branch(epic_id).split('-', 1)[-1]}-{stem}"
+    return git_ops.task_branch(epic_id, stem)
 
 
 def _dep_base_ref(epic_id, stem, repo, job=None):
-    """Base for a task = main + the task's already-accepted dependencies, assembled
-    in topo order, so a dependent task is implemented ON TOP of what it depends on.
-    Keeps several tasks that edit the same file from conflicting at assembly time.
-    Defensive: on ANY problem it falls back to plain main — but now it EMITS the
-    reason so a silent fallback is never a mystery. Returns (base_ref, depbase_branch|None)."""
-    base = _base_ref(repo)
-    def say(msg, level=""):
-        if job:
-            job.emit(msg, level)
-    try:
-        num = _task_num(stem + ".md")
-        files = sorted((BACKLOG_DIR / epic_id).glob("task-*.md"))
-        depmap = epic_dep_nums(epic_id, files)
-        deps, stack = set(), list(depmap.get(num, set()))
-        while stack:
-            d = stack.pop()
-            if d in deps:
-                continue
-            deps.add(d)
-            stack.extend(depmap.get(d, set()))
-        if not deps:
-            say(f"dep-base: задача #{num} без зависимостей — строю от {base}")
-            return base, None
-        rs = load_runstate(epic_id)
-        byname = {_task_num(f.name): f.name for f in files}
-        order = [n for n in _topo_order(list(deps), depmap) if n in deps]
-        applic = []
-        for n in order:
-            run = rs.get(byname.get(n, ""), {})
-            head = run.get("head")
-            if run.get("changed") and head and head != run.get("base"):
-                applic.append((n, head))
-            else:
-                say(f"dep-base: зависимость #{n} ещё не выполнена/без коммита (state={run.get('state')}) — её правки не лягут в базу", "skip")
-        if not applic:
-            say(f"dep-base: ни одна зависимость #{num} не имеет коммита — строю от {base}", "skip")
-            return base, None
-        _git_run(repo, ["worktree", "prune"])
-        db = f"agentic/depbase-{_epic_branch(epic_id).split('-', 1)[-1]}-{num:03d}"
-        wt = Path(repo).parent / ".agentic-worktrees" / f"depbase-{num:03d}-{datetime.now().strftime('%H%M%S')}"
-        if wt.exists():
-            shutil.rmtree(wt, ignore_errors=True)
-        # a stale worktree may hold the depbase branch checked out → free it
-        _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-        r = _git_run(repo, ["worktree", "add", "-B", db, str(wt), base])
-        if r.returncode != 0:
-            say(f"dep-base: не смог создать worktree ({(r.stderr or '').strip()[:160]}) — строю от {base}", "err")
-            return base, None
-        try:
-            for n, head in applic:
-                cp = _git_run(wt, ["cherry-pick", head])
-                if cp.returncode != 0:
-                    confl = [l[3:] for l in _git_run(wt, ["status", "--porcelain"]).stdout.splitlines() if l.startswith(("UU", "AA", "DD"))]
-                    _git_run(wt, ["cherry-pick", "--abort"])
-                    say(f"dep-base: зависимости конфликтуют между собой на #{n} ({', '.join(confl) or 'files'}) — строю от {base}", "err")
-                    return base, None
-            depbase_head = (_git_run(wt, ["rev-parse", "HEAD"]).stdout or "").strip()
-        finally:
-            _git_run(repo, ["worktree", "remove", "--force", str(wt)])
-            _git_run(repo, ["worktree", "prune"])
-        if depbase_head and depbase_head != (_git_run(repo, ["rev-parse", base]).stdout or "").strip():
-            say(f"dep-base: строю поверх зависимостей {', '.join('#'+str(n) for n,_ in applic)} → base {depbase_head[:9]} (сборка ляжет без конфликта)", "ok")
-            return depbase_head, db
-        say(f"dep-base: зависимости не дали изменений — строю от {base}", "skip")
-        return base, None
-    except Exception as exc:
-        say(f"dep-base: ошибка ({exc}) — строю от {base}", "err")
-        return base, None
+    return git_ops.dep_base_ref(BACKLOG_DIR, epic_id, stem, repo, load_runstate, job)
 
 
 def _run_task(epic_id, task_file, product, repo, job):
@@ -690,27 +576,7 @@ def run_task_implementation(epic_id, task_file):
 
 
 def _topo_order(nums, depmap):
-    """Kahn topological sort over task numbers; stable by number on ties."""
-    nums = sorted(nums)
-    indeg = {n: len([d for d in depmap.get(n, set()) if d in nums]) for n in nums}
-    out, ready = [], sorted([n for n in nums if indeg[n] == 0])
-    seen = set()
-    while ready:
-        n = ready.pop(0)
-        if n in seen:
-            continue
-        seen.add(n)
-        out.append(n)
-        for m in nums:
-            if n in depmap.get(m, set()) and m not in seen:
-                indeg[m] -= 1
-                if indeg[m] <= 0 and m not in ready:
-                    ready.append(m)
-        ready.sort()
-    for n in nums:  # append any left over (cycles) deterministically
-        if n not in seen:
-            out.append(n)
-    return out
+    return git_ops.topo_order(nums, depmap)
 
 
 def epic_build_status(epic_id):
@@ -2253,13 +2119,7 @@ def run_baseline(product_name):
 
 # --- Changes: git state of the product repo (read-only) -----------------------
 def _git(repo, args, timeout=20):
-    import subprocess
-    try:
-        r = subprocess.run(["git", "-C", str(repo)] + args,
-                            capture_output=True, text=True, timeout=timeout)
-        return r.returncode, r.stdout, r.stderr
-    except Exception as exc:
-        return 1, "", str(exc)
+    return git_ops.git(repo, args, timeout)
 
 
 def _porcelain_status(xy):
