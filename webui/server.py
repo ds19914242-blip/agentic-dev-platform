@@ -40,6 +40,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))  # webui/ — for the c
 from console import git_ops
 from console import state as _state
 from console import inbox as _inbox
+from console import serializers as _ser
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 BACKLOG_DIR = ROOT / "backlog"
@@ -49,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-42"
+API_VERSION = "workspace-43"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -169,9 +170,7 @@ def list_products():
 
 # --- epic / artifact helpers --------------------------------------------------
 def _section(text, heading):
-    import re
-    m = re.search(rf"##\s*{re.escape(heading)}\s*\n+(.*?)(?=\n##\s|\Z)", text, re.DOTALL)
-    return m.group(1).strip() if m else ""
+    return _ser.section(text, heading)
 
 
 def _read_json(path):
@@ -339,27 +338,7 @@ _DONE_STATUSES = {
 
 
 def _parse_task_file(path):
-    text = path.read_text(errors="ignore")
-    fields, deps, title, in_deps = {}, [], path.name, False
-    for line in text.splitlines():
-        ls = line.strip()
-        if ls.startswith("### ") and title == path.name:
-            title = ls.lstrip("# ").strip()
-        if ":" in line and not line.startswith("#") and not line.startswith("**"):
-            k, _, v = line.partition(":")
-            k = k.strip().lower()
-            if k in {"status", "type", "pipeline", "risk", "pr", "run"}:
-                fields.setdefault(k, v.strip())
-        if ls.lower().startswith("## depends"):
-            in_deps = True
-            continue
-        if in_deps:
-            if ls.startswith("## "):
-                in_deps = False
-            elif ls and ls != "_None_" and not ls.startswith("_"):
-                deps.append(ls.lstrip("- ").strip())
-    return {"file": path.name, "title": title, "status": fields.get("status", ""),
-            "pr": fields.get("pr", ""), "run": fields.get("run", ""), "depends_on": deps}
+    return _ser.parse_task(path.read_text(errors="ignore"), path.name)
 
 
 def _task_num(name):
@@ -726,19 +705,7 @@ def _read_spec_excerpt(epic_id):
 
 
 def _parse_tsc_errors(text):
-    """Parse `file(line,col): error TSxxxx: msg` lines into {file:[errs]} and
-    {symbol:count} for symbols that are undefined/removed but still referenced."""
-    files, symbols = {}, {}
-    for line in (text or "").splitlines():
-        m = re.match(r"^\s*(\S.*?)\((\d+),(\d+)\):\s*error\s+(TS\d+):\s*(.*)$", line)
-        if not m:
-            continue
-        f, ln, _col, code, msg = m.groups()
-        files.setdefault(f, []).append(f"L{ln} {code}: {msg}")
-        sm = re.search(r"'([^']+)'", msg)
-        if sm and code in ("TS2304", "TS2305", "TS2307", "TS2552", "TS2614", "TS2724", "TS2339"):
-            symbols[sm.group(1)] = symbols.get(sm.group(1), 0) + 1
-    return files, symbols
+    return _ser.parse_tsc_errors(text)
 
 
 def _build_fix_prompt(epic_id):
@@ -1363,18 +1330,7 @@ def epic_detail(epic_id):
                     break
             run = rs.get(name, {})
             rstate = run.get("state")
-            if fields.get("status") in _DONE_STATUSES or rstate == "accepted":
-                eff = "accepted" if rstate == "accepted" else "done"
-            elif rstate == "running":
-                eff = "running"
-            elif rstate == "failed":
-                eff = "failed"
-            elif rstate == "interrupted":
-                eff = "interrupted"
-            elif rstate in ("implemented", "no_changes"):
-                eff = "implemented"
-            else:
-                eff = fields.get("status") or "todo"
+            eff = _ser.eff_status(fields.get("status"), rstate, _DONE_STATUSES)
             tasks.append({"file": name, "title": title, "run_state": rstate,
                           "eff_status": eff, "num": _task_num(name),
                           "depends_on": sorted(depmap.get(_task_num(name), [])), **fields})
