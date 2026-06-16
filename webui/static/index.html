@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-50";
+const FE_VERSION="workspace-51";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -837,6 +837,12 @@ async function refreshExecGate(id){
   if(st.nav_orphans&&st.nav_orphans.length){
     ver+=` <span class="pill bad" title="Пункт меню ведёт на страницу, которой нет на ветке → 404 в проде: ${esc(st.nav_orphans.join(", "))}">nav: ${st.nav_orphans.length} битых</span>`;
   }
+  if(st.smoke){const sm=st.smoke;
+    if(sm.login===false)ver+=` <span class="pill bad" title="Не удалось залогиниться в preview для рантайм-пробы">smoke: login failed</span>`;
+    else if(sm.checked){const bad=(sm.results||[]).filter(r=>r.verdict==="missing"||r.verdict==="error");
+      if(bad.length)ver+=` <span class="pill bad" title="Роуты не отдаются в рантайме: ${esc(bad.map(r=>r.route+"("+r.status+")").join(", "))}">smoke: ${bad.length} битых</span>`;
+      else ver+=` <span class="pill ok" title="Все ${sm.checked} роут(ов) отдаются 2xx под авторизацией">smoke ✓</span>`;}
+  }
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
@@ -869,6 +875,7 @@ async function refreshExecGate(id){
     if(st.preview_running){
       flow+=` <span class="pill ok" style="font-size:11px">preview</span>`
         +` <a class="btn ghost sm" href="${esc(purl)}" target="_blank" rel="noopener" style="font-size:13px;padding:10px 15px">Открыть ${esc(purl)}</a>`
+        +` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="smokeEpic('${esc(id)}',this)" title="Рантайм-проба: залогиниться в preview и GET по роутам, добавленным эпиком (+health). 200=отдаётся, 404=нет, 5xx=падает. Read-only.">Smoke</button>`
         +` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="stopPreview('${esc(id)}')">Stop preview</button>`;
       startPreviewPoll(id);
     }else if(!st.pushed){
@@ -908,6 +915,16 @@ function verifyEpic(id,btn){
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
     loadEpicCriteria(id);
+  });
+}
+function smokeEpic(id,btn){
+  btn.disabled=true;btn.textContent="Smoke…";
+  runJob("/api/epic/smoke",{epic_id:id},"#epiclog",res=>{
+    if(res&&res.ok&&res.login===false)toast("Smoke: не удалось залогиниться в preview");
+    else if(res&&res.ok&&res.checked)toast(`Smoke: ${res.ok_count||0}/${res.checked} роут(ов) отдаются`+((res.bad||0)?` · ${res.bad} битых`:" ✓"));
+    else if(res&&res.ok)toast("Smoke: нет роутов для пробы — прогони Verify");
+    else if(res&&res.error)toast(res.error);
+    refreshExecGate(id);
   });
 }
 async function loadEpicCriteria(id){
@@ -1141,7 +1158,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,loadEpicCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,smokeEpic,loadEpicCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>

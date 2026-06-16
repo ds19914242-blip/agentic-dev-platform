@@ -189,6 +189,26 @@ def criterion_state(text, branch_routes, nav_orphans=None):
     return ("confirmed", "роут(ы) на месте: " + ", ".join(routes) + " — поведение проверь глазами")
 
 
+def smoke_verdict(status):
+    """Classify an HTTP status from an authenticated runtime probe of a route. Pure.
+      2xx          -> 'ok'      (route serves)
+      404          -> 'missing' (route doesn't exist at runtime — the /saved defect, live)
+      5xx          -> 'error'   (route exists but crashes)
+      3xx/401/403  -> 'auth'    (redirected/blocked — session not accepted)
+      else         -> 'other'
+    """
+    s = int(status or 0)
+    if 200 <= s < 300:
+        return "ok"
+    if s == 404:
+        return "missing"
+    if 500 <= s < 600:
+        return "error"
+    if s in (301, 302, 303, 307, 308, 401, 403):
+        return "auth"
+    return "other"
+
+
 def eff_status(task_status, rstate, done_statuses):
     """Collapse a task's declared status + its run-state into the single 'effective'
     status the UI shows. Pure mapping; done_statuses is injected (server constant)."""

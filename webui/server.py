@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-50"
+API_VERSION = "workspace-51"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -881,6 +881,144 @@ def _branch_route_set(wt):
     return sorted(routes)
 
 
+def _parse_env(text):
+    """Parse KEY=VALUE lines from an .env file body. Pure; strips quotes and comments."""
+    d = {}
+    for line in (text or "").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        k, v = line.split("=", 1)
+        d[k.strip()] = v.strip().strip('"').strip("'")
+    return d
+
+
+def _read_preview_creds(wt):
+    """Read APP_USERNAME/APP_PASSWORD from the preview worktree's seeded .env.local (ws-50)."""
+    if not wt:
+        return {}
+    p = Path(wt) / ".env.local"
+    if not p.exists():
+        return {}
+    env = _parse_env(p.read_text(errors="ignore"))
+    return {"username": env.get("APP_USERNAME"), "password": env.get("APP_PASSWORD")}
+
+
+def _load_acceptance_cfg(product):
+    """Login recipe + health paths from the product config (with sane defaults)."""
+    cfg = {}
+    try:
+        from orchestrator.product_registry import load_product_config
+        cfg = load_product_config(product) or {}
+    except Exception:
+        cfg = {}
+    acc = cfg.get("acceptance", {}) or {}
+    health = (cfg.get("deployment", {}) or {}).get("health_paths", []) or []
+    return acc, list(health)
+
+
+def _run_smoke(base, login_url, login_payload, routes, emit=None, timeout=60):
+    """Core runtime smoke: log in once (POST json), then GET each route with the session cookie,
+    classifying each status via serializers.smoke_verdict. No console-state coupling so it can be
+    tested hermetically against a stub server. Returns {login, login_status, results:[...]}."""
+    import http.cookiejar
+    import urllib.request
+    import urllib.error
+    import json as _json
+
+    def say(m, lvl=""):
+        if emit:
+            emit(m, lvl)
+
+    jar = http.cookiejar.CookieJar()
+    opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar))
+
+    def status_of(resp):
+        return getattr(resp, "status", None) or resp.getcode()
+
+    try:
+        req = urllib.request.Request(base + login_url, data=_json.dumps(login_payload).encode(),
+                                     headers={"Content-Type": "application/json"}, method="POST")
+        ls = status_of(opener.open(req, timeout=timeout))
+    except urllib.error.HTTPError as e:
+        ls = e.code
+    except Exception as exc:
+        return {"login": False, "login_status": 0, "error": str(exc), "results": []}
+
+    if ls >= 300 or len(jar) == 0:
+        say(f"Login failed (status {ls}, session cookie {'set' if len(jar) else 'missing'}).", "err")
+        return {"login": False, "login_status": ls, "results": []}
+    say(f"Logged in (status {ls}, session cookie set).", "ok")
+
+    results = []
+    for r in routes:
+        try:
+            st = status_of(opener.open(urllib.request.Request(base + r, method="GET"), timeout=timeout))
+        except urllib.error.HTTPError as e:
+            st = e.code
+        except Exception:
+            st = 0
+        v = _ser.smoke_verdict(st)
+        lvl = "ok" if v == "ok" else ("err" if v in ("missing", "error", "auth") else "skip")
+        say(f"  GET {r} → {st} {v.upper()}", lvl)
+        results.append({"route": r, "status": st, "verdict": v})
+    return {"login": True, "login_status": ls, "results": results}
+
+
+def smoke_epic(epic_id):
+    """Runtime reachability smoke against the running preview (:3100): log in with the seeded
+    creds, then GET every route the epic added (routes_added from Verify) + the product's
+    health_paths, classifying 200/404/5xx under auth. The runtime twin of Verify ('file exists'
+    -> 'actually serves'). Read-only, no Playwright/LLM, does NOT gate push."""
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        pv = _preview_state(eid)
+        if not (pv and pv.get("running")):
+            return {"ok": False, "error": "preview not running — start Preview (:3100) first"}
+        base = pv.get("url") or f"http://localhost:{PREVIEW_PORT}"
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        es = load_epic_state(eid)
+        creds = _read_preview_creds(es.get("preview_path"))
+        if not creds.get("username") or not creds.get("password"):
+            return {"ok": False, "error": "no APP_USERNAME/APP_PASSWORD in preview .env.local — cannot log in"}
+        acc, health = _load_acceptance_cfg(product)
+        login_url = acc.get("login_url") or "/api/auth/login"
+        uf = acc.get("username_field") or "username"
+        pf = acc.get("password_field") or "password"
+        added = [r["route"] for r in (es.get("routes_added") or [])]
+        routes, seen = [], set()
+        for r in added + list(health):
+            if r and r not in seen:
+                seen.add(r)
+                routes.append(r)
+        if not routes:
+            job.emit("No routes to probe — epic added none and no health_paths. Run Verify first.", "skip")
+            set_epic_state(eid, smoke={"login": None, "results": [], "checked": 0})
+            return {"ok": True, "checked": 0}
+        job.emit(f"Runtime smoke against {base} — login then probe {len(routes)} route(s) under auth.")
+        res = _run_smoke(base, login_url, {uf: creds["username"], pf: creds["password"]}, routes, emit=job.emit)
+        if not res.get("login"):
+            set_epic_state(eid, smoke={"login": False, "results": [], "checked": 0})
+            if res.get("error"):
+                job.emit("Smoke aborted: " + res["error"], "err")
+            return {"ok": True, "login": False, "checked": 0}
+        results = res["results"]
+        ok = sum(1 for x in results if x["verdict"] == "ok")
+        bad = [x for x in results if x["verdict"] in ("missing", "error")]
+        set_epic_state(eid, smoke={"login": True, "results": results, "ok": ok, "checked": len(results)})
+        if bad:
+            job.emit(f"{len(bad)} route(s) don't serve at runtime: "
+                     + ", ".join(f"{x['route']}({x['status']})" for x in bad), "err")
+        else:
+            job.emit(f"All {len(results)} route(s) serve OK at runtime.", "ok")
+        return {"ok": True, "login": True, "checked": len(results), "ok_count": ok, "bad": len(bad)}
+    return target
+
+
 def verify_epic(epic_id):
     """Deeper-than-tsc check: do the routes the spec PROMISED actually exist as files
     on the assembled epic branch? Reuses the platform's pure verify_routes (the same
@@ -1357,6 +1495,7 @@ def epic_stage(epic_id):
             "route_verify": es.get("route_verify"),
             "routes_added": es.get("routes_added"),
             "nav_orphans": es.get("nav_orphans"),
+            "smoke": es.get("smoke"),
             "has_fix": bool(es.get("fix_head") and es.get("fix_head") != es.get("fix_base")),
             "previewed": bool(es.get("previewed")), "preview_path": es.get("preview_path"),
             "preview_running": bool(pv and pv.get("running")),
@@ -2519,6 +2658,14 @@ def _post_epic_verify(p):
     return {"job_id": job.id, "started": started}
 
 
+def _post_epic_smoke(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_smoke", ("epic_smoke", eid), smoke_epic(eid))
+    return {"job_id": job.id, "started": started}
+
+
 def _post_task_accept(p):
     eid = _safe_epic_id(_pp(p, "epic_id"))
     tf = _pp(p, "task_file")
@@ -2558,6 +2705,7 @@ POST_ROUTES = {
     "/api/epic/fix-build": _post_epic_fix,
     "/api/epic/validate": _post_epic_validate,
     "/api/epic/verify": _post_epic_verify,
+    "/api/epic/smoke": _post_epic_smoke,
     "/api/epic/reset-runs": lambda p: reset_epic_runs(_pp(p, "epic_id")),
     "/api/task/reset": lambda p: reset_task_run(_pp(p, "epic_id"), _pp(p, "task_file")),
     "/api/task/accept": _post_task_accept,

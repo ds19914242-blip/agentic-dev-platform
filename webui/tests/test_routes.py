@@ -46,7 +46,7 @@ EXPECTED_POST = {
     "/api/connect-repo", "/api/analyze", "/api/baseline", "/api/approve-product",
     "/api/approve-spec", "/api/epic/build", "/api/epic/preview-start", "/api/epic/preview-stop",
     "/api/epic/preview-mark", "/api/epic/push", "/api/epic/rollback", "/api/epic/fix-build",
-    "/api/epic/validate", "/api/epic/verify", "/api/epic/reset-runs", "/api/task/reset", "/api/task/accept",
+    "/api/epic/validate", "/api/epic/verify", "/api/epic/smoke", "/api/epic/reset-runs", "/api/task/reset", "/api/task/accept",
     "/api/task/run", "/api/epic/archive", "/api/epic/restore", "/api/epic/delete",
     "/api/commit-epic",
 }
