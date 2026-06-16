@@ -148,19 +148,26 @@ def route_set_has(href, routes):
     return any(_route_matches(href, r) for r in routes)
 
 
-_CRITERION_ROUTE_RE = re.compile(r"/(?:api/)?[a-zA-Z][\w\-]*(?:/[\w\-\[\]\.]+)*")
+_CRITERION_ROUTE_RE = re.compile(r"(?<![\w./])/(?:api/)?[a-zA-Z][\w\-]*(?:/[\w\-\[\]\.]+)*")
 
 
 def criterion_routes(text):
     """Extract route-like tokens from an acceptance/success criterion string. Pure.
-    Catches /saved, /api/saved, /saved/[id], `GET /api/saved` → ['/api/saved'], etc.
-    First segment must start with a letter (so dates like 12/06/2026 aren't routes).
-    Trailing punctuation stripped; deduped, order preserved."""
+    Catches /saved, /api/saved, /saved/[id], `GET /api/saved` -> ['/api/saved'].
+    Deliberately NOT a route (so we don't emit false negatives):
+      - file paths: `app/api/status/route.ts`, `lib/version.ts` (a '/seg.ext' is a file, and a
+        '/' glued to a preceding word/dot like the one in lib/version.ts is not a URL);
+      - dates like 12/06/2026 (first segment must start with a letter).
+    First segment starts with a letter; leading '/' must sit on a word boundary; any token whose
+    last segment carries a file extension (a dot) is dropped. Trailing punctuation stripped."""
     out, seen = [], set()
     for m in _CRITERION_ROUTE_RE.finditer(text or ""):
         r = m.group(0).rstrip(".,;:)")
         if r.endswith("/") and r != "/":
             r = r.rstrip("/")
+        last = r.rsplit("/", 1)[-1]
+        if "." in last:          # /api/status/route.ts, /foo/page.tsx -> file, not a route
+            continue
         if r not in seen:
             seen.add(r)
             out.append(r)

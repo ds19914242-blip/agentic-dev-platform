@@ -194,6 +194,13 @@ def test_criterion_routes():
     check("no route -> empty", cr("empty-state оформлено, заметка редактируется") == [])
     check("date is not a route", cr("релиз 12/06/2026 готов") == [])
     check("trailing punct stripped", cr("открой /saved.") == ["/saved"])
+    # ws-52 regressions: file paths must NOT be read as routes (the Status-epic false-✗ bug)
+    check("file path /…/route.ts is not a route", cr("A route exists at `app/api/status/route.ts`") == [])
+    check("lib/version.ts does not yield /version",
+          cr("displays the version via `lib/version.ts`") == [])
+    check("quoted page file dropped", cr("page at `app/status/page.tsx`") == [])
+    check("real route survives next to a file mention",
+          cr("`/status` page reads from `lib/version.ts`") == ["/status"])
 
 
 def test_criterion_state():
