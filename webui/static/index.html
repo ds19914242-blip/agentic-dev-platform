@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-46";
+const FE_VERSION="workspace-47";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -829,6 +829,9 @@ async function refreshExecGate(id){
     const ms=(st.route_verify.missing||[]).map(m=>m.route).join(", ");
     ver+=` <span class="pill warn" title="Упомянуты в спеке в кавычках, но файла нет: ${esc(ms)}\nЭвристика низкого recall — динамику /…/[id] и незакавыченные пути не видит.">spec: ${(st.route_verify.missing||[]).length} unmatched</span>`;
   }
+  if(st.nav_orphans&&st.nav_orphans.length){
+    ver+=` <span class="pill bad" title="Пункт меню ведёт на страницу, которой нет на ветке → 404 в проде: ${esc(st.nav_orphans.join(", "))}">nav: ${st.nav_orphans.length} битых</span>`;
+  }
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
@@ -896,7 +899,7 @@ function validateEpic(id,btn){
 function verifyEpic(id,btn){
   btn.disabled=true;btn.textContent="Verifying…";
   runJob("/api/epic/verify",{epic_id:id},"#epiclog",res=>{
-    if(res&&res.ok)toast(`Эпик добавил ${res.added||0} роут(ов)`+((res.missing||0)?` · spec: ${res.missing} без файла`:"")+" — см. лог");
+    if(res&&res.ok)toast(`Эпик добавил ${res.added||0} роут(ов)`+((res.nav_broken||0)?` · ⚠ ${res.nav_broken} битых nav-ссылок`:"")+((res.missing||0)?` · spec: ${res.missing} без файла`:"")+" — см. лог");
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
   });

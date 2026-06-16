@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-46"
+API_VERSION = "workspace-47"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -834,6 +834,34 @@ def _epic_routes_added(wt, base):
     return out
 
 
+def _nav_orphans(wt):
+    """Nav links (components/NavBar.tsx) that point to a route with no page on this branch —
+    i.e. a menu item that would 404 (the /saved class of defect that tsc+build misses).
+    Reads NavBar + walks app/ for page routes, both from the worktree. Returns
+    {checked, orphans:[href...], routes} or None if there is no NavBar to check."""
+    nav = Path(wt) / "components" / "NavBar.tsx"
+    if not nav.exists():
+        return None
+    try:
+        hrefs = _ser.nav_hrefs(nav.read_text(errors="ignore"))
+    except Exception:
+        return None
+    routes = set()
+    for root in (Path(wt) / "app", Path(wt) / "src" / "app"):
+        if not root.exists():
+            continue
+        for pf in root.rglob("page.*"):
+            try:
+                rel = str(pf.relative_to(wt))
+            except Exception:
+                continue
+            mapped = _ser.file_to_route(rel)
+            if mapped and mapped[1] == "page":
+                routes.add(mapped[0])
+    orphans = [h for h in hrefs if not _ser.route_set_has(h, routes)]
+    return {"checked": len(hrefs), "orphans": orphans, "routes": len(routes)}
+
+
 def verify_epic(epic_id):
     """Deeper-than-tsc check: do the routes the spec PROMISED actually exist as files
     on the assembled epic branch? Reuses the platform's pure verify_routes (the same
@@ -893,8 +921,22 @@ def verify_epic(epic_id):
                              "NOTE: low-recall heuristic — dynamic /…/[id] and unquoted paths are invisible to it.", "err")
                 else:
                     job.emit(f"Spec cross-check: all {len(pages) + len(apis)} quoted route(s) have matching files.", "ok")
+
+                nav = _nav_orphans(wt)
+                if nav is None:
+                    job.emit("Nav check: components/NavBar.tsx not found on this branch — skipped.", "skip")
+                elif nav["orphans"]:
+                    job.emit(f"Nav check: {len(nav['orphans'])} broken nav link(s) — a menu item points to a "
+                             "route with no page (would 404 in prod):", "err")
+                    for h in nav["orphans"]:
+                        job.emit(f"  BROKEN {h} → no app{h}/page.* on this branch", "err")
+                else:
+                    job.emit(f"Nav check: all {nav['checked']} nav link(s) resolve to a page.", "ok")
+                set_epic_state(eid, nav_orphans=(nav["orphans"] if nav else None))
+
                 return {"ok": True, "added": len(added), "result": res.get("result"),
-                        "missing": len(missing), "n_pages": len(pages), "n_api": len(apis)}
+                        "missing": len(missing), "n_pages": len(pages), "n_api": len(apis),
+                        "nav_broken": (len(nav["orphans"]) if nav else 0)}
             except Exception as exc:
                 return {"ok": False, "error": str(exc)}
             finally:
@@ -1232,6 +1274,7 @@ def epic_stage(epic_id):
             "validation": es.get("validation"), "fix_attempts": es.get("fix_attempts", 0),
             "route_verify": es.get("route_verify"),
             "routes_added": es.get("routes_added"),
+            "nav_orphans": es.get("nav_orphans"),
             "has_fix": bool(es.get("fix_head") and es.get("fix_head") != es.get("fix_base")),
             "previewed": bool(es.get("previewed")), "preview_path": es.get("preview_path"),
             "preview_running": bool(pv and pv.get("running")),

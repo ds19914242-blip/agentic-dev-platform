@@ -92,6 +92,62 @@ def file_to_route(path):
     return route, kind
 
 
+_NAV_HREF_RE = re.compile(r"""href\s*[:=]\s*\{?\s*(["'])(/[^"']*)\1""")
+
+
+def nav_hrefs(text):
+    """Extract internal nav hrefs from a nav component's source (NavBar.tsx etc.).
+    Pure. Handles object config (href: "/x") and JSX (<Link href="/x">, href={"/x"}),
+    single or double quotes. Skips:
+      - external/protocol-relative (//cdn, http…, mailto:, tel:, #anchor — don't start with one '/')
+      - template-literal hrefs (backtick) — can't be resolved statically
+    Strips query/hash. Returns deduped list preserving order."""
+    out, seen = [], set()
+    for m in _NAV_HREF_RE.finditer(text or ""):
+        h = m.group(2)
+        h = h.split("#", 1)[0].split("?", 1)[0]
+        if not h or h.startswith("//"):
+            continue
+        if h != "/":
+            h = h.rstrip("/")
+        if h not in seen:
+            seen.add(h)
+            out.append(h)
+    return out
+
+
+def _route_matches(href, route):
+    """Does a concrete nav href match a (possibly dynamic) app-router route?
+    [param] segments are wildcards; a trailing [...catch-all] absorbs >=1 segment.
+    Pure, segment-wise."""
+    h = [s for s in href.split("/") if s]
+    r = [s for s in route.split("/") if s]
+    catch = bool(r) and r[-1].startswith("[...") and r[-1].endswith("]")
+    if catch:
+        prefix = r[:-1]
+        if len(h) < len(r):  # catch-all needs at least one segment of its own
+            return False
+        for hs, rs in zip(h[: len(prefix)], prefix):
+            if rs.startswith("[") and rs.endswith("]"):
+                continue
+            if hs != rs:
+                return False
+        return True
+    if len(h) != len(r):
+        return False
+    for hs, rs in zip(h, r):
+        if rs.startswith("[") and rs.endswith("]"):
+            continue
+        if hs != rs:
+            return False
+    return True
+
+
+def route_set_has(href, routes):
+    """True if href resolves to any route in the set (exact or via dynamic wildcards). Pure."""
+    return any(_route_matches(href, r) for r in routes)
+
+
 def eff_status(task_status, rstate, done_statuses):
     """Collapse a task's declared status + its run-state into the single 'effective'
     status the UI shows. Pure mapping; done_statuses is injected (server constant)."""

@@ -118,6 +118,72 @@ def test_file_to_route():
     check("non-app file is not a route", f("components/Card.tsx") is None)
 
 
+def test_nav_hrefs():
+    from console.serializers import nav_hrefs as nh
+    src = '''
+      const LINKS = [
+        { href: "/dashboard", label: "Dash" },
+        { href: "/saved", label: "Сохранённые" },
+        { href: '/admin/users', label: "Users" },
+      ];
+      <Link href="/dashboard">brand</Link>
+      <a href="https://example.com">ext</a>
+      <a href="//cdn.example.com/x">proto</a>
+      <a href="mailto:x@y.z">mail</a>
+      <a href="#top">anchor</a>
+      <Link href={`/run/${id}`}>dynamic</Link>
+      <Link href="/sources?tab=all#x">query</Link>
+    '''
+    got = nh(src)
+    check("extracts object-config hrefs", "/dashboard" in got and "/saved" in got)
+    check("extracts single-quoted href", "/admin/users" in got)
+    check("dedupes brand+link /dashboard", got.count("/dashboard") == 1)
+    check("skips external https", "https://example.com" not in " ".join(got) and not any("example.com" in g for g in got))
+    check("skips protocol-relative //", not any(g.startswith("//") for g in got))
+    check("skips mailto/anchor", not any("mailto" in g or g.startswith("#") for g in got))
+    check("skips template-literal href", not any("run" in g for g in got))
+    check("strips query/hash", "/sources" in got and "/sources?tab=all" not in got)
+
+
+def test_route_set_has():
+    from console.serializers import route_set_has as has
+    routes = {"/", "/dashboard", "/admin/users", "/run/[id]", "/docs/[...slug]"}
+    check("exact static match", has("/dashboard", routes))
+    check("nested static match", has("/admin/users", routes))
+    check("root match", has("/", routes))
+    check("dynamic [id] wildcard match", has("/run/123", routes))
+    check("catch-all match (1 seg)", has("/docs/intro", routes))
+    check("catch-all match (deep)", has("/docs/a/b/c", routes))
+    check("missing route -> no match (the /saved case)", not has("/saved", routes))
+    check("static /run has no index page -> no match", not has("/run", routes))
+
+
+def test_nav_orphans_tree():
+    """End-to-end of the helper logic on a real tree: NavBar links to /dashboard (exists)
+    and /saved (missing) -> exactly one orphan, /saved (the caught defect)."""
+    from console.serializers import nav_hrefs, file_to_route, route_set_has
+    with tempfile.TemporaryDirectory() as tmp:
+        wt = Path(tmp)
+        (wt / "components").mkdir()
+        (wt / "components" / "NavBar.tsx").write_text(
+            'const LINKS=[{href:"/dashboard",label:"D"},{href:"/saved",label:"S"}];'
+        )
+        for r in ["dashboard", "sources"]:
+            d = wt / "app" / r
+            d.mkdir(parents=True)
+            (d / "page.tsx").write_text("export default function P(){}")
+        # replicate _nav_orphans' core
+        hrefs = nav_hrefs((wt / "components" / "NavBar.tsx").read_text())
+        routes = set()
+        for pf in (wt / "app").rglob("page.*"):
+            m = file_to_route(str(pf.relative_to(wt)))
+            if m and m[1] == "page":
+                routes.add(m[0])
+        orphans = [h for h in hrefs if not route_set_has(h, routes)]
+        check("dashboard link resolves (not orphan)", "/dashboard" not in orphans)
+        check("saved link flagged as orphan", orphans == ["/saved"])
+
+
 def test_routes_added_from_diff():
     """The high-recall view: enumerate route files the epic branch added vs base.
     Builds a real throwaway repo, branches, adds page/api files, and checks the mapping —
@@ -171,7 +237,8 @@ def test_routes_added_from_diff():
 def main():
     for t in (test_missing_route_detected, test_all_present_passes,
               test_no_route_literals, test_asset_and_speculative_filtered,
-              test_file_to_route, test_routes_added_from_diff):
+              test_file_to_route, test_routes_added_from_diff,
+              test_nav_hrefs, test_route_set_has, test_nav_orphans_tree):
         print(t.__name__ + ":")
         try:
             t()
