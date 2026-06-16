@@ -57,6 +57,41 @@ def parse_tsc_errors(text):
     return files, symbols
 
 
+_ROUTE_PAGE_FILES = ("page.tsx", "page.ts", "page.jsx", "page.js")
+_ROUTE_API_FILES = ("route.ts", "route.js", "route.tsx", "route.jsx")
+
+
+def file_to_route(path):
+    """Map a Next.js app-router file path to (url_route, kind) or None if not a route file.
+    Pure. Handles app/ and src/app/, page vs route (api), dynamic [id]/[...slug] segments
+    (kept verbatim), and route groups (parens) which are stripped from the URL.
+
+        app/page.tsx                -> ('/', 'page')
+        app/notes/page.tsx          -> ('/notes', 'page')
+        app/notes/[id]/page.tsx     -> ('/notes/[id]', 'page')
+        app/(marketing)/about/...   -> ('/about', 'page')
+        src/app/api/notes/route.ts  -> ('/api/notes', 'api')
+    """
+    p = (path or "").strip()
+    for pre in ("src/app/", "app/"):
+        if p.startswith(pre):
+            p = p[len(pre):]
+            break
+    else:
+        return None
+    fname = p.rsplit("/", 1)[-1]
+    if fname in _ROUTE_PAGE_FILES:
+        kind = "page"
+    elif fname in _ROUTE_API_FILES:
+        kind = "api"
+    else:
+        return None
+    seg = p[: len(p) - len(fname)].rstrip("/")
+    parts = [s for s in seg.split("/") if s and not (s.startswith("(") and s.endswith(")"))]
+    route = "/" + "/".join(parts)
+    return route, kind
+
+
 def eff_status(task_status, rstate, done_statuses):
     """Collapse a task's declared status + its run-state into the single 'effective'
     status the UI shows. Pure mapping; done_statuses is injected (server constant)."""

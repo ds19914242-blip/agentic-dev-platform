@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-44"
+API_VERSION = "workspace-45"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -809,6 +809,31 @@ def fix_epic_build(epic_id):
     return target
 
 
+def _epic_routes_added(wt, base):
+    """High-recall view: the route files (app-router page/api) this epic added or changed
+    vs its base, derived from the branch diff. Robust where the spec-mention heuristic is
+    blind (dynamic [id] routes, unquoted paths). Returns [{route, kind, file, status}]."""
+    r = _git_run(wt, ["diff", "--name-status", f"{base}...HEAD"])
+    if r.returncode != 0:
+        r = _git_run(wt, ["diff", "--name-status", base])
+    out, seen = [], set()
+    for line in (r.stdout or "").splitlines():
+        parts = line.split("\t")
+        if len(parts) < 2:
+            continue
+        status, path = parts[0].strip(), parts[-1].strip()
+        mapped = _ser.file_to_route(path)
+        if not mapped:
+            continue
+        route, kind = mapped
+        if (route, kind) in seen:
+            continue
+        seen.add((route, kind))
+        out.append({"route": route, "kind": kind, "file": path, "status": status[:1]})
+    out.sort(key=lambda x: (x["kind"], x["route"]))
+    return out
+
+
 def verify_epic(epic_id):
     """Deeper-than-tsc check: do the routes the spec PROMISED actually exist as files
     on the assembled epic branch? Reuses the platform's pure verify_routes (the same
@@ -834,7 +859,16 @@ def verify_epic(epic_id):
                 return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
             try:
                 from orchestrator.route_verification import verify_routes
-                job.emit(f"Verifying routes promised by the spec against {eb}…")
+                eb_base = _base_ref(repo)
+                added = _epic_routes_added(wt, eb_base)
+                if added:
+                    job.emit(f"Routes this epic adds/changes ({len(added)}) — high-recall, from the branch diff:")
+                    for a in added:
+                        job.emit(f"  {a['status']} {a['route']}  ·  {a['kind']}  [{a['file']}]", "ok")
+                else:
+                    job.emit("This epic adds no app-router page/route files (nothing in the diff under app/**).", "skip")
+
+                job.emit(f"Cross-check: routes the spec promised vs files present on {eb}…")
                 res = verify_routes(BACKLOG_DIR / eid, str(wt))
                 pages = res.get("routes", [])
                 apis = res.get("api_routes", [])
@@ -850,17 +884,17 @@ def verify_epic(epic_id):
                     "verified_at": res.get("verified_at"),
                     "branch": eb,
                 }
-                set_epic_state(eid, route_verify=summary)
+                set_epic_state(eid, route_verify=summary, routes_added=added)
                 if not (pages or apis):
-                    job.emit("No route literals found in the spec — nothing to verify "
-                             "(routes are detected from quoted paths like \"/settings\").", "skip")
+                    job.emit("Spec cross-check: no quoted route literals in the spec — only the diff view above "
+                             "is meaningful here (the spec heuristic misses unquoted and dynamic [id] routes).", "skip")
                 elif missing:
-                    job.emit(f"{len(missing)} promised route(s) have no matching file on the branch. "
-                             "NOTE: dynamic routes like /users/[id] can be false positives here.", "err")
+                    job.emit(f"Spec cross-check: {len(missing)} quoted route(s) have no matching file. "
+                             "NOTE: low-recall heuristic — dynamic /…/[id] and unquoted paths are invisible to it.", "err")
                 else:
-                    job.emit(f"All {len(pages) + len(apis)} promised route(s) have matching files.", "ok")
-                return {"ok": True, "result": res.get("result"), "missing": len(missing),
-                        "n_pages": len(pages), "n_api": len(apis)}
+                    job.emit(f"Spec cross-check: all {len(pages) + len(apis)} quoted route(s) have matching files.", "ok")
+                return {"ok": True, "added": len(added), "result": res.get("result"),
+                        "missing": len(missing), "n_pages": len(pages), "n_api": len(apis)}
             except Exception as exc:
                 return {"ok": False, "error": str(exc)}
             finally:
@@ -1197,6 +1231,7 @@ def epic_stage(epic_id):
             "assembled": bool(es.get("assembled")), "validated": bool(es.get("validated")),
             "validation": es.get("validation"), "fix_attempts": es.get("fix_attempts", 0),
             "route_verify": es.get("route_verify"),
+            "routes_added": es.get("routes_added"),
             "has_fix": bool(es.get("fix_head") and es.get("fix_head") != es.get("fix_base")),
             "previewed": bool(es.get("previewed")), "preview_path": es.get("preview_path"),
             "preview_running": bool(pv and pv.get("running")),

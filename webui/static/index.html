@@ -189,7 +189,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-44";
+const FE_VERSION="workspace-45";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -820,10 +820,13 @@ async function refreshExecGate(id){
   if(st.validation==="passed")val=' <span class="pill ok">tsc+build ✓</span>';
   else if(st.validation==="failed")val=' <span class="pill bad">build FAILED</span>';
   let ver="";
-  if(st.route_verify){const rv=st.route_verify;
-    if(rv.result==="passed")ver=' <span class="pill ok">routes ✓</span>';
-    else if(rv.result==="failed"){const ms=(rv.missing||[]).map(m=>m.route).join(", ");
-      ver=` <span class="pill bad" title="Нет файла для: ${esc(ms)}\nЭвристика — динамические роуты /…/[id] могут быть ложными.">routes: ${(rv.missing||[]).length} missing</span>`;}
+  if(st.routes_added){const ra=st.routes_added;
+    const lst=ra.map(r=>r.route).join(", ")||"нет роут-файлов в диффе";
+    ver=` <span class="pill ${ra.length?'ok':''}" title="Роуты, добавленные/изменённые эпиком (из диффа ветки):\n${esc(lst)}">routes +${ra.length}</span>`;
+  }
+  if(st.route_verify&&st.route_verify.result==="failed"&&(st.route_verify.missing||[]).length){
+    const ms=(st.route_verify.missing||[]).map(m=>m.route).join(", ");
+    ver+=` <span class="pill warn" title="Упомянуты в спеке в кавычках, но файла нет: ${esc(ms)}\nЭвристика низкого recall — динамику /…/[id] и незакавыченные пути не видит.">spec: ${(st.route_verify.missing||[]).length} unmatched</span>`;
   }
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
@@ -892,9 +895,7 @@ function validateEpic(id,btn){
 function verifyEpic(id,btn){
   btn.disabled=true;btn.textContent="Verifying…";
   runJob("/api/epic/verify",{epic_id:id},"#epiclog",res=>{
-    if(res&&res.ok&&res.result==="passed")toast("Routes verified ✓ — обещанные роуты на месте");
-    else if(res&&res.ok&&res.missing)toast(res.missing+" роут(ов) без файла — см. лог (динамика /…/[id] может быть ложной)");
-    else if(res&&res.ok)toast("В спеке нет роут-литералов — проверять нечего");
+    if(res&&res.ok)toast(`Эпик добавил ${res.added||0} роут(ов)`+((res.missing||0)?` · spec: ${res.missing} без файла`:"")+" — см. лог");
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
   });

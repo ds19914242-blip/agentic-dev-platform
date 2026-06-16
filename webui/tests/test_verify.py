@@ -103,9 +103,75 @@ def test_asset_and_speculative_filtered():
               "/alpha" not in {m["route"] for m in res["missing"]})
 
 
+def test_file_to_route():
+    from console.serializers import file_to_route as f
+    check("root page", f("app/page.tsx") == ("/", "page"))
+    check("simple page", f("app/notes/page.tsx") == ("/notes", "page"))
+    check("dynamic page kept verbatim", f("app/notes/[id]/page.tsx") == ("/notes/[id]", "page"))
+    check("catch-all kept", f("app/docs/[...slug]/page.tsx") == ("/docs/[...slug]", "page"))
+    check("route group stripped", f("app/(marketing)/about/page.tsx") == ("/about", "page"))
+    check("src/app prefix", f("src/app/dashboard/page.tsx") == ("/dashboard", "page"))
+    check("api route", f("app/api/notes/route.ts") == ("/api/notes", "api"))
+    check("dynamic api route", f("app/api/notes/[id]/route.ts") == ("/api/notes/[id]", "api"))
+    check("page.js variant", f("app/x/page.js") == ("/x", "page"))
+    check("layout is not a route", f("app/notes/layout.tsx") is None)
+    check("non-app file is not a route", f("components/Card.tsx") is None)
+
+
+def test_routes_added_from_diff():
+    """The high-recall view: enumerate route files the epic branch added vs base.
+    Builds a real throwaway repo, branches, adds page/api files, and checks the mapping —
+    crucially that dynamic [id] routes (invisible to the spec heuristic) ARE captured here."""
+    import subprocess
+
+    def run(repo, *a):
+        return subprocess.run(["git", "-C", str(repo)] + list(a), capture_output=True, text=True)
+
+    with tempfile.TemporaryDirectory() as tmp:
+        repo = Path(tmp) / "repo"
+        repo.mkdir()
+        run(repo, "init", "-q")
+        run(repo, "config", "user.email", "t@t.t")
+        run(repo, "config", "user.name", "t")
+        run(repo, "checkout", "-q", "-b", "main")
+        (repo / "app").mkdir()
+        (repo / "app" / "page.tsx").write_text("export default function H(){}")
+        run(repo, "add", "-A")
+        run(repo, "commit", "-qm", "base")
+
+        run(repo, "checkout", "-q", "-b", "agentic/epic-x")
+        for rel in ["app/notes/page.tsx", "app/notes/new/page.tsx",
+                    "app/notes/[id]/page.tsx", "app/api/notes/route.ts",
+                    "app/api/notes/[id]/route.ts", "app/notes/layout.tsx"]:
+            fp = repo / rel
+            fp.parent.mkdir(parents=True, exist_ok=True)
+            fp.write_text("x")
+        run(repo, "add", "-A")
+        run(repo, "commit", "-qm", "notes feature")
+
+        # mirror what the server helper does (diff base...HEAD -> file_to_route)
+        from console.serializers import file_to_route
+        diff = run(repo, "diff", "--name-status", "main...HEAD").stdout
+        routes = []
+        for line in diff.splitlines():
+            parts = line.split("\t")
+            if len(parts) < 2:
+                continue
+            m = file_to_route(parts[-1].strip())
+            if m:
+                routes.append(m[0])
+        check("captures static added routes", "/notes" in routes and "/notes/new" in routes)
+        check("captures DYNAMIC route (spec heuristic could not)", "/notes/[id]" in routes)
+        check("captures api routes incl dynamic",
+              "/api/notes" in routes and "/api/notes/[id]" in routes)
+        check("ignores layout.tsx", all(r != "/notes/layout" for r in routes))
+        check("base root page not counted as added", "/" not in routes)
+
+
 def main():
     for t in (test_missing_route_detected, test_all_present_passes,
-              test_no_route_literals, test_asset_and_speculative_filtered):
+              test_no_route_literals, test_asset_and_speculative_filtered,
+              test_file_to_route, test_routes_added_from_diff):
         print(t.__name__ + ":")
         try:
             t()
