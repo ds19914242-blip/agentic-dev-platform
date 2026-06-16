@@ -41,6 +41,7 @@ from console import git_ops
 from console import state as _state
 from console import inbox as _inbox
 from console import serializers as _ser
+from console import doctor as _doctor
 
 STATIC_DIR = Path(__file__).resolve().parent / "static"
 BACKLOG_DIR = ROOT / "backlog"
@@ -50,7 +51,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-55"
+API_VERSION = "workspace-56"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -1541,6 +1542,51 @@ def epic_drift(epic_id, do_fetch=True):
             "fetched": fetched, "stale": bool(behind)}
 
 
+def _worktree_paths(repo):
+    """Absolute paths of all git-tracked worktrees (`git worktree list --porcelain`)."""
+    r = _git_run(repo, ["worktree", "list", "--porcelain"])
+    out = []
+    for line in (r.stdout or "").splitlines():
+        if line.startswith("worktree "):
+            out.append(os.path.normpath(line[len("worktree "):].strip()))
+    return out
+
+
+def epic_doctor(epic_id):
+    """#1 state↔git consistency: surface ghost branches, missing task commits, and
+    orphan/stale worktrees for one epic. Read-only — gathers git/disk facts and feeds
+    them to the pure console.doctor heuristics."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    product, repo, err = _resolve_repo(eid)
+    if err:
+        return {"ok": False, "error": err}
+    eb = _epic_branch(eid)
+    stem = eb.split("/")[-1]
+
+    def bexists(ref):
+        return _git_run(repo, ["rev-parse", "--verify", ref]).returncode == 0
+
+    def cexists(sha):
+        return _git_run(repo, ["cat-file", "-e", sha]).returncode == 0
+
+    tracked = [p for p in _worktree_paths(repo) if stem in p]
+    wt_root = Path(repo).parent / ".agentic-worktrees"
+    existing = []
+    if wt_root.exists():
+        existing = [os.path.normpath(str(p)) for p in wt_root.iterdir()
+                    if p.is_dir() and stem in p.name]
+    es = load_epic_state(eid)
+    rs = load_runstate(eid)
+    findings = []
+    findings += _doctor.epic_branch_findings(es, eb, bexists)
+    findings += _doctor.task_commit_findings(rs, cexists)
+    findings += _doctor.worktree_findings(tracked, existing)
+    return {"ok": True, "epic_id": eid, "branch": eb,
+            "findings": findings, "summary": _doctor.summarize(findings)}
+
+
 def reset_epic_runs(epic_id):
     eid = _safe_epic_id(epic_id)
     if not eid:
@@ -2576,6 +2622,7 @@ GET_ROUTES = {
     "/api/epic/stage": lambda q: epic_stage(_qp(q, "epic_id")),
     "/api/epic/criteria": lambda q: epic_criteria(_qp(q, "epic_id")),
     "/api/epic/drift": lambda q: epic_drift(_qp(q, "epic_id"), _qp(q, "fetch", "1") != "0"),
+    "/api/epic/doctor": lambda q: epic_doctor(_qp(q, "epic_id")),
     "/api/epic/fix-diff": lambda q: epic_fix_diff(_qp(q, "epic_id"), _qp(q, "path")),
     "/api/epic/preview-log": lambda q: preview_log(_qp(q, "epic_id")),
     "/api/preview/active": lambda q: preview_active(),

@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-55";
+const FE_VERSION="workspace-56";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -677,7 +677,8 @@ async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent
       <div class="row"><span id="exec-build"></span>
       <button class="btn ghost sm" onclick="resetEpicRuns('${esc(id)}')" title="Аварийная пересборка: сбросить состояние сборки и собрать ветку эпика заново по графу зависимостей (cherry-pick принятых задач). main не трогается, агент не запускается, PR нет. Нужно, если ветка собралась криво/частично.">Пересобрать с нуля</button>
       <span class="muted" style="font-size:12px">Сборка = задачи по DAG поверх зависимостей. Без агента, main не трогается, без PR.</span></div>
-      <div class="log" id="epiclog" style="display:none;margin-top:10px"></div></div>
+      <div class="log" id="epiclog" style="display:none;margin-top:10px"></div>
+      <div id="exec-doctor" style="margin-top:8px"></div></div>
     ${taskPanel}
     <div class="card"><h2>Artifacts</h2><div class="split"><div class="tree" id="artlist">${artList}</div><div class="viewer" id="aview"><div class="vh">select an artifact</div></div></div></div>
     <div class="card" id="epic-criteria" style="margin-top:14px;display:none"></div>`;
@@ -685,6 +686,7 @@ async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent
   renderEpicTasks(EPIC_TASK_VIEW);
   renderEpicRail(id,null);
   refreshExecGate(id);
+  renderDoctor(id);
   loadEpicCriteria(id);}
 function renderEpicRail(id,st){
   const el=$("#epic-rail");if(!el)return;
@@ -849,6 +851,7 @@ async function refreshExecGate(id){
       else ver+=` <span class="pill ok" title="Все ${sm.checked} роут(ов) отдаются 2xx под авторизацией">smoke ✓</span>`;}
   }
   if(_driftCache[id])ver+=driftBadge(_driftCache[id]);
+  if(_doctorCache[id])ver+=doctorBadge(_doctorCache[id]);
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
@@ -896,6 +899,7 @@ async function refreshExecGate(id){
   }
   if(st.assembled&&!st.pushed){
     flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="checkDrift('${esc(id)}',this)" title="Свериться с origin/main: не устарела ли база ветки эпика. Делает fetch и считает, на сколько коммитов main ушёл вперёд с момента сборки. Read-only, ветку не трогает.">Проверить базу</button>`;
+    flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="checkDoctor('${esc(id)}',this)" title="Сверка состояния с git: ветки-призраки (помечено собранным, а ветки нет), потерянные коммиты задач, осиротевшие/застрявшие worktree. Read-only.">Проверить целостность</button>`;
     flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
   }
   if(st.pushed){
@@ -934,6 +938,40 @@ async function checkDrift(id,btn){
     else if(r&&r.error)toast(r.error);
   }catch(e){toast("Не удалось проверить дрейф base");}
   refreshExecGate(id);
+}
+let _doctorCache={};
+function doctorBadge(d){
+  if(!d||!d.ok||!d.summary)return"";
+  const s=d.summary;
+  if(s.clean)return ` <span class="pill ok" title="Состояние сходится с git: нет призрачных веток, потерянных коммитов или осиротевших worktree">целостность ✓</span>`;
+  const cls=s.worst==="bad"?"bad":"warn";
+  return ` <span class="pill ${cls}" title="Открой панель ниже: ${esc((d.findings||[]).map(f=>f.msg).join(" · "))}">целостность: ${s.total} проблем${s.counts.bad?" ("+s.counts.bad+" критич.)":""}</span>`;
+}
+async function checkDoctor(id,btn){
+  if(btn){btn.disabled=true;btn.textContent="сверяю с git…";}
+  try{
+    const r=await api("/api/epic/doctor?epic_id="+encodeURIComponent(id));
+    _doctorCache[id]=r;
+    if(r&&r.ok){const s=r.summary||{};
+      if(s.clean)toast("Целостность ✓ — состояние сходится с git");
+      else toast(`Найдено проблем: ${s.total}`+(s.counts&&s.counts.bad?` (${s.counts.bad} критич.)`:""));
+    }else if(r&&r.error)toast(r.error);
+  }catch(e){toast("Не удалось проверить целостность");}
+  renderDoctor(id);
+  refreshExecGate(id);
+}
+function renderDoctor(id){
+  const el=$("#exec-doctor");if(!el)return;
+  const d=_doctorCache[id];
+  if(!d||!d.ok){el.innerHTML="";return;}
+  const f=d.findings||[];
+  if(!f.length){el.innerHTML=`<div class="muted" style="font-size:12px">Целостность: расхождений с git не найдено ✓</div>`;return;}
+  const ico={bad:'<span style="color:var(--red)">✗</span>',warn:'<span style="color:var(--gold,#caa)">⚠</span>',ok:'<span style="color:var(--teal)">✓</span>'};
+  el.innerHTML=`<div style="border:1px solid var(--line);border-radius:10px;padding:10px 12px">
+    <div class="row" style="justify-content:space-between"><strong style="font-size:13px">Целостность · ${f.length} расхождени${f.length===1?"е":"й"} с git</strong>
+      <span class="muted" style="font-size:11px">сверка состояния ↔ git, read-only</span></div>
+    ${f.map(x=>`<div class="row" style="gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line)"><span style="width:14px;flex:none">${ico[x.level]||"•"}</span><span style="font-size:13px;${x.level==="bad"?"color:var(--red)":""}">${esc(x.msg)}</span></div>`).join("")}
+    <div class="muted" style="font-size:11px;margin-top:6px">Призрачная ветка → «Пересобрать ветку». Осиротевший/застрявший worktree → удали папку вручную или <span class="mono">git worktree prune</span>. Потерянный коммит → перевыполни задачу.</div></div>`;
 }
 function verifyEpic(id,btn){
   btn.disabled=true;btn.textContent="Verifying…";
@@ -1045,8 +1083,8 @@ async function rollbackEpic(id){
   stopPreviewPoll();
   const r=await api("/api/epic/rollback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
   if(r&&r.ok)toast("Эпик возвращён на доработку — перевыполни задачу и пересобери");else if(r&&r.error)toast(r.error);
-  _driftCache[id]=null;
-  refreshExecGate(id);
+  _driftCache[id]=null;_doctorCache[id]=null;
+  refreshExecGate(id);renderDoctor(id);
 }
 async function closeEpic(id){
   if(!confirm("Закрыть эпик и отправить в архив?\n\nДелай это после того, как смержил PR на GitHub. Эпик уедет в архив (восстановим при необходимости)."))return;
@@ -1179,7 +1217,7 @@ function buildEpic(id,btn){
   btn.disabled=true;btn.textContent="Assembling…";
   runJob("/api/epic/build",{epic_id:id},"#epiclog",res=>{
     btn.disabled=false;btn.textContent="Собрать ветку эпика →";
-    _driftCache[id]=null;
+    _driftCache[id]=null;_doctorCache[id]=null;
     if(res&&res.ok)toast("Собрано на "+(res.branch||"")+" — "+(res.applied||0)+" задач");
     else if(res&&res.conflict_task)toast("Конфликт на "+res.conflict_task+" — причина в логе ниже");
     else if(res&&res.error)toast(res.error);
@@ -1202,7 +1240,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,smokeEpic,checkDrift,loadEpicCriteria,toggleCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,smokeEpic,checkDrift,checkDoctor,renderDoctor,loadEpicCriteria,toggleCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>
