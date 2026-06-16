@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-52";
+const FE_VERSION="workspace-53";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -236,21 +236,25 @@ function artLabel(n){if(ART_LABELS[n])return ART_LABELS[n];if(/^task-\d+\.md$/.t
 
 // stream a job's progress via SSE into a log element; call onDone(result) at end
 function runJob(endpoint,payload,logSel,onDone){
-  const el=$(logSel);el.style.display="";el.innerHTML="";
-  const dock=(logSel==="#etasklog");
+  const el=$(logSel);
+  if(el){el.style.display="";el.innerHTML="";}
+  const dock=(logSel==="#etasklog"&&!!el);
   let _home=null;
-  if(dock){_home={parent:el.parentNode,next:el.nextSibling};document.body.appendChild(el);el.classList.add("docklog");}
-  const undock=()=>{if(dock){el.classList.remove("docklog");try{if(_home&&_home.parent)_home.parent.insertBefore(el,_home.next);}catch(_){}}};
-  logLine(logSel,"","Dispatching…");
+  if(dock&&el.parentNode){try{_home={parent:el.parentNode,next:el.nextSibling};document.body.appendChild(el);el.classList.add("docklog");}catch(_){_home=null;}}
+  const undock=()=>{if(!dock)return;try{el.classList.remove("docklog");
+    if(_home&&_home.parent&&_home.parent.isConnected)_home.parent.insertBefore(el,_home.next);
+    else if(el.parentNode===document.body)el.remove();}catch(_){}};
+  if(el)logLine(logSel,"","Dispatching…");
   return api(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
     .then(r=>{
-      if(r.error){logLine(logSel,"",r.error,"err");undock();if(onDone)onDone({ok:false});return}
-      if(r.started===false)logLine(logSel,"","(attaching to a run already in progress)","skip");
+      if(r.error){if(el)logLine(logSel,"",r.error,"err");undock();if(onDone)onDone({ok:false});return}
+      if(r.started===false&&el)logLine(logSel,"","(attaching to a run already in progress)","skip");
       const es=new EventSource("/api/job/stream?id="+encodeURIComponent(r.job_id));
-      es.onmessage=e=>{try{const l=JSON.parse(e.data);logLine(logSel,l.ts,l.msg,l.level)}catch(_){}};
+      es.onmessage=e=>{try{const l=JSON.parse(e.data);if($(logSel))logLine(logSel,l.ts,l.msg,l.level)}catch(_){}};
       es.addEventListener("done",e=>{es.close();undock();let res={};try{res=JSON.parse(e.data)}catch(_){}if(onDone)onDone(res)});
       es.onerror=()=>{es.close();undock();if(onDone)onDone({ok:false,error:"stream lost"})};
-    });
+    })
+    .catch(err=>{undock();if(onDone)onDone({ok:false,error:String(err)})});
 }
 
 async function boot(){
