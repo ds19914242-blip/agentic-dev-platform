@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-49"
+API_VERSION = "workspace-50"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -1077,6 +1077,32 @@ def _ensure_worktree(repo, eb, wt):
     return None
 
 
+def _seed_preview_env(repo, wt):
+    """Make the epic preview behave like the product's real dev env. Env files are gitignored,
+    so a fresh worktree checkout has none — copy the product repo's .env* into the worktree
+    (real SESSION_SECRET + real creds, so login works out of the box). Only fall back to a
+    synthetic .env.local if the product ships no env at all. Returns the list copied."""
+    import shutil
+    import secrets
+    copied = []
+    for name in (".env", ".env.local", ".env.development", ".env.development.local"):
+        src = Path(repo) / name
+        dst = Path(wt) / name
+        if src.exists() and src.is_file() and not dst.exists():
+            try:
+                shutil.copyfile(src, dst)
+                copied.append(name)
+            except Exception:
+                pass
+    if not copied and not (Path(wt) / ".env.local").exists():
+        try:
+            (Path(wt) / ".env.local").write_text(
+                f"APP_USERNAME=admin\nAPP_PASSWORD=admin\nSESSION_SECRET={secrets.token_hex(32)}\n")
+        except Exception:
+            pass
+    return copied
+
+
 def preview_start(epic_id):
     """Managed preview: ensure a worktree on the epic branch (node_modules symlinked,
     test .env.local written), then launch `npm run dev -p 3100` as a tracked background
@@ -1104,13 +1130,7 @@ def preview_start(epic_id):
             wt_nm.symlink_to(base_nm, target_is_directory=True)
         except Exception:
             pass
-    import secrets
-    envf = wt / ".env.local"
-    if not envf.exists():
-        try:
-            envf.write_text(f"APP_USERNAME=admin\nAPP_PASSWORD=admin\nSESSION_SECRET={secrets.token_hex(32)}\n")
-        except Exception:
-            pass
+    _seed_preview_env(repo, wt)
     set_epic_state(eid, preview_path=str(wt))
     _preview_kill(eid)  # no duplicates
     import subprocess
