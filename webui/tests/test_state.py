@@ -62,6 +62,26 @@ def test_merge_update():
         check("update keeps changed list", e.get("changed") == ["a.ts"])
 
 
+def test_epic_state_signals_clear_on_none():
+    # ws-54: rebuild/rollback must clear stale verify/smoke signals (None erases the key)
+    with tempfile.TemporaryDirectory() as d:
+        eid = _epic(d)
+        state.set_epic_state(d, eid, route_verify={"result": "failed"}, routes_added=[{"route": "/x"}],
+                             nav_orphans=["/x"], branch_routes=["/a"], smoke={"login": True})
+        es = state.load_epic_state(d, eid)
+        check("signals present after verify", es.get("route_verify") and es.get("smoke"))
+        # a (re)assembly / rollback passes these as None
+        state.set_epic_state(d, eid, route_verify=None, routes_added=None,
+                             nav_orphans=None, branch_routes=None, smoke=None)
+        es2 = state.load_epic_state(d, eid)
+        for k in ("route_verify", "routes_added", "nav_orphans", "branch_routes", "smoke"):
+            check(f"{k} cleared by None", es2.get(k) is None)
+        # unrelated fields set in the same call survive
+        state.set_epic_state(d, eid, assembled=True, validated=False, route_verify=None)
+        es3 = state.load_epic_state(d, eid)
+        check("clearing signals leaves other fields intact", es3.get("assembled") is True)
+
+
 def test_epic_state_separation():
     with tempfile.TemporaryDirectory() as d:
         eid = _epic(d)
@@ -88,6 +108,7 @@ def test_corrupt_file():
 
 def main():
     for t in (test_path_and_empty, test_set_and_roundtrip, test_merge_update,
+              test_epic_state_signals_clear_on_none,
               test_epic_state_separation, test_corrupt_file):
         print(t.__name__ + ":")
         try:

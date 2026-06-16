@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-53"
+API_VERSION = "workspace-54"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -601,7 +601,9 @@ def build_epic(epic_id):
                     job.emit(f"#{n} {tf}: applied", "ok")
                     picked += 1
                 job.emit(f"Epic assembled on {eb}: {picked} applied, {skipped} skipped. main untouched, no PR.", "ok")
-                set_epic_state(eid, assembled=True, assembled_branch=eb, validated=False, validation=None)
+                set_epic_state(eid, assembled=True, assembled_branch=eb, validated=False, validation=None,
+                               route_verify=None, routes_added=None, nav_orphans=None,
+                               branch_routes=None, smoke=None)
                 return {"ok": True, "branch": eb, "applied": picked, "skipped": skipped}
             finally:
                 _git_run(repo, ["worktree", "remove", "--force", str(wt)])
@@ -1423,7 +1425,9 @@ def rollback_epic(epic_id):
             _git_run(repo, ["branch", "-D", eb])
     set_epic_state(eid, assembled=False, validated=False, validation=None, previewed=False,
                    pushed=False, pr_url=None, preview_path=None, fix_attempts=0,
-                   fix_base=None, fix_head=None)
+                   fix_base=None, fix_head=None,
+                   route_verify=None, routes_added=None, nav_orphans=None,
+                   branch_routes=None, smoke=None)
     return {"ok": True, "epic_id": eid}
 
 
