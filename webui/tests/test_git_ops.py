@@ -146,9 +146,32 @@ def test_dep_base_no_deps():
         check("dep_base no-deps does NOT load run-state", called["n"] == 0, f"loader called {called['n']}x")
 
 
+def test_base_drift_count():
+    with tempfile.TemporaryDirectory() as d:
+        repo = Path(d) / "repo"
+        repo.mkdir()
+        _run(repo, "init", "-q")
+        _run(repo, "config", "user.email", "t@t.t")
+        _run(repo, "config", "user.name", "t")
+        _run(repo, "checkout", "-q", "-b", "main")
+        (repo / "a.txt").write_text("1\n"); _run(repo, "add", "-A"); _run(repo, "commit", "-qm", "c1")
+        # epic branch forks off main here
+        _run(repo, "checkout", "-q", "-b", "agentic/epic-x")
+        (repo / "e.txt").write_text("e\n"); _run(repo, "add", "-A"); _run(repo, "commit", "-qm", "epic work")
+        check("fresh fork: behind 0", git_ops.base_drift_count(repo, "agentic/epic-x", "main") == 0)
+        # main moves ahead by 2 commits after the fork
+        _run(repo, "checkout", "-q", "main")
+        (repo / "b.txt").write_text("2\n"); _run(repo, "add", "-A"); _run(repo, "commit", "-qm", "c2")
+        (repo / "c.txt").write_text("3\n"); _run(repo, "add", "-A"); _run(repo, "commit", "-qm", "c3")
+        check("epic now behind main by 2", git_ops.base_drift_count(repo, "agentic/epic-x", "main") == 2)
+        check("main is not behind itself", git_ops.base_drift_count(repo, "main", "main") == 0)
+        check("missing epic branch -> None", git_ops.base_drift_count(repo, "agentic/nope", "main") is None)
+        check("missing main ref -> None", git_ops.base_drift_count(repo, "main", "origin/nope") is None)
+
+
 def main():
     for t in (test_ids, test_branches, test_topo, test_epic_dep_nums_dag,
-              test_git_repo, test_dep_base_no_deps):
+              test_git_repo, test_dep_base_no_deps, test_base_drift_count):
         print(t.__name__ + ":")
         try:
             t()

@@ -102,6 +102,18 @@ def base_ref(repo):
     return (git_run(repo, ["symbolic-ref", "--short", "HEAD"]).stdout or "HEAD").strip() or "HEAD"
 
 
+def base_drift_count(repo, branch, main_ref):
+    """How many commits <main_ref> has that <branch> does not contain — i.e. how far
+    <branch>'s base has fallen behind the main line. Returns int, or None if either ref
+    is missing or the count can't be parsed. Pure read: no fetch, no branch mutation."""
+    for ref in (branch, main_ref):
+        if git_run(repo, ["rev-parse", "--verify", ref]).returncode != 0:
+            return None
+    r = git_run(repo, ["rev-list", "--count", f"{branch}..{main_ref}"])
+    s = (r.stdout or "").strip()
+    return int(s) if (r.returncode == 0 and s.isdigit()) else None
+
+
 # --- dependency graph (pure) ------------------------------------------------
 def topo_order(nums, depmap):
     """Kahn topological sort over task numbers; stable by number on ties."""

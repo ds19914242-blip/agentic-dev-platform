@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-54";
+const FE_VERSION="workspace-55";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -848,6 +848,7 @@ async function refreshExecGate(id){
       if(bad.length)ver+=` <span class="pill bad" title="Роуты не отдаются в рантайме: ${esc(bad.map(r=>r.route+"("+r.status+")").join(", "))}">smoke: ${bad.length} битых</span>`;
       else ver+=` <span class="pill ok" title="Все ${sm.checked} роут(ов) отдаются 2xx под авторизацией">smoke ✓</span>`;}
   }
+  if(_driftCache[id])ver+=driftBadge(_driftCache[id]);
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
@@ -894,6 +895,7 @@ async function refreshExecGate(id){
     flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="pushEpic('${esc(id)}',this)">Push в origin (PR, без мержа) →</button>`;
   }
   if(st.assembled&&!st.pushed){
+    flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="checkDrift('${esc(id)}',this)" title="Свериться с origin/main: не устарела ли база ветки эпика. Делает fetch и считает, на сколько коммитов main ушёл вперёд с момента сборки. Read-only, ветку не трогает.">Проверить базу</button>`;
     flow+=` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
   }
   if(st.pushed){
@@ -912,6 +914,26 @@ function validateEpic(id,btn){
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
   });
+}
+let _driftCache={};
+function driftBadge(d){
+  if(!d||!d.ok)return"";
+  if(d.behind===0)return ` <span class="pill ok" title="Ветка эпика собрана от свежего ${esc(d.main||"main")}${d.fetched?" (только что свёрнут fetch)":""}">base актуальна</span>`;
+  if(typeof d.behind==="number"&&d.behind>0)return ` <span class="pill bad" title="${esc(d.main||"main")} ушёл вперёд на ${d.behind} коммит(ов) с момента сборки ветки. Пересобери ветку от свежего main, иначе PR будет позади main → конфликты/тихие регрессии.">base отстаёт на ${d.behind} от main</span>`;
+  return ` <span class="pill warn" title="Не удалось вычислить дрейф (нет ветки эпика или main-рефа)">дрейф base неизвестен</span>`;
+}
+async function checkDrift(id,btn){
+  if(btn){btn.disabled=true;btn.textContent="сверяю с main…";}
+  try{
+    const r=await api("/api/epic/drift?epic_id="+encodeURIComponent(id)+"&fetch=1");
+    _driftCache[id]=r;
+    if(r&&r.ok&&typeof r.behind==="number"){
+      if(r.behind>0)toast(`base отстаёт от ${r.main||"main"} на ${r.behind} коммит(ов) — пересобери ветку`);
+      else toast("base актуальна ✓");
+    }else if(r&&r.reason==="not_assembled")toast("Сначала собери ветку эпика");
+    else if(r&&r.error)toast(r.error);
+  }catch(e){toast("Не удалось проверить дрейф base");}
+  refreshExecGate(id);
 }
 function verifyEpic(id,btn){
   btn.disabled=true;btn.textContent="Verifying…";
@@ -1023,6 +1045,7 @@ async function rollbackEpic(id){
   stopPreviewPoll();
   const r=await api("/api/epic/rollback",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:id})});
   if(r&&r.ok)toast("Эпик возвращён на доработку — перевыполни задачу и пересобери");else if(r&&r.error)toast(r.error);
+  _driftCache[id]=null;
   refreshExecGate(id);
 }
 async function closeEpic(id){
@@ -1156,6 +1179,7 @@ function buildEpic(id,btn){
   btn.disabled=true;btn.textContent="Assembling…";
   runJob("/api/epic/build",{epic_id:id},"#epiclog",res=>{
     btn.disabled=false;btn.textContent="Собрать ветку эпика →";
+    _driftCache[id]=null;
     if(res&&res.ok)toast("Собрано на "+(res.branch||"")+" — "+(res.applied||0)+" задач");
     else if(res&&res.conflict_task)toast("Конфликт на "+res.conflict_task+" — причина в логе ниже");
     else if(res&&res.error)toast(res.error);
@@ -1178,7 +1202,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,smokeEpic,loadEpicCriteria,toggleCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,smokeEpic,checkDrift,loadEpicCriteria,toggleCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>

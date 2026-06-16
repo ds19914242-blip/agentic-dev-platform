@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-54"
+API_VERSION = "workspace-55"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -1510,6 +1510,37 @@ def epic_stage(epic_id):
             "pending": bs.get("pending"), "total": bs.get("total"), "branch": bs.get("branch")}
 
 
+def _base_drift_count(repo, epic_branch, main_ref):
+    """Thin wrapper over git_ops.base_drift_count (see there)."""
+    return git_ops.base_drift_count(repo, epic_branch, main_ref)
+
+
+def epic_drift(epic_id, do_fetch=True):
+    """#15 main-drift: is the assembled epic branch built on a base that has fallen
+    behind main? Best-effort fetch (never fatal), then count commits on main missing
+    from the epic branch. Read-only; no branch is modified."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return {"ok": False, "error": "invalid epic id"}
+    if not load_epic_state(eid).get("assembled"):
+        return {"ok": False, "reason": "not_assembled"}
+    product, repo, err = _resolve_repo(eid)
+    if err:
+        return {"ok": False, "error": err}
+    eb = _epic_branch(eid)
+    main = _base_ref(repo)
+    fetched = False
+    if do_fetch and main.startswith("origin/"):
+        remote, _, br = main.partition("/")
+        try:
+            fetched = _git_run(repo, ["fetch", "--quiet", remote, br], timeout=30).returncode == 0
+        except Exception:
+            fetched = False
+    behind = _base_drift_count(repo, eb, main)
+    return {"ok": True, "behind": behind, "main": main, "branch": eb,
+            "fetched": fetched, "stale": bool(behind)}
+
+
 def reset_epic_runs(epic_id):
     eid = _safe_epic_id(epic_id)
     if not eid:
@@ -2544,6 +2575,7 @@ GET_ROUTES = {
     "/api/epic/build-status": lambda q: epic_build_status(_qp(q, "epic_id")),
     "/api/epic/stage": lambda q: epic_stage(_qp(q, "epic_id")),
     "/api/epic/criteria": lambda q: epic_criteria(_qp(q, "epic_id")),
+    "/api/epic/drift": lambda q: epic_drift(_qp(q, "epic_id"), _qp(q, "fetch", "1") != "0"),
     "/api/epic/fix-diff": lambda q: epic_fix_diff(_qp(q, "epic_id"), _qp(q, "path")),
     "/api/epic/preview-log": lambda q: preview_log(_qp(q, "epic_id")),
     "/api/preview/active": lambda q: preview_active(),
