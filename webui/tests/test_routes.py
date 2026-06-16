@@ -31,7 +31,7 @@ def check(name, cond, detail=""):
 EXPECTED_GET = {
     "/api/state", "/api/inbox", "/api/epics", "/api/epics/overview", "/api/epics/archived",
     "/api/overview", "/api/backlog", "/api/task", "/api/task/diff", "/api/epic/build-status",
-    "/api/epic/stage", "/api/epic/fix-diff", "/api/epic/preview-log", "/api/preview/active",
+    "/api/epic/stage", "/api/epic/criteria", "/api/epic/fix-diff", "/api/epic/preview-log", "/api/preview/active",
     "/api/jobs/active", "/api/epic", "/api/runs", "/api/version", "/api/job",
     "/api/repo/tree", "/api/repo/file", "/api/repo/structure", "/api/repo/operational",
     "/api/repo/history", "/api/repo/baseline", "/api/repo/changes", "/api/repo/diff",

@@ -184,6 +184,36 @@ def test_nav_orphans_tree():
         check("saved link flagged as orphan", orphans == ["/saved"])
 
 
+def test_criterion_routes():
+    from console.serializers import criterion_routes as cr
+    check("plain route", cr("На /saved виден список") == ["/saved"])
+    check("api route in backticks", cr("GET `/api/saved` возвращает список") == ["/api/saved"])
+    check("dynamic route", cr("/saved/[id] открывает один материал") == ["/saved/[id]"])
+    check("multiple routes deduped", cr("`/api/saved` POST и `/api/saved` GET") == ["/api/saved"])
+    check("two distinct routes", set(cr("страницы /saved и /saved/new")) == {"/saved", "/saved/new"})
+    check("no route -> empty", cr("empty-state оформлено, заметка редактируется") == [])
+    check("date is not a route", cr("релиз 12/06/2026 готов") == [])
+    check("trailing punct stripped", cr("открой /saved.") == ["/saved"])
+
+
+def test_criterion_state():
+    from console.serializers import criterion_state as cs
+    branch = ["/saved", "/saved/[id]", "/api/saved", "/api/saved/[id]", "/sources"]
+    st, _ = cs("На /saved виден список", branch)
+    check("present route -> confirmed", st == "confirmed")
+    st, _ = cs("/saved/[id] открывает материал", branch)
+    check("present dynamic -> confirmed", st == "confirmed")
+    st, _ = cs("empty-state оформлено", branch)
+    check("no route -> review", st == "review")
+    st, why = cs("GET `/api/missing` отдаёт данные", branch)
+    check("absent route -> not_met", st == "not_met")
+    check("not_met explains which route", "/api/missing" in why)
+    # the 101806 case: nothing built -> all route criteria not_met
+    st, why = cs("На /saved виден список", [], nav_orphans=["/saved"])
+    check("empty branch -> route criterion not_met", st == "not_met")
+    check("nav-orphan reinforces reason", "nav" in why.lower())
+
+
 def test_routes_added_from_diff():
     """The high-recall view: enumerate route files the epic branch added vs base.
     Builds a real throwaway repo, branches, adds page/api files, and checks the mapping —
@@ -238,7 +268,8 @@ def main():
     for t in (test_missing_route_detected, test_all_present_passes,
               test_no_route_literals, test_asset_and_speculative_filtered,
               test_file_to_route, test_routes_added_from_diff,
-              test_nav_hrefs, test_route_set_has, test_nav_orphans_tree):
+              test_nav_hrefs, test_route_set_has, test_nav_orphans_tree,
+              test_criterion_routes, test_criterion_state):
         print(t.__name__ + ":")
         try:
             t()

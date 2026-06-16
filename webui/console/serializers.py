@@ -148,6 +148,47 @@ def route_set_has(href, routes):
     return any(_route_matches(href, r) for r in routes)
 
 
+_CRITERION_ROUTE_RE = re.compile(r"/(?:api/)?[a-zA-Z][\w\-]*(?:/[\w\-\[\]\.]+)*")
+
+
+def criterion_routes(text):
+    """Extract route-like tokens from an acceptance/success criterion string. Pure.
+    Catches /saved, /api/saved, /saved/[id], `GET /api/saved` → ['/api/saved'], etc.
+    First segment must start with a letter (so dates like 12/06/2026 aren't routes).
+    Trailing punctuation stripped; deduped, order preserved."""
+    out, seen = [], set()
+    for m in _CRITERION_ROUTE_RE.finditer(text or ""):
+        r = m.group(0).rstrip(".,;:)")
+        if r.endswith("/") and r != "/":
+            r = r.rstrip("/")
+        if r not in seen:
+            seen.add(r)
+            out.append(r)
+    return out
+
+
+def criterion_state(text, branch_routes, nav_orphans=None):
+    """Classify a criterion against Verify signals. Pure. Returns (state, why):
+      - 'not_met'   : criterion names a route that does NOT exist on the branch (strong ✗)
+      - 'confirmed' : every route it names exists on the branch (file-level ✓ — behaviour still
+                      needs human eyes)
+      - 'review'    : no route to check automatically (○ manual)
+    nav_orphans reinforces the reason when a missing route is also a broken menu link."""
+    routes = criterion_routes(text)
+    if not routes:
+        return ("review", "нет роута — ручная проверка")
+    branch_set = set(branch_routes or [])
+    nav = set(nav_orphans or [])
+    missing = [r for r in routes if not route_set_has(r, branch_set)]
+    if missing:
+        broken = [r for r in missing if r in nav]
+        why = "нет на ветке: " + ", ".join(missing)
+        if broken:
+            why += " (битая nav-ссылка)"
+        return ("not_met", why)
+    return ("confirmed", "роут(ы) на месте: " + ", ".join(routes) + " — поведение проверь глазами")
+
+
 def eff_status(task_status, rstate, done_statuses):
     """Collapse a task's declared status + its run-state into the single 'effective'
     status the UI shows. Pure mapping; done_statuses is injected (server constant)."""

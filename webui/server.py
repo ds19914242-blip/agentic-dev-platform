@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-47"
+API_VERSION = "workspace-48"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -862,6 +862,25 @@ def _nav_orphans(wt):
     return {"checked": len(hrefs), "orphans": orphans, "routes": len(routes)}
 
 
+def _branch_route_set(wt):
+    """All app-router routes (page + api) present on the branch worktree, as a sorted list.
+    Used to auto-check route-bearing acceptance criteria during Verify."""
+    routes = set()
+    for root in (Path(wt) / "app", Path(wt) / "src" / "app"):
+        if not root.exists():
+            continue
+        for pat in ("page.*", "route.*"):
+            for f in root.rglob(pat):
+                try:
+                    rel = str(f.relative_to(wt))
+                except Exception:
+                    continue
+                mapped = _ser.file_to_route(rel)
+                if mapped:
+                    routes.add(mapped[0])
+    return sorted(routes)
+
+
 def verify_epic(epic_id):
     """Deeper-than-tsc check: do the routes the spec PROMISED actually exist as files
     on the assembled epic branch? Reuses the platform's pure verify_routes (the same
@@ -932,7 +951,8 @@ def verify_epic(epic_id):
                         job.emit(f"  BROKEN {h} → no app{h}/page.* on this branch", "err")
                 else:
                     job.emit(f"Nav check: all {nav['checked']} nav link(s) resolve to a page.", "ok")
-                set_epic_state(eid, nav_orphans=(nav["orphans"] if nav else None))
+                set_epic_state(eid, nav_orphans=(nav["orphans"] if nav else None),
+                               branch_routes=_branch_route_set(wt))
 
                 return {"ok": True, "added": len(added), "result": res.get("result"),
                         "missing": len(missing), "n_pages": len(pages), "n_api": len(apis),
@@ -1250,6 +1270,48 @@ def rollback_epic(epic_id):
 
 
 _EPIC_STAGES = ["implementing", "assembled", "validated", "previewed", "pushed"]
+
+
+def epic_criteria(epic_id):
+    """Stage 2 review surface: the spec's success/acceptance criteria (texts via the platform's
+    pure build_criteria_verification) crossed with our Verify signals (branch_routes, nav_orphans
+    from the last Verify) → each criterion tagged confirmed / not_met / review. Read-only:
+    does NOT call write_criteria_verification / attach_evidence / set_outcome_status."""
+    eid = _safe_epic_id(epic_id)
+    if not eid:
+        return (400, {"error": "invalid epic id"})
+    try:
+        from orchestrator.outcome_criteria import build_criteria_verification
+        cv = build_criteria_verification(BACKLOG_DIR / eid, note="")
+    except Exception as exc:
+        return {"error": f"criteria extraction failed: {exc}"}
+    es = load_epic_state(eid)
+    branch = es.get("branch_routes")
+    nav = es.get("nav_orphans") or []
+    verified = branch is not None
+
+    def mk(items):
+        out = []
+        for t in (items or []):
+            if verified:
+                state, why = _ser.criterion_state(t, branch, nav)
+            else:
+                state = "review"
+                why = "роут — прогони Verify для авто-проверки" if _ser.criterion_routes(t) else "ручная проверка"
+            out.append({"text": t, "state": state, "why": why})
+        return out
+
+    def counts(xs):
+        c = {"confirmed": 0, "not_met": 0, "review": 0}
+        for x in xs:
+            c[x["state"]] = c.get(x["state"], 0) + 1
+        return c
+
+    succ = mk(cv.get("success_criteria"))
+    acc = mk(cv.get("acceptance_criteria"))
+    return {"success": succ, "acceptance": acc, "verified": verified,
+            "counts": {"success": counts(succ), "acceptance": counts(acc)},
+            "total": len(succ) + len(acc)}
 
 
 def epic_stage(epic_id):
@@ -2318,6 +2380,7 @@ GET_ROUTES = {
     "/api/task/diff": lambda q: task_diff(_qp(q, "epic_id"), _qp(q, "task_file"), _qp(q, "path")),
     "/api/epic/build-status": lambda q: epic_build_status(_qp(q, "epic_id")),
     "/api/epic/stage": lambda q: epic_stage(_qp(q, "epic_id")),
+    "/api/epic/criteria": lambda q: epic_criteria(_qp(q, "epic_id")),
     "/api/epic/fix-diff": lambda q: epic_fix_diff(_qp(q, "epic_id"), _qp(q, "path")),
     "/api/epic/preview-log": lambda q: preview_log(_qp(q, "epic_id")),
     "/api/preview/active": lambda q: preview_active(),

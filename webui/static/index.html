@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-47";
+const FE_VERSION="workspace-48";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -670,12 +670,14 @@ async function openEpic(id){const d=await api("/api/epic?id="+encodeURIComponent
       <button class="btn ghost sm" onclick="resetEpicRuns('${esc(id)}')">Restart by DAG</button>
       <span class="muted" style="font-size:12px">Сборка = задачи по DAG поверх зависимостей. Без агента, main не трогается, без PR.</span></div>
       <div class="log" id="epiclog" style="display:none;margin-top:10px"></div></div>
+    <div class="card" id="epic-criteria" style="margin-bottom:14px;display:none"></div>
     ${taskPanel}
     <div class="card"><h2>Artifacts</h2><div class="split"><div class="tree" id="artlist">${artList}</div><div class="viewer" id="aview"><div class="vh">select an artifact</div></div></div></div>`;
   if(arts.length)viewArtifact(id,arts[0].name,$("#art-"+CSS.escape(arts[0].name)));
   renderEpicTasks(EPIC_TASK_VIEW);
   renderEpicRail(id,null);
-  refreshExecGate(id);}
+  refreshExecGate(id);
+  loadEpicCriteria(id);}
 function renderEpicRail(id,st){
   const el=$("#epic-rail");if(!el)return;
   const labels={implementing:"Implementing",assembled:"Assembled",validated:"Validated",previewed:"Previewed",pushed:"Pushed"};
@@ -902,7 +904,22 @@ function verifyEpic(id,btn){
     if(res&&res.ok)toast(`Эпик добавил ${res.added||0} роут(ов)`+((res.nav_broken||0)?` · ⚠ ${res.nav_broken} битых nav-ссылок`:"")+((res.missing||0)?` · spec: ${res.missing} без файла`:"")+" — см. лог");
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
+    loadEpicCriteria(id);
   });
+}
+async function loadEpicCriteria(id){
+  const box=$("#epic-criteria");if(!box)return;
+  let c;try{c=await api("/api/epic/criteria?epic_id="+encodeURIComponent(id));}catch(e){box.style.display="none";return;}
+  if(!c||c.error||!c.total){box.style.display="none";return;}
+  const ico={confirmed:'<span style="color:var(--teal)">✓</span>',not_met:'<span style="color:var(--red)">✗</span>',review:'<span style="color:var(--faint)">○</span>'};
+  const row=x=>`<div class="row" style="gap:8px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--line)"><span style="width:14px;flex:none" title="${esc(x.why||"")}">${ico[x.state]||"○"}</span><span style="font-size:13px;${x.state==="not_met"?"color:var(--red)":""}">${esc(x.text)}</span></div>`;
+  const grp=(title,items,cnt)=>!items.length?"":`<div style="margin-top:10px"><div class="row" style="justify-content:space-between"><h3 style="margin:0;font-size:13px;color:var(--dim)">${title} (${items.length})</h3>
+    <span class="muted" style="font-size:11px">${cnt.confirmed?`<span style="color:var(--teal)">${cnt.confirmed} ✓</span> · `:""}${cnt.not_met?`<span style="color:var(--red)">${cnt.not_met} ✗</span> · `:""}${cnt.review} ○</span></div>${items.map(row).join("")}</div>`;
+  const hint=c.verified?"":'<span class="pill warn" style="font-size:10px">прогони Verify, чтобы авто-проверить роут-критерии</span>';
+  box.style.display="block";
+  box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Review · критерии</h2>${hint}</div>
+    <div class="muted" style="font-size:11px;margin-top:2px">✓ роут на месте (поведение проверь глазами) · ✗ роута нет на ветке · ○ ручная проверка</div>
+    ${grp("Acceptance",c.acceptance,c.counts.acceptance)}${grp("Success",c.success,c.counts.success)}`;
 }
 function fixBuild(id,btn){
   if(!confirm("Запустить агента, чтобы починить билд?\n\nАгент получит структурированные ошибки tsc (файлы + удалённые символы) и намерение эпика из spec, и поправит ПОТРЕБИТЕЛЕЙ на ветке эпика (не возвращая удалённое). main не трогается. После — посмотри «Дифф фикса» и нажми Re-validate."))return;
@@ -1121,7 +1138,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,loadEpicCriteria,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>
