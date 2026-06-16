@@ -52,7 +52,7 @@ h2{font-size:15px;margin:0 0 10px}
 .muted{color:var(--dim)}
 .empty{color:var(--faint);padding:22px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
 .log{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12px;max-height:230px;overflow:auto}
-#etasklog{position:sticky;bottom:10px;z-index:5;max-height:40vh;box-shadow:0 12px 34px rgba(0,0,0,.55);border-color:var(--amber)}
+#etasklog.docklog{position:fixed;left:264px;right:18px;bottom:16px;z-index:50;max-height:42vh;box-shadow:0 16px 40px rgba(0,0,0,.6);border-color:var(--amber)}
 .log .l{white-space:pre-wrap;color:var(--dim)}.log .l .t{color:var(--faint);margin-right:8px}
 .log .l.ok{color:var(--teal)}.log .l.err{color:var(--red)}.log .l.skip{color:var(--amber)}
 .repo-card{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:12px;cursor:pointer}
@@ -111,7 +111,7 @@ h2{font-size:15px;margin:0 0 10px}
 .tcard.running{border-color:var(--amber)}
 .tdetail .filerow{font-family:var(--mono);font-size:12px;color:var(--dim);padding:4px 6px;border-radius:5px;cursor:pointer}
 .tdetail .filerow:hover,.tdetail .filerow.on{background:var(--panel);color:var(--txt)}
-@media(max-width:760px){.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap}.side .foot{display:none}.split{grid-template-columns:1fr}}
+@media(max-width:760px){.app{grid-template-columns:1fr}.side{flex-direction:row;flex-wrap:wrap}.side .foot{display:none}.split{grid-template-columns:1fr}#etasklog.docklog{left:8px;right:8px}}
 </style>
 </head>
 <body>
@@ -190,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-48";
+const FE_VERSION="workspace-49";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -236,16 +236,19 @@ function artLabel(n){if(ART_LABELS[n])return ART_LABELS[n];if(/^task-\d+\.md$/.t
 
 // stream a job's progress via SSE into a log element; call onDone(result) at end
 function runJob(endpoint,payload,logSel,onDone){
-  $(logSel).style.display="";$(logSel).innerHTML="";
+  const el=$(logSel);el.style.display="";el.innerHTML="";
+  const dock=(logSel==="#etasklog");
+  if(dock)el.classList.add("docklog");
+  const undock=()=>{if(dock)el.classList.remove("docklog");};
   logLine(logSel,"","Dispatching…");
   return api(endpoint,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(payload)})
     .then(r=>{
-      if(r.error){logLine(logSel,"",r.error,"err");if(onDone)onDone({ok:false});return}
+      if(r.error){logLine(logSel,"",r.error,"err");undock();if(onDone)onDone({ok:false});return}
       if(r.started===false)logLine(logSel,"","(attaching to a run already in progress)","skip");
       const es=new EventSource("/api/job/stream?id="+encodeURIComponent(r.job_id));
       es.onmessage=e=>{try{const l=JSON.parse(e.data);logLine(logSel,l.ts,l.msg,l.level)}catch(_){}};
-      es.addEventListener("done",e=>{es.close();let res={};try{res=JSON.parse(e.data)}catch(_){}if(onDone)onDone(res)});
-      es.onerror=()=>{es.close();if(onDone)onDone({ok:false,error:"stream lost"})};
+      es.addEventListener("done",e=>{es.close();undock();let res={};try{res=JSON.parse(e.data)}catch(_){}if(onDone)onDone(res)});
+      es.onerror=()=>{es.close();undock();if(onDone)onDone({ok:false,error:"stream lost"})};
     });
 }
 
@@ -738,7 +741,7 @@ async function etaskRun(file){
     else toast("Задача завершена");
     refreshEpicTasks();
   });
-  setTimeout(refreshEpicTasks,700);
+  setTimeout(refreshEpicTasks,700);_etaskPoll();
 }
 async function etaskRunQuiet(file){
   const r=await api("/api/task/run",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({epic_id:EPIC,task_file:file})});
@@ -919,7 +922,7 @@ async function loadEpicCriteria(id){
   box.style.display="block";
   box.innerHTML=`<div class="row" style="justify-content:space-between;align-items:center"><h2 style="margin:0">Review · критерии</h2>${hint}</div>
     <div class="muted" style="font-size:11px;margin-top:2px">✓ роут на месте (поведение проверь глазами) · ✗ роута нет на ветке · ○ ручная проверка</div>
-    ${grp("Acceptance",c.acceptance,c.counts.acceptance)}${grp("Success",c.success,c.counts.success)}`;
+    <div style="max-height:46vh;overflow:auto;margin-top:6px">${grp("Acceptance",c.acceptance,c.counts.acceptance)}${grp("Success",c.success,c.counts.success)}</div>`;
 }
 function fixBuild(id,btn){
   if(!confirm("Запустить агента, чтобы починить билд?\n\nАгент получит структурированные ошибки tsc (файлы + удалённые символы) и намерение эпика из spec, и поправит ПОТРЕБИТЕЛЕЙ на ветке эпика (не возвращая удалённое). main не трогается. После — посмотри «Дифф фикса» и нажми Re-validate."))return;
