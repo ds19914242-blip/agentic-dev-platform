@@ -189,7 +189,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-43";
+const FE_VERSION="workspace-44";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
@@ -819,6 +819,12 @@ async function refreshExecGate(id){
   let val="";
   if(st.validation==="passed")val=' <span class="pill ok">tsc+build ✓</span>';
   else if(st.validation==="failed")val=' <span class="pill bad">build FAILED</span>';
+  let ver="";
+  if(st.route_verify){const rv=st.route_verify;
+    if(rv.result==="passed")ver=' <span class="pill ok">routes ✓</span>';
+    else if(rv.result==="failed"){const ms=(rv.missing||[]).map(m=>m.route).join(", ");
+      ver=` <span class="pill bad" title="Нет файла для: ${esc(ms)}\nЭвристика — динамические роуты /…/[id] могут быть ложными.">routes: ${(rv.missing||[]).length} missing</span>`;}
+  }
   const purl=st.preview_url||("http://localhost:"+st.preview_port);
   let releasedInfo="";
   if(st.pushed){
@@ -826,7 +832,7 @@ async function refreshExecGate(id){
       ?`<div style="margin-top:8px"><a class="pill ok" href="${esc(st.pr_url)}" target="_blank" rel="noopener">Pushed → открыть PR (мержишь сам)</a></div>`
       :`<div style="margin-top:8px"><span class="pill ok">Pushed в origin</span> <span class="muted" style="font-size:12px">— открой PR на GitHub и смержи сам</span></div>`;
   }
-  g.innerHTML=gate+val+releasedInfo;
+  g.innerHTML=gate+val+ver+releasedInfo;
   renderEpicRail(id,st);
   const assembleBtn=st.buildable
     ?`<button class="btn" onclick="buildEpic('${esc(id)}',this)">${st.assembled?"Пересобрать ветку":"Собрать ветку эпика"} →</button>`
@@ -834,6 +840,9 @@ async function refreshExecGate(id){
   const validateBtn=st.assembled
     ?`<button class="btn ${st.validated?'ghost ':''}sm" onclick="validateEpic('${esc(id)}',this)" style="font-size:13px;padding:10px 15px">${st.validated?"Re-validate":"Validate (tsc+build)"}</button>`
     :`<button class="btn ghost" disabled title="Сначала собери ветку эпика" style="padding:10px 15px">Validate</button>`;
+  const verifyBtn=st.assembled
+    ?` <button class="btn ghost sm" onclick="verifyEpic('${esc(id)}',this)" style="font-size:13px;padding:10px 15px" title="Проверить, что обещанные в спеке роуты реально созданы как файлы (app/.../page.tsx, api/.../route.ts) на ветке эпика. Информационно, push не блокирует. Эвристика: динамические роуты /…/[id] могут давать ложные минусы.">${st.route_verify?"Re-verify routes":"Verify routes"}</button>`
+    :"";
   let fixBtn="";
   if(st.validation==="failed"){
     fixBtn=(st.fix_attempts||0)<3
@@ -868,7 +877,7 @@ async function refreshExecGate(id){
     flow+=` <button class="btn sm" style="font-size:13px;padding:10px 15px" onclick="closeEpic('${esc(id)}')">${closeLabel}</button>`
         +` <button class="btn ghost sm" style="font-size:13px;padding:10px 15px" onclick="rollbackEpic('${esc(id)}')">Вернуть на доработку</button>`;
   }
-  b.innerHTML=assembleBtn+" "+validateBtn+fixBtn+fixDiffBtn+flow;
+  b.innerHTML=assembleBtn+" "+validateBtn+verifyBtn+fixBtn+fixDiffBtn+flow;
   loadSideEpics();
 }
 function validateEpic(id,btn){
@@ -876,6 +885,16 @@ function validateEpic(id,btn){
   runJob("/api/epic/validate",{epic_id:id},"#epiclog",res=>{
     if(res&&res.overall==="passed")toast("Validation passed ✓");
     else if(res&&res.overall==="failed")toast("Validation FAILED — смотри ошибки в логе");
+    else if(res&&res.error)toast(res.error);
+    refreshExecGate(id);
+  });
+}
+function verifyEpic(id,btn){
+  btn.disabled=true;btn.textContent="Verifying…";
+  runJob("/api/epic/verify",{epic_id:id},"#epiclog",res=>{
+    if(res&&res.ok&&res.result==="passed")toast("Routes verified ✓ — обещанные роуты на месте");
+    else if(res&&res.ok&&res.missing)toast(res.missing+" роут(ов) без файла — см. лог (динамика /…/[id] может быть ложной)");
+    else if(res&&res.ok)toast("В спеке нет роут-литералов — проверять нечего");
     else if(res&&res.error)toast(res.error);
     refreshExecGate(id);
   });
@@ -1097,7 +1116,7 @@ async function taskDiff(epicId,file,path,row){
 boot();
 Object.assign(window,{go,sub,onProductChange,onPathInput,openProduct,connectRepo,runAnalyze,runBaseline,
   loadChanges,openDiff,loadEpics,decompose,openEpic,viewArtifact,approve,toggleArchived,archiveEpic,restoreEpic,deleteEpic,
-  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
+  renderEpicList,renderBoard,runTask,runAllReady,openTask,backToBoard,taskDiff,clearRuns,acceptTask,resetTask,buildEpic,resetEpicRuns,refreshExecGate,validateEpic,verifyEpic,renderEpicRail,fixBuild,viewFixDiff,startPreview,stopPreview,markPreviewed,pushEpic,rollbackEpic,closeEpic,startPreviewPoll,stopPreviewPoll,loadSideEpics,openEpicNav,backToDashboard,applyRoute,setHash,loadDashboard,renderEpicTasks,drawDag,epicMiniBoard,epicTaskList,etaskRun,etaskRunQuiet,etaskAccept,etaskReset,etaskRunReady,refreshEpicTasks,etaskReady,etaskActions,setWorkType,doWork,workHint,loadBacklogInbox,startBacklog,delBacklog,loadInbox,loadArchive,toggleArchive});
 </script>
 </body>
 </html>

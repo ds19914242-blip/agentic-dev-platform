@@ -50,7 +50,7 @@ MEMORY_DIR = ROOT / "memory"
 
 # Bumped whenever the API surface changes, so the frontend can detect a
 # stale server (we hit "new frontend / old backend" desyncs before).
-API_VERSION = "workspace-43"
+API_VERSION = "workspace-44"
 
 # Directories never shown in the repository file tree.
 REPO_IGNORE_DIRS = {
@@ -809,6 +809,66 @@ def fix_epic_build(epic_id):
     return target
 
 
+def verify_epic(epic_id):
+    """Deeper-than-tsc check: do the routes the spec PROMISED actually exist as files
+    on the assembled epic branch? Reuses the platform's pure verify_routes (the same
+    check the autonomous path runs) against a lightweight worktree of agentic/epic-<id>.
+    Stores a compact summary in epic-state (route_verify) for the UI. INFORMATIONAL —
+    does NOT gate preview/push. Heuristic: dynamic routes like /users/[id] can show as
+    false positives, so we never block on it in this version."""
+    def target(job):
+        eid = _safe_epic_id(epic_id)
+        if not eid:
+            return {"ok": False, "error": "invalid epic id"}
+        es = load_epic_state(eid)
+        if not es.get("assembled"):
+            return {"ok": False, "error": "epic not assembled — build the epic branch first"}
+        product, repo, err = _resolve_repo(eid)
+        if err:
+            return {"ok": False, "error": err}
+        eb = _epic_branch(eid)
+        wt = Path(repo).parent / ".agentic-worktrees" / f"{eb.split('/')[-1]}-verify-{datetime.now().strftime('%H%M%S')}"
+        with git_ops.repo_lock(repo):
+            r = _git_run(repo, ["worktree", "add", str(wt), eb])
+            if r.returncode != 0:
+                return {"ok": False, "error": "git worktree failed: " + (r.stderr or "").strip()}
+            try:
+                from orchestrator.route_verification import verify_routes
+                job.emit(f"Verifying routes promised by the spec against {eb}…")
+                res = verify_routes(BACKLOG_DIR / eid, str(wt))
+                pages = res.get("routes", [])
+                apis = res.get("api_routes", [])
+                for c in pages + apis:
+                    job.emit(("  OK   " if c["exists"] else "  MISS ") + c["route"] + " → " + c["expected_file"],
+                             "ok" if c["exists"] else "err")
+                missing = res.get("missing", [])
+                summary = {
+                    "result": res.get("result"),
+                    "missing": [{"route": m["route"], "expected_file": m["expected_file"]} for m in missing],
+                    "n_pages": len(pages),
+                    "n_api": len(apis),
+                    "verified_at": res.get("verified_at"),
+                    "branch": eb,
+                }
+                set_epic_state(eid, route_verify=summary)
+                if not (pages or apis):
+                    job.emit("No route literals found in the spec — nothing to verify "
+                             "(routes are detected from quoted paths like \"/settings\").", "skip")
+                elif missing:
+                    job.emit(f"{len(missing)} promised route(s) have no matching file on the branch. "
+                             "NOTE: dynamic routes like /users/[id] can be false positives here.", "err")
+                else:
+                    job.emit(f"All {len(pages) + len(apis)} promised route(s) have matching files.", "ok")
+                return {"ok": True, "result": res.get("result"), "missing": len(missing),
+                        "n_pages": len(pages), "n_api": len(apis)}
+            except Exception as exc:
+                return {"ok": False, "error": str(exc)}
+            finally:
+                _git_run(repo, ["worktree", "remove", "--force", str(wt)])
+                _git_run(repo, ["worktree", "prune"])
+    return target
+
+
 def epic_fix_diff(epic_id, path=""):
     eid = _safe_epic_id(epic_id)
     es = load_epic_state(eid)
@@ -1136,6 +1196,7 @@ def epic_stage(epic_id):
     return {"stage": stage, "stages": _EPIC_STAGES, "buildable": bs.get("buildable"),
             "assembled": bool(es.get("assembled")), "validated": bool(es.get("validated")),
             "validation": es.get("validation"), "fix_attempts": es.get("fix_attempts", 0),
+            "route_verify": es.get("route_verify"),
             "has_fix": bool(es.get("fix_head") and es.get("fix_head") != es.get("fix_base")),
             "previewed": bool(es.get("previewed")), "preview_path": es.get("preview_path"),
             "preview_running": bool(pv and pv.get("running")),
@@ -2289,6 +2350,14 @@ def _post_epic_validate(p):
     return {"job_id": job.id, "started": started}
 
 
+def _post_epic_verify(p):
+    eid = _safe_epic_id(_pp(p, "epic_id"))
+    if not eid:
+        return (400, {"error": "epic_id required"})
+    job, started = start_job("epic_verify", ("epic_verify", eid), verify_epic(eid))
+    return {"job_id": job.id, "started": started}
+
+
 def _post_task_accept(p):
     eid = _safe_epic_id(_pp(p, "epic_id"))
     tf = _pp(p, "task_file")
@@ -2327,6 +2396,7 @@ POST_ROUTES = {
     "/api/epic/rollback": lambda p: rollback_epic(_pp(p, "epic_id")),
     "/api/epic/fix-build": _post_epic_fix,
     "/api/epic/validate": _post_epic_validate,
+    "/api/epic/verify": _post_epic_verify,
     "/api/epic/reset-runs": lambda p: reset_epic_runs(_pp(p, "epic_id")),
     "/api/task/reset": lambda p: reset_task_run(_pp(p, "epic_id"), _pp(p, "task_file")),
     "/api/task/accept": _post_task_accept,
