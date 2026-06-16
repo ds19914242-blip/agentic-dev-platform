@@ -52,6 +52,7 @@ h2{font-size:15px;margin:0 0 10px}
 .muted{color:var(--dim)}
 .empty{color:var(--faint);padding:22px;text-align:center;border:1px dashed var(--line2);border-radius:9px}
 .log{background:var(--panel2);border:1px solid var(--line);border-radius:8px;padding:10px;font-family:var(--mono);font-size:12px;max-height:230px;overflow:auto}
+#etasklog{position:sticky;bottom:10px;z-index:5;max-height:40vh;box-shadow:0 12px 34px rgba(0,0,0,.55);border-color:var(--amber)}
 .log .l{white-space:pre-wrap;color:var(--dim)}.log .l .t{color:var(--faint);margin-right:8px}
 .log .l.ok{color:var(--teal)}.log .l.err{color:var(--red)}.log .l.skip{color:var(--amber)}
 .repo-card{display:flex;gap:14px;align-items:flex-start;padding:16px;border:1px solid var(--line);border-radius:11px;background:var(--panel);margin-bottom:12px;cursor:pointer}
@@ -189,7 +190,7 @@ h2{font-size:15px;margin:0 0 10px}
 </div>
 
 <script>
-const FE_VERSION="workspace-45";
+const FE_VERSION="workspace-46";
 const $=s=>document.querySelector(s);
 const esc=s=>(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 let STATE={products:[]},CUR="",VIEW="repos",EPIC=null;
